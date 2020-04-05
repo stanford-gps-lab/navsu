@@ -109,7 +109,7 @@ end
 if ~isempty(epochStart)
    % convert from GPS epoch to calendar date and time;
     %-ts y/m/d h:m:s  start time [all]
-   [yr,mn,dy,hr,min,sec] = utility.time.epochs2cal(epochStart);
+   [yr,mn,dy,hr,min,sec] = navsu.time.epochs2cal(epochStart);
    optionTexti = [' -ts ' num2str(yr) '/' num2str(mn,'%02i') '/' num2str(dy,'%02i') ' ' ...
        num2str(hr,'%02i') ':' num2str(min,'%02i') ':' num2str(round(sec),'%02i')];
    optionText = [optionText optionTexti];
@@ -118,7 +118,7 @@ end
 if ~isempty(epochEnd)
    % convert from GPS epoch to calendar date and time;
     %-te y/m/d h:m:s  start time [all]
-   [yr,mn,dy,hr,min,sec] = utility.time.epochs2cal(epochEnd);
+   [yr,mn,dy,hr,min,sec] = navsu.time.epochs2cal(epochEnd);
    optionTexti = [' -te ' num2str(yr) '/' num2str(mn,'%02i') '/' num2str(dy,'%02i') ' ' ...
        num2str(hr,'%02i') ':' num2str(min,'%02i') ':' num2str(round(sec),'%02i')];
    optionText = [optionText optionTexti];

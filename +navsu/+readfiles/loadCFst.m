@@ -37,7 +37,7 @@ function [Clck, CFileName,CFileNameFull] = loadCFst(Year,dayNum ,settings,FLAG_N
 % Adjust in case day number is 0
 if dayNum == 0
     Year = Year-1;
-    dayNum = YearDays(Year);
+    dayNum = navsu.time.yearDays(Year);
 end
 
 if nargin < 4

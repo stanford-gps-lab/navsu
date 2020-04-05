@@ -1,4 +1,14 @@
-function nDays = YearDays(year)
+function nDays = yearDays(year)
+% yearDays
+% DESCRIPTION:
+%   Compute the number of days in a given year accounting for leap years
+% INPUT:
+%   year = the year [1x1]
+%
+% OUTPUT:
+%   nDays = number of days in the year [1x1]
+%
+% See also: monthly calendars, daily calendars with jokes or comics
 
 % In the Gregorian calendar 3 criteria must be taken into account to identify leap years:
 % The year is evenly divisible by 4;

@@ -1,4 +1,19 @@
 function epochs = cal2epochs(yr,mn,dy,hr,min,sec)
+% cal2epochs
+% DESCRIPTION:
+%   Convert from calendar date to GPS epoch (seconds since start of GPS
+%   time)
+% INPUT:
+%   yr  = year      [Nx1]
+%   mn  = month     [Nx1]
+%   dy  = day       [Nx1]
+%   hr  = hour      [Nx1]
+%   min = minute    [Nx1]
+%   sec = second    [Nx1]
+% OUTPUT:
+%   epochs = GPS epoch [Nx1]
+%
+% See also: navsu.time.epochs2cal
 
 % Allow for single vector input
 if nargin == 1 && size(yr,2) == 6

@@ -20,21 +20,21 @@ end
 if any(epoch < 3000)
     sdx = epoch < 3000;
     year = floor(epoch(sdx));
-    dayn = ceil(YearDays(year)*(epoch(sdx) - year));
-    epoch(sdx) = doy2jd(year, dayn);
+    dayn = ceil(navsu.time.yearDays(year)*(epoch(sdx) - year));
+    epoch(sdx) = navsu.time.doy2jd(year, dayn);
 end
 if length(epoch) == 1
     epoch = epoch*ones(size(prn));
 end
 
 % Pull svndata table 
-svndata = utility.svprn.constSvnData(2,source);
+svndata = navsu.svprn.constSvnData(2,source);
 
 %find start date in jd       
-svndata(:,end+1) = utility.time.cal2jd_vect(svndata(:,3), svndata(:,4), ...
+svndata(:,end+1) = navsu.time.cal2jd_vect(svndata(:,3), svndata(:,4), ...
                     svndata(:,5)) + (svndata(:,6) + svndata(:,7)/60)/24;
 %find end date in jd       
-svndata(:,end+1) = utility.time.cal2jd_vect(svndata(:,8), svndata(:,9), ...
+svndata(:,end+1) = navsu.time.cal2jd_vect(svndata(:,8), svndata(:,9), ...
                     svndata(:,10) + (svndata(:,11) + svndata(:,12)/60)/24);       
 % fix infinities
 svndata(svndata(:,8) == Inf,end) = Inf;

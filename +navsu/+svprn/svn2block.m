@@ -30,7 +30,7 @@ if nargin < 4
     end
 end
 
-[svndata,blockText] = constSvnData(const,source);
+[svndata,blockText] = navsu.svprn.constSvnData(const,source);
 
 for i = 1:length(svn)
     idx = svndata(svndata(:,1) == svn(i),13);

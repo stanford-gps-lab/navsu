@@ -147,7 +147,7 @@ if B < 0
 end
 
 Bg_r    = abs(B);
-[res_clensin] = utility.thirdparty.clsin(bg, 4, 2*Bg_r);
+[res_clensin] = navsu.thirdparty.clsin(bg, 4, 2*Bg_r);
 Bg_r    = Bg_r + res_clensin;
 L0      = L0*pi / 180;
 Lg_r    = L - L0;
@@ -161,7 +161,7 @@ Ep      = atanh(sin(Lg_r) * cos_BN);
 %Spherical normalized N, E to ellipsoidal N, E
 Np      = 2 * Np;
 Ep      = 2 * Ep;
-[dN, dE] = utility.thirdparty.clksin(gtu, 4, Np, Ep);
+[dN, dE] = navsu.thirdparty.clksin(gtu, 4, Np, Ep);
 Np      = Np/2;
 Ep      = Ep/2;
 Np      = Np + dN;
