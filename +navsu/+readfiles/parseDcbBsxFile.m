@@ -165,7 +165,7 @@ while ~feof(fid)
                 startYri = startYri + 2000;
             end
             startDyi = temp{10+rxIndOffset};
-            startEpochi = utility.time.jd2epochs(utility.time.doy2jd(startYri,startDyi));
+            startEpochi = navsu.time.jd2epochs(navsu.time.doy2jd(startYri,startDyi));
             
             %             Save epochs and reference and offset
             endYri = temp{13+rxIndOffset};
@@ -176,7 +176,7 @@ while ~feof(fid)
                 endYri = endYri + 2000;
             end
             endDyi = temp{15+rxIndOffset};
-            endEpochi = utility.time.jd2epochs(utility.time.doy2jd(endYri,endDyi));
+            endEpochi = navsu.time.jd2epochs(navsu.time.doy2jd(endYri,endDyi));
             
             
             % Bias

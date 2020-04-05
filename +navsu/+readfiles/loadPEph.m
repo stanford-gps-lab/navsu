@@ -65,7 +65,7 @@ end
 if length(dayNum) > 1
     PFileName = {}; PFileNameFull = {};
     for idx = 1:length(dayNum)
-        [Pephi,PFileNamei,PFileNameFulli] = utility.readfiles.loadPEph(Year(idx), dayNum(idx), settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
+        [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year(idx), dayNum(idx), settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
         
         if idx == 1
             Peph = Pephi;
@@ -87,12 +87,12 @@ if length(dayNum) > 1
 else
     Peph = [];
     
-    jd = utility.time.cal2jd(Year,1,0) + floor(dayNum);
+    jd = navsu.time.cal2jd(Year,1,0) + floor(dayNum);
     % adjust Year and dayNum in case of rollover
-    %     [dayNum,Year] = utility.time.jd2doy(jd);
-    gps_day = jd - utility.time.cal2jd(1980,1,6);
-    [yr,mn,dy]=utility.time.jd2cal(jd);
-    [doy,~]=utility.time.jd2doy(jd);
+    %     [dayNum,Year] = navsu.time.jd2doy(jd);
+    gps_day = jd - navsu.time.cal2jd(1980,1,6);
+    [yr,mn,dy]=navsu.time.jd2cal(jd);
+    [doy,~]=navsu.time.jd2doy(jd);
     
     
     if all(settings.constUse ==  [1 0 0 0 0])
@@ -163,7 +163,7 @@ else
                  tmp = sprintf(PpathNameFormat, yr,dayNum);
                 PFileName = sprintf(PfileNameFormat1, yr, mn,dy);
                 
-                Peph = utility.readfiles.readJplPos([tmp PFileName]);
+                Peph = navsu.readfiles.readJplPos([tmp PFileName]);
                 
             otherwise
                 ephCenter = settings.gpsEphCenter;
@@ -261,7 +261,7 @@ else
                 settings2.constUse(cdx) = 1;
                 
                 % Call yourself
-                [Pephi,PFileNamei,PFileNameFulli] = utility.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
+                [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
                 
                 if ~FLAG_NO_LOAD
                     PRN           = [PRN; Pephi.PRN];
@@ -334,7 +334,7 @@ end
         end
         
         if ~FLAG_NO_LOAD
-            Peph = utility.readfiles.ReadSP3Mixed([tmp PFileName],FLAG_APC_OFFSET,1,constOut);
+            Peph = navsu.readfiles.ReadSP3Mixed([tmp PFileName],FLAG_APC_OFFSET,1,constOut);
             
             % Ensure all fields are filled
             if ~isfield(Peph,'clock_drift')
@@ -353,7 +353,7 @@ end
             
             % strip off epochs that aren't on correct day
             if TIME_STRIP
-                doysi = floor(utility.time.jd2doy(utility.time.epochs2jd(Peph.epochs)));
+                doysi = floor(navsu.time.jd2doy(navsu.time.epochs2jd(Peph.epochs)));
                 indsRemove = find(doysi ~= dayNum);
                 if ~isempty(indsRemove)
                     Peph.PRN(indsRemove) = [];

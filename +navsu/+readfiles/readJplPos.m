@@ -72,14 +72,14 @@ data = table(dataArray{1:end-1}, 'VariableNames', {'E','constellation',...
 
 %% convert and rearrange various things
 % convert from jpl epochs to gps epochs
-epochs = utility.time.jpl2epochs(data.epoch_jpl);
+epochs = navsu.time.jpl2epochs(data.epoch_jpl);
 
 % constellations
 % this doesn't really do anything right now
 constellation = ones(size(epochs));
 
 % convert from svn to prn
-prns = utility.svprn.svn2prn(data.svn,epochs,constellation(1));
+prns = navsu.svprn.svn2prn(data.svn,epochs,constellation(1));
 
 % some data is not available at all here
 clock_bias  = nan(size(epochs));

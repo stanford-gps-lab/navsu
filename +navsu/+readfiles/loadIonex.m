@@ -13,7 +13,7 @@ if length(dayNum) > 1
     IFileName = {}; IFileNameFull = {};
     
     for idx = 1:length(dayNum)
-        [ionoDatai,IFileNamei,IFileNameFulli] = utility.readfiles.loadIonex(Year(idx),dayNum(idx),settings,FLAG_NO_LOAD,center);
+        [ionoDatai,IFileNamei,IFileNameFulli] = navsu.readfiles.loadIonex(Year(idx),dayNum(idx),settings,FLAG_NO_LOAD,center);
     end
     
     % do something useful with all this
@@ -34,7 +34,7 @@ else
     IFileNameFull = {filenameFulli};
     
     if ~FLAG_NO_LOAD
-        [dcbData,ionoData] = utility.readfiles.readIONEX(filenameFulli);
+        [dcbData,ionoData] = navsu.readfiles.readIONEX(filenameFulli);
     end
 end
 

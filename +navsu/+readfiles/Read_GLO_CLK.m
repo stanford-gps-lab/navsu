@@ -34,7 +34,7 @@ if isempty(prns)
 end
 
 % find time interval
-tempEpochs = sort(unique(utility.time.cal2epochs(temp.data(~isnan(temp.data(:,1)),1:6))));
+tempEpochs = sort(unique(navsu.time.cal2epochs(temp.data(~isnan(temp.data(:,1)),1:6))));
 dEpochs = mode(diff(tempEpochs));
 
 % Initialize output variables

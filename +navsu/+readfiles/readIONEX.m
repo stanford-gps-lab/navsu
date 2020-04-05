@@ -20,17 +20,17 @@ while ~feof(fid)
     if contains(linetxt,'EPOCH OF FIRST MAP')
         datai = textscan(linetxt,'%f %f %f %f %f %f');
         
-        startJdi = utility.time.cal2jd(datai{1},datai{2},datai{3}+datai{4}/24+datai{5}/(24*60)+datai{6}/(24*60*60));
-        [startDyi,startYri] = utility.time.jd2doy(startJdi);
-        startEpochi = utility.time.jd2epochs(startJdi);
+        startJdi = navsu.time.cal2jd(datai{1},datai{2},datai{3}+datai{4}/24+datai{5}/(24*60)+datai{6}/(24*60*60));
+        [startDyi,startYri] = navsu.time.jd2doy(startJdi);
+        startEpochi = navsu.time.jd2epochs(startJdi);
     end
     
     if contains(linetxt,'EPOCH OF LAST MAP')
         datai = textscan(linetxt,'%f %f %f %f %f %f');
         
-        endJdi = utility.time.cal2jd(datai{1},datai{2},datai{3}+datai{4}/24+datai{5}/(24*60)+datai{6}/(24*60*60));
-        [endDyi,endYri] = utility.time.jd2doy(endJdi);
-        endEpochi = utility.time.jd2epochs(endJdi);
+        endJdi = navsu.time.cal2jd(datai{1},datai{2},datai{3}+datai{4}/24+datai{5}/(24*60)+datai{6}/(24*60*60));
+        [endDyi,endYri] = navsu.time.jd2doy(endJdi);
+        endEpochi = navsu.time.jd2epochs(endJdi);
     end
     
     if contains(linetxt,'HGT1 / HGT2 / DHGT')
@@ -142,10 +142,10 @@ while ~feof(fid)
                 biasi   = datai{3};
                 stdDevi = datai{4};
                 
-                constIndi = utility.svprn.convertConstIndName(consti,1);
-                constiFull = utility.svprn.convertConstIndName(constIndi);
+                constIndi = navsu.svprn.convertConstIndName(consti,1);
+                constiFull = navsu.svprn.convertConstIndName(constIndi);
                 
-                SVNs(ind) = utility.svprn.prn2svn(prni,startJdi,constiFull);
+                SVNs(ind) = navsu.svprn.prn2svn(prni,startJdi,constiFull);
                 PRNs(ind) = prni;
                 sites{ind} = NaN;
                 domes{ind} = NaN;
@@ -161,7 +161,7 @@ while ~feof(fid)
                 stdDev(ind) = stdDevi;
                 satFlag(ind) = 1;
                 const{ind} = consti;
-                constInd(ind) = utility.svprn.convertConstIndName(consti,1);
+                constInd(ind) = navsu.svprn.convertConstIndName(consti,1);
                 
                 ind = ind+1;
             end
@@ -219,7 +219,7 @@ while ~feof(fid)
         linetxt = fgetl(fid);
         datai = textscan(linetxt,'%f %f %f %f %f %f');
         datevecs(mapi,:) = cell2mat(datai);
-        epochs(mapi) = utility.time.cal2epochs(datevecs(mapi,1),datevecs(mapi,2),...
+        epochs(mapi) = navsu.time.cal2epochs(datevecs(mapi,1),datevecs(mapi,2),...
             datevecs(mapi,3),datevecs(mapi,4),datevecs(mapi,5),datevecs(mapi,6));
         
         tecMapi = nan(length(latVec),length(lonVec),length(hgtVec));

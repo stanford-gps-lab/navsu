@@ -47,15 +47,15 @@ opts = setvaropts(opts, "satAndType", "EmptyFieldRule", "auto");
 data = readtable(filename, opts);
 
 %% Make it into something useful
-indsClkBias = utility.strFindCell(data.satAndType,'Clk');
+indsClkBias = navsu.strFindCell(data.satAndType,'Clk');
 
 % 
-epochs = utility.time.jpl2epochs(data.jpl_epoch(indsClkBias));
+epochs = navsu.time.jpl2epochs(data.jpl_epoch(indsClkBias));
 
 constellation = ones(size(epochs));
 
 
-c = utility.constants('c');
+c = navsu.constants('c');
 bias = data.val2(indsClkBias)/c;
 
 rate = data.val3(indsClkBias)/c;
@@ -64,7 +64,7 @@ rate = data.val3(indsClkBias)/c;
 svnStr = cell2mat(cellfun(@(x) x(15:16),data.satAndType(indsClkBias),'UniformOutput',false));
 svns = str2num(svnStr);
 
-prns = utility.svprn.svn2prn(svns,epochs,constellation(1));
+prns = navsu.svprn.svn2prn(svns,epochs,constellation(1));
 
 epochsUn = unique(epochs);
 prnUn = 1:32;

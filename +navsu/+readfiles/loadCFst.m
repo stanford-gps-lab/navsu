@@ -48,7 +48,7 @@ if length(dayNum) > 1
     CFileName = {};
     CFileNameFull = {};
     for idx = 1:length(dayNum)
-        [Clcki, CFileNamei,filenameFulli] = utility.readfiles.loadCFst(Year(idx),dayNum(idx),settings,FLAG_NO_LOAD);
+        [Clcki, CFileNamei,filenameFulli] = navsu.readfiles.loadCFst(Year(idx),dayNum(idx),settings,FLAG_NO_LOAD);
         if ~FLAG_NO_LOAD
             if idx == 1
                 Clck = Clcki;
@@ -65,10 +65,10 @@ if length(dayNum) > 1
     
 else
     
-    jd = utility.time.cal2jd(Year,1,0) + dayNum;
-    gps_day = jd - utility.time.cal2jd(1980,1,6);
-    [yr,mn,dy]=utility.time.jd2cal(jd);
-    [dayNum,Year]=utility.time.jd2doy(jd);
+    jd = navsu.time.cal2jd(Year,1,0) + dayNum;
+    gps_day = jd - navsu.time.cal2jd(1980,1,6);
+    [yr,mn,dy]=navsu.time.jd2cal(jd);
+    [dayNum,Year]=navsu.time.jd2doy(jd);
     %     dayNum = jd2doy
     
     % Initialize output
@@ -117,7 +117,7 @@ else
                 CFileName = sprintf(PfileNameFormat1, yr, mn,dy);
                 
                 % load jpl ultra rapids
-               [Cepochs, Cclk, Cclk_sig] = utility.readfiles.readJplClock([tmp CFileName]);
+               [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readJplClock([tmp CFileName]);
                
                Clck.Cepochs  = Cepochs;
                Clck.Cclk     = Cclk;
@@ -156,7 +156,7 @@ else
                 end
                 
                 if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = utility.readfiles.Read_GLO_CLK([tmp CFileName],32,'G');
+                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.Read_GLO_CLK([tmp CFileName],32,'G');
                     Cepochs = Cepochs + 86400*(gps_day);
                     
                     %                 if length(Cepochs) == 2880
@@ -227,7 +227,7 @@ else
                 end
                 
                 if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = utility.readfiles.Read_GLO_CLK([tmp CFileName],24,'R');
+                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.Read_GLO_CLK([tmp CFileName],24,'R');
                     Cepochs = Cepochs + 86400*(gps_day);
                     
                     %                 if length(Cepochs) == 2880
@@ -277,7 +277,7 @@ else
         end
         
         if ~FLAG_NO_LOAD
-            [Cepochs, Cclk, Cclk_sig] = utility.readfiles.Read_GLO_CLK([tmp CFileName],36,'E');
+            [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.Read_GLO_CLK([tmp CFileName],36,'E');
             Cepochs = Cepochs + 86400*(gps_day);
             
             Clck.Cepochs  = Cepochs;
@@ -349,7 +349,7 @@ else
                 settings2.constUse(cdx) = 1;
                 
                 % Call yourself
-                [Cdatai,CFileNamei,CFileNameFulli] = utility.readfiles.loadCFst(Year, dayNum, settings2,FLAG_NO_LOAD);
+                [Cdatai,CFileNamei,CFileNameFulli] = navsu.readfiles.loadCFst(Year, dayNum, settings2,FLAG_NO_LOAD);
                 
                 if ~FLAG_NO_LOAD
                     if isempty(PRNs)

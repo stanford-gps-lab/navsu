@@ -12,7 +12,7 @@ if nargin < 6
     statCode = [];
 end
 
-dayStartEpochs = utility.time.jd2epochs(utility.time.doy2jd(YearList,dayList));
+dayStartEpochs = navsu.time.jd2epochs(navsu.time.doy2jd(YearList,dayList));
 
 dcbData = [];
 filesRead = {};
@@ -20,7 +20,7 @@ for ddx = 1:length(YearList)
     
     Year = YearList(ddx);
     dayNum = dayList(ddx);
-    [gpsWeek,gpsTow] = utility.time.jd2gps(utility.time.doy2jd(Year,dayNum));
+    [gpsWeek,gpsTow] = navsu.time.jd2gps(navsu.time.doy2jd(Year,dayNum));
     gpsDow = floor(gpsTow/86400);
     
     
@@ -72,10 +72,10 @@ for ddx = 1:length(YearList)
             end
             
             dcbDatai = [];
-            if found && isempty(utility.strFindCell(filesRead,filenamei))
+            if found && isempty(navsu.strFindCell(filesRead,filenamei))
                 filesRead = [filesRead {filenamei}];
                 if ~FLAG_NO_LOAD
-                    dcbDatai = utility.readfiles.parseDcbBsxFile(filenamei);
+                    dcbDatai = navsu.readfiles.parseDcbBsxFile(filenamei);
                     
                     % Only include the current day
                     indsInclude = find(ismember(dcbDatai.startEpoch,dayStartEpochs));
@@ -105,7 +105,7 @@ for ddx = 1:length(YearList)
             
             filenamei(strfind(filenamei,'*')) = [];
             
-            dcbDatai = utility.readfiles.readIONEX(filenamei);
+            dcbDatai = navsu.readfiles.readIONEX(filenamei);
         case 4
             % Daily CODE DCB estimates.
             ftpStruc.destDir      = settings.dcbDir;
@@ -131,7 +131,7 @@ for ddx = 1:length(YearList)
                 filenamei = [settings.dcbDir eval(ftpStruc.destFormat) eval(ftpStruc.fileFormat{1})];
                 filenamei = filenamei(1:end-3);
                 
-                dcbDatai = utility.readfiles.parseDcbBsxFile(filenamei,0);
+                dcbDatai = navsu.readfiles.parseDcbBsxFile(filenamei,0);
             end
             
             filesRead = {filenamei};
@@ -169,7 +169,7 @@ for ddx = 1:length(YearList)
     
             filenamei = [DpathName DFileName];
             
-            dcbDatai = utility.readfiles.parseDcbBsxFile(filenamei,0); 
+            dcbDatai = navsu.readfiles.parseDcbBsxFile(filenamei,0); 
     end
     
     if ~isempty(dcbDatai) && (ddx == 1 || isempty(dcbData))
