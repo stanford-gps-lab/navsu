@@ -1,17 +1,41 @@
-function pvt = ReadSP3Mixed(filename, cmToApcFlag,strictConstNumFlag,constellationOut,atxData)
-% TrueEphem = readNGA( filename )
-% TrueEphem is a n x 12 matrix. Each row of TrueEphem includes
-% [ GPS week, GPS sec, PRN, x, y, z, Clock drift, dx, dy, dz, d(Clock drift), Event Flag ]
-% No mathematical processing --- the value of each element is identical to that in the NGA file
-
-% Written by: Liang Heng  05/28/2009
-
-% functions called: err_chk, utc2leap
+function pvt = readSp3(filename, cmToApcFlag,strictConstNumFlag,constellationOut,atxData)
+% readSp3
+% DESCRIPTION:
+%   Parses .sp3 precise orbit and clock files! 
+% INPUT:
+%   filename    - name of the .sp3 file to parse
+% OPTIONAL INPUTS:
+%   cmToApcFlag - default is false.  Flag to indicate to offset the
+%                 positions from the default center of mass to antenna 
+%                 phase center.
+%   strictConstNumFlag - default is false.  Flag to indicate to force each 
+%                 constellation to have a specific default number of satellites.
+%                 nGPS = 32, nGlonass = 24, nGalileo = 36, nBeidou = 35
+%   constellationOut - default is 1.  Constellation index indicating which
+%                 constellation to parse. 12345 = GRECS
+%   atxData     - antenna phase center data for converting from center of
+%                 mass to antenna phase center.  This should be from an IGS 
+%                 .atx file
+% OUTPUT:
+%   pvt           - structure containing all of the parsed data
+%    .filename    - name of the file that was parsed
+%    .GPS_week_num - vector of GPS weeks corresponding to unique output
+%                   epochs
+%    .GPS_seconds - vector of GPS times of week corresponding to unique
+%                   output epochs
+%    .Epoch_interval - nominal spacing between epochs [s]
+%    .NumSV       - number of satellites included in output
+%    .NumEpochs   - number of unique epochs included in output
+%    .PRN         - vector list of PRNs in output
+%    .clock_bias  - vector of clock biases in seconds- each element
+%                   corresponds to values of .GPS_seconds and .PRN
+%    .position    - [length(.PRN) x 3] matrix of satellite positions in m
+%    .Event       - vector of detected estimator events
+%
+% See also:  navsu.svOrbitClock, navsu.readfiles.loadPEph
 
 pvt = [];
-% if (nargin <= 1)
-%     outputFormat = [];
-% end
+
 [fid, message] = fopen(filename, 'rt');
 if (fid == -1)
     fprintf(2, 'Error open %s: %s\n', filename, message);
@@ -114,10 +138,6 @@ while ~feof(fid)
         const = tline(2);
         
         constNum = strfind(consts,const);
-        
-        %%%% CHANGING THIS 3/6/2018 FOR JAX DATA
-%         Ci = textscan(tline(3:end),'%n%n%n%n%n');
-%         dataTemp = [Ci{:}];
 
         Ci = textscan(tline(3:end),'%n%n%n%n%n%n%n%n%n%n%n%n%n');
         dataTemp = [Ci{1:5}];

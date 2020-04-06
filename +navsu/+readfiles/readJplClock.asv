@@ -2,16 +2,16 @@ function [epochs, clk, clk_sig] = readJplClock(filename, dataLines)
 % readJplClock
 % DESCRIPTION:
 %   Parser for JPL real-time clock products. 
-%
 % INPUT:
 %   filename    - the name of the file (please include the path as well)
-%
+
+
 % OUTPUT:
 %   epochs      - Nx1 vector of GPS epochs of clock outputs
 %   clk         - Nx32 matrix of GPS clock biases [s]
 %   clk_sig     - Nx32 matrix of GPS clock bias sigmas [s]
 %
-% See also: navsu.readfiles.readRinexClock
+% See also: 
 
 %% Input handling
 

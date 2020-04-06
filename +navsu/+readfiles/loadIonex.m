@@ -60,7 +60,7 @@ else
     IFileNameFull = {filenameFulli};
     
     if ~FLAG_NO_LOAD
-        [dcbData,ionoData] = navsu.readfiles.readIONEX(filenameFulli);
+        [dcbData,ionoData] = navsu.readfiles.readIonex(filenameFulli);
     end
 end
 

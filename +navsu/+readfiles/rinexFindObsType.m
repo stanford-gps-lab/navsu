@@ -1,8 +1,14 @@
 function [obsColumns,nObsTypes,obs_types_u ] = rinexFindObsType(obs_type,sysId)
-
-
-% collect all observation types
-% nObsTypes = 0;
+% rinexFindObsTypes
+% DESCRIPTION:
+%   Sorry this is a bad description. This is just an internal function to
+%   loadRinexObs to collect all observation types. 
+% INPUT:
+%   
+% OUTPUT:
+%   
+%
+% See also: navsu.readfiles.loadRinexObs
 
 if isempty(sysId) % RINEX v2.xx
 	stri = obs_type{1};

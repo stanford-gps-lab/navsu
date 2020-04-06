@@ -131,7 +131,7 @@ for ddx = 1:length(yearList)
             
             filenamei(strfind(filenamei,'*')) = [];
             
-            dcbDatai = navsu.readfiles.readIONEX(filenamei);
+            dcbDatai = navsu.readfiles.readIonex(filenamei);
         case 4
             % Daily CODE DCB estimates.
             ftpStruc.destDir      = settings.dcbDir;

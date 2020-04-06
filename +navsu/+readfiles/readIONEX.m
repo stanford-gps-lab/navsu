@@ -1,5 +1,17 @@
-function [dcbData, tecData] = readIONEX(filename)
+function [dcbData, tecData] = readIonex(filename)
+% readIonex
+% DESCRIPTION:
+%   File parser for IGS IONEX files. 
+% INPUT:
+%   filename    - the name of the file (along with the path) to parse.
+% OUTPUT:
+%   dcbData     - structure containing DCB data- similar to those from 
+%                 0navsu.readfiles.parseDcbBsxFile
+%   tecData     - structure containing ionospheric data
+%
+% See also: navsu.readfiles.loadDcb, navsu.svOrbitClock
 
+%
 % CURRENTLY ONLY PARSING SATELLITE DCB DATA.. SORRY!
 dcbData = struct;
 

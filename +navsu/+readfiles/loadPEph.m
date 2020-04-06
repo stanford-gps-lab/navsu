@@ -195,7 +195,7 @@ else
                 
                 if ~FLAG_NO_LOAD
                     if strcmp(settings.gloEphCenter,'emx') || strcmp(settings.gloEphCenter,'com')
-                        Peph = ReadSP3Mixed([tmp PFileName],FLAG_APC_OFFSET,1,2);
+                        Peph = readSp3([tmp PFileName],FLAG_APC_OFFSET,1,2);
                         
                     else
                         Peph = ReadSP3([tmp PFileName],1,1);
@@ -336,7 +336,7 @@ end
         end
         
         if ~FLAG_NO_LOAD
-            Peph = navsu.readfiles.ReadSP3Mixed([tmp PFileName],FLAG_APC_OFFSET,1,constOut);
+            Peph = navsu.readfiles.readSp3([tmp PFileName],FLAG_APC_OFFSET,1,constOut);
             
             % Ensure all fields are filled
             if ~isfield(Peph,'clock_drift')
