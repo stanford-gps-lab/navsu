@@ -1,4 +1,15 @@
 function dcbData = parseDcbBsxFile(filename,skipRx)
+% parseDcbBsxFile
+% DESCRIPTION:
+%   Parses a specified IGS differential code bias .bsx file.  
+% INPUT:
+%   filename    - name of the file to be parsed (including path)
+%   skipRx      - boolean, where TRUE tells the function not to parse all
+%                 of the receiver-specific entries (saves time!)
+% OUTPUT:
+%   dcbData     - structure containing the DCB data
+%
+% See also: navsu.readfiles.loadDcb, navsu.ftp.download
 
 fid = fopen(filename,'r');
 dcbData = [];

@@ -1,6 +1,6 @@
 function initAtxData(obj,filenameAtx)
 
-atxData = navsu.readfiles.ReadATX(filenameAtx);
+atxData = utility.readfiles.readAtx(filenameAtx);
 % Find antenna data for the receiver of interest
 % atxRx = atxData( find(~cellfun(@isempty,strfind({atxData.block},antMod))));
 

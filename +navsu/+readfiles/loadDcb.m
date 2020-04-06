@@ -1,4 +1,30 @@
-function [dcbData, filesRead] = loadDcb(YearList,dayList,settings,FLAG_NO_LOAD,SOURCE_SELECT,statCode)
+function [dcbData, filesRead] = loadDcb(yearList,dayList,settings,FLAG_NO_LOAD,SOURCE_SELECT,statCode)
+% loadDcb
+% DESCRIPTION:
+%   Find and parse IGS differential code bias corrections.  The files to be 
+%   parsed should already exist locally.
+%
+% INPUTS:
+%  yearList            - N-length vector of years of desired outputs
+%  dayList             - N-length vector of days of years of desired
+%                        outputs
+%  settings            - settings structure
+%   .dcbDir            - Directory containing precise products- should be
+%                        setup in initSettings with a config file
+%
+% OPTIONAL INPUTS:
+%  FLAG_NO_LOAD        - True = do not parse the file, just output the name
+%                        and locaiton of the local file
+%  SOURCE_SELECT       - Index of which source of DCBs to use- hopefully
+%                        this will be cleaned up.  Default is 4, which is
+%                        obviously the daily CODE DCB estimates
+%
+% OUTPUTS:
+%  dcbData             - Structure containing parsed differential code bias
+%                        information
+%  filesRead           - Name of DCB files parsed
+%
+% See also: navsu.ftp.download, navsu.svOrbitClock, navsu.readfiles.loadIonex
 
 if nargin < 4
     FLAG_NO_LOAD = 0;
@@ -12,15 +38,15 @@ if nargin < 6
     statCode = [];
 end
 
-dayStartEpochs = navsu.time.jd2epochs(navsu.time.doy2jd(YearList,dayList));
+dayStartEpochs = navsu.time.jd2epochs(navsu.time.doy2jd(yearList,dayList));
 
 dcbData = [];
 filesRead = {};
-for ddx = 1:length(YearList)
+for ddx = 1:length(yearList)
     
-    Year = YearList(ddx);
+    year = yearList(ddx);
     dayNum = dayList(ddx);
-    [gpsWeek,gpsTow] = navsu.time.jd2gps(navsu.time.doy2jd(Year,dayNum));
+    [gpsWeek,gpsTow] = navsu.time.jd2gps(navsu.time.doy2jd(year,dayNum));
     gpsDow = floor(gpsTow/86400);
     
     
@@ -32,10 +58,10 @@ for ddx = 1:length(YearList)
             DfileNameFormat = '%4d/%03d/CAS0MGXRAP_%4d%03d0000_01D_01D_DCB.BSX';
             
             % File location
-            DpathName = settings.dcbMgexDir;
+            DpathName = settings.dcbDir;
             
             % Filename
-            DFileName = sprintf(DfileNameFormat, Year, dayNum,Year, dayNum);
+            DFileName = sprintf(DfileNameFormat, year, dayNum,year, dayNum);
             
             % Load the file
             dcbDatai = parseDcbBsxFile([DpathName DFileName]);
@@ -47,9 +73,9 @@ for ddx = 1:length(YearList)
             % DLR product
             ftpStruc.destDir      = settings.dcbDir;
             ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
-            ftpStruc.sourceFormat = '[''/gnss/products/bias/'' num2str(Year) ''/'']';
-            ftpStruc.destFormat   = '[int2str(Year) ''/'']';
-            ftpStruc.fileFormat   =  {'[''DLR0MGXFIN_'' num2str(Year,''%04d'') num2str(floor(floor(dayNum/91)*91/10),''%02d'') ''*0000_03L_01D_DCB.BSX*'']' };
+            ftpStruc.sourceFormat = '[''/gnss/products/bias/'' num2str(year) ''/'']';
+            ftpStruc.destFormat   = '[int2str(year) ''/'']';
+            ftpStruc.fileFormat   =  {'[''DLR0MGXFIN_'' num2str(year,''%04d'') num2str(floor(floor(dayNum/91)*91/10),''%02d'') ''*0000_03L_01D_DCB.BSX*'']' };
             filenamei = [settings.dcbDir eval(ftpStruc.destFormat) eval(ftpStruc.fileFormat{1})];
             
             filenamei = filenamei(1:end-1);
@@ -94,10 +120,10 @@ for ddx = 1:length(YearList)
             % nor this
             ftpStruc.destDir      = settings.dcbDir;
             ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
-            ftpStruc.sourceFormat = '[''/gnss/products/ionex/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
-            ftpStruc.destFormat   = '[int2str(Year) ''\'' num2str(dayNum,''%03d'') ''/'']';
-            ftpStruc.fileFormat   =  {'[''codg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;
-                '[''casg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;};
+            ftpStruc.sourceFormat = '[''/gnss/products/ionex/'' num2str(year) ''/'' num2str(dayNum,''%03d'') ''/'']';
+            ftpStruc.destFormat   = '[int2str(year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+            ftpStruc.fileFormat   =  {'[''codg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(year,100),''%02d'') ''i*'']' ;
+                '[''casg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(year,100),''%02d'') ''i*'']' ;};
             ftpStruc.unzipFlag    = 1;
             
             
@@ -111,7 +137,7 @@ for ddx = 1:length(YearList)
             ftpStruc.destDir      = settings.dcbDir;
             ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
             ftpStruc.sourceFormat = '[''/pub/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
-            ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
+            ftpStruc.destFormat   = '[int2str(year) ''/'' num2str(dayNum,''%03d'') ''/'']';
             ftpStruc.fileFormat   =  {'[''com'' num2str(gpsWeek,''%04d'') num2str(gpsDow) ''.bia.Z'']' };
             ftpStruc.unzipFlag    = 1;
             filenamei = [settings.dcbDir eval(ftpStruc.destFormat) eval(ftpStruc.fileFormat{1})];
@@ -124,8 +150,8 @@ for ddx = 1:length(YearList)
                 ftpStruc.destDir      = settings.dcbDir;
                 ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
                 ftpStruc.sourceFormat = '[''/pub/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
-                ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
-                ftpStruc.fileFormat   =  {'[''COD0MGXFIN_'' int2str(Year) num2str(dayNum , ''%03i'') ''0000_01D_01D_OSB.BIA.gz'']' };
+                ftpStruc.destFormat   = '[int2str(year) ''/'' num2str(dayNum,''%03d'') ''/'']';
+                ftpStruc.fileFormat   =  {'[''COD0MGXFIN_'' int2str(year) num2str(dayNum , ''%03i'') ''0000_01D_01D_OSB.BIA.gz'']' };
                 ftpStruc.unzipFlag    = 1;
                 
                 filenamei = [settings.dcbDir eval(ftpStruc.destFormat) eval(ftpStruc.fileFormat{1})];
@@ -145,10 +171,10 @@ for ddx = 1:length(YearList)
             DfileNameFormat = ['%4d/%03d/' statCode 'MGXRAP_%4d%03d0000_01D_01D_DCB.mat'];
             
             % File location
-            DpathName = settings.dcbMgexDir;
+            DpathName = settings.dcbDir;
             
             % Filename
-            DFileName = sprintf(DfileNameFormat, Year, dayNum,Year, dayNum);
+            DFileName = sprintf(DfileNameFormat, year, dayNum,year, dayNum);
             
             filenamei = [DpathName DFileName];
             if exist(filenamei,'file')

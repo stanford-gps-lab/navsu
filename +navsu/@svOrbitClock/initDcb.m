@@ -1,57 +1,31 @@
-function initDcb(obj,year,doy,varargin)
-
+function initDcb(obj,years,doys,varargin)
 
 p = inputParser;
-
-p.addParameter('DOWNLOAD',true);   
-
-% parse the results
-parse(p, varargin{:});
-res = p.Results;
-DOWNLOAD        = res.DOWNLOAD;        % indicator to check for downloads and download
+p.addParameter('source',  []);  % DLR
+p.addParameter('FLAG_NO_LOAD', false);
 
 settings = obj.settings;
+% parse the results
+parse(p, varargin{:});
 
-dcbType = 3; % 1 = CODE, 0/2 = SU, 3 = DLR
+res = p.Results;
 
-typeMap = [0 1 3;
-           5 4 2];
-   
-type2 = typeMap(2,typeMap(1,:) == dcbType);
-
-if DOWNLOAD
-    [~,filenameDcb] =  loadDcb(year,doy,settings,1,type2);
-
-    if isempty(filenameDcb) || ~exist(filenameDcb{1},'file')
-        ftpHelper(6,year,doy,settings);
-    end   
+if isempty(res.source)
+    source = settings.dcbSource;
+else
+    source = res.source;
 end
+FLAG_NO_LOAD = res.FLAG_NO_LOAD;
 
-% Still need to pull SU estimates
-if dcbType == 0
-    [~,filenameDcb] =  loadDcb(year,doy,settings,1,5);
+% if there is no precise ephemeris already there, just make a new one
+if isempty(obj.dcb)
+    dcb = utility.readfiles.loadDcb(years,doys,settings,FLAG_NO_LOAD,source);
+    obj.dcb = dcb;
+else
+    % This will be added to the rest of it
     
-    if ~exist(filenameDcb{1},'file')
-        % generate a dcb file
-        
-        consts = settings.multiConst;
-        
-        dcbData = genDcbEstTECMap(doy,year,'STFU',consts,settings);
-    else
-        [dcbData,filenameDcb] =  loadDcb(year,doy,settings,0,5);
-    end
-    dcbType = 2;
-elseif dcbType == 1
-    % CODE
-   dcbData = loadDcb(year,doy,settings,0,4);
-elseif dcbType == 3
-    % DLR
-    dcbData = loadDcb(year,doy,settings,0,2);
+    % ADD STUFF HERE PLEASE
 end
-
-
-obj.dcb = dcbData;
-obj.dcb.type = dcbType;
 
 
 

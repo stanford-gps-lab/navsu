@@ -1,9 +1,8 @@
 function [obsStruc, constellations, time, date, pos, interval, antoff, antmod,...
     rxmod] = loadRinexObs(filename, varargin)
-% SYNTAX:
-%   [obsStruc, constellations, time, date, pos, interval, antoff, antmod,...
-%     rxmod] = loadRinexObs(filename, varargin)
-%
+% loadRinexObs
+% DESCRIPTION:
+%   Parses RINEX observation files.
 % INPUT:
 %   filename = RINEX observation file
 % OPTIONAL INPUTS:
@@ -31,9 +30,8 @@ function [obsStruc, constellations, time, date, pos, interval, antoff, antmod,..
 %   antmod   = antenna model [string]
 %   rxmod    = receiver model 
 %
-% DESCRIPTION:
-%   Parses RINEX observation files.
-
+% See also: 
+%
 % This has been heavily modified from the original goGPS code.
 %----------------------------------------------------------------------------------------------
 %                           goGPS v0.4.3

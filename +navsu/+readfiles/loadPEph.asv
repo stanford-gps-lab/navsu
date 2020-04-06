@@ -1,10 +1,10 @@
 function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP)
 % loadPEph
-% DESCRIPTION: 
+% D
 % Find and parse IGS clock corrections.  The files to be parsed should
 % already exist locally.
 %
-% INPUTS:
+% Required Inputs:
 %  Year                - N-length vector of years of desired outputs
 %  dayNum              - N-length vector of days of years of desired
 %                        outputs
@@ -27,20 +27,19 @@ function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings,FLAG_N
 %   .galEphCenter      - 3 letter IGS Analysis Center for GAL corrections
 %   .GloPephSource     - this should be set to 'MGEX'- this is old and bad
 %
-% OPTIONAL INPUTS:
+% Optional Inputs:
 %  FLAG_NO_LOAD        - True = do not parse the file, just output the name
 %                        and location of the local file
 %  atxData             - Structure of IGS antenna phase center information
 %  FLAG_APC_OFFSET     - True = displace the interpolated positions by their
 %                        antenna phase center offset. Default = true.
+
 %
-% OUTPUTS:
+% Outputs:
 %  Peph                - Structure containing parsed precise orbit
 %                        information
 %  PFileName           - Name of precise orbit files parsed
 %  PFileNameFull       - Name and directory of precise orbit files parsed
-%
-% See also: navsu.ftp.download, navsu.svOrbitClock
 
 %%
 % Adjust in case day number is 0

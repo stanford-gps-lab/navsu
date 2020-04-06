@@ -1,4 +1,4 @@
-function [svPos,svVel,iod,sigma] = propagate(obj,prns,constInds,epochs,varargin)
+function [svPos,svVel,iod,svClock] = propagate(obj,prns,constInds,epochs,varargin)
 
 
 % this is mostly a wrapper for svPosFromProd
@@ -10,6 +10,7 @@ p.addParameter('FLAG_APC_OFFSET',true);
 p.addParameter('pPosInds',[]);
 p.addParameter('pPosPoly',[]);
 p.addParameter('dttx',[]);
+p.addParameter('latency',0);
 
 % parse the results
 parse(p, varargin{:});
@@ -20,10 +21,16 @@ FLAG_APC_OFFSET = res.FLAG_APC_OFFSET; % whether or not to add the antenna phase
 pPosInds        = res.pPosInds;        
 pPosPoly        = res.pPosPoly;         
 dttx            = res.dttx;            
+latency         = res.latency;
 
 settings = obj.settings;
 
-[svPos,svVel,iod,sigma] = svPosFromProd(prns, epochs,obj,settings,...
-    pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
+if ~strcmp(obj.orbMode,'PREDICT')
+    [svPos,svVel,iod] = obj.svPosFromProd(prns, epochs,settings,...
+        pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
+else
+    [svPos,svVel,iod,svClock] = obj.predictOrbit(prns,constInds,epochs,latency);
+end
+
 
 end

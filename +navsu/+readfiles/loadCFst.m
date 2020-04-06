@@ -1,9 +1,10 @@
 function [Clck, CFileName,CFileNameFull] = loadCFst(Year,dayNum ,settings,FLAG_NO_LOAD)
-%% loadCFst
-% Find and parse IGS clock corrections.  The files to be parsed should
-% already exist locally.
+% loadCFst
+% DESCRIPTION:
+%   Find and parse IGS clock corrections.  The files to be parsed should
+%   already exist locally.
 %
-% Required Inputs:
+% INPUTS:
 %  Year                - N-length vector of years of desired outputs
 %  dayNum              - N-length vector of days of years of desired
 %                        outputs
@@ -24,15 +25,17 @@ function [Clck, CFileName,CFileNameFull] = loadCFst(Year,dayNum ,settings,FLAG_N
 %   .galClkCenter      - 3 letter IGS Analysis Center for GAL corrections
 %   .GloPclkSource     - this should be set to 'MGEX'- this is old and bad
 %
-% Optional Inputs:
+% OPTIONAL INPUTS:
 %  FLAG_NO_LOAD        - True = do not parse the file, just output the name
 %                        and locaiton of the local file
 %
-% Outputs:
+% OUTPUTS:
 %  Clck                - Structure containing parsed precise clock
 %                        information
 %  CFileName           - Name of precise clock files parsed
 %  CFileNameFull       - Name and directory of precise clock files parsed
+%
+% See also: navsu.ftp.download, navsu.svOrbitClock
 
 % Adjust in case day number is 0
 if dayNum == 0
@@ -156,7 +159,7 @@ else
                 end
                 
                 if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.Read_GLO_CLK([tmp CFileName],32,'G');
+                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock([tmp CFileName],32,'G');
                     Cepochs = Cepochs + 86400*(gps_day);
                     
                     %                 if length(Cepochs) == 2880
@@ -190,7 +193,7 @@ else
                 CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
                 tmp = sprintf(CpathNameFormat, yr);
                 if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = Read_GLO_CLK([tmp CFileName],24);
+                    [Cepochs, Cclk, Cclk_sig] = readRinexClock([tmp CFileName],24);
                     Cepochs = Cepochs + 86400*(gps_day);
                     
                     Clck.Cepochs  = Cepochs;
@@ -227,7 +230,7 @@ else
                 end
                 
                 if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.Read_GLO_CLK([tmp CFileName],24,'R');
+                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock([tmp CFileName],24,'R');
                     Cepochs = Cepochs + 86400*(gps_day);
                     
                     %                 if length(Cepochs) == 2880
@@ -277,7 +280,7 @@ else
         end
         
         if ~FLAG_NO_LOAD
-            [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.Read_GLO_CLK([tmp CFileName],36,'E');
+            [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock([tmp CFileName],36,'E');
             Cepochs = Cepochs + 86400*(gps_day);
             
             Clck.Cepochs  = Cepochs;
@@ -319,7 +322,7 @@ else
         end
         
         if ~FLAG_NO_LOAD
-            [Cepochs, Cclk, Cclk_sig] = Read_GLO_CLK([tmp CFileName],35,'C');
+            [Cepochs, Cclk, Cclk_sig] = readRinexClock([tmp CFileName],35,'C');
             Cepochs = Cepochs + 86400*(gps_day);
             
             Clck.Cepochs  = Cepochs;

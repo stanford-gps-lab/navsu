@@ -4,17 +4,16 @@ function outCodes = convertRinex3ObsCodes(inCodes,const)
 % DESCRIPTION:
 %   Convert RINEX 2 observation codes (2 character, i.e. C1) to RINEX 3
 %   observation codes (3 character, i.e. C1C).  This is used in certain
-%   cases in navsu.readfiles.loadRinexObs
+%   cases in 
 % INPUT:
-%   inCodes  - cell array of strings containing RINEX 2 obs codes
-%   const    - string representing constellation of input codes, i.e.
-%              'G','R','E','C','S'
+%   
 % OUTPUT:
-%   outCodes - cell array of strings containing converted RINEX 3 obs codes
+%   
 %
-% See also: navsu.readfiles.loadRinexObs
+% See also: 
 
-% List of maps
+% RINEX 2->3 MAPPING
+% GPS
 mapGPS  =  {'C1' 'C1C';
 'P1' 'C1P';
 'L1' 'L1C';

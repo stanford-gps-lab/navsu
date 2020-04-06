@@ -1,10 +1,15 @@
 function [status, sysout] = crx2rnx(filename)
-% Wrapper function for using crx2rnx (Hatanaka de-compression .exe)
-% [pathstr,name,ext] = fileparts(filename);
-% need to change name of file to .crx
-% if ~strcmp(ext,'.crx')
-%     copyfile(filename,[pathstr '\' name '.crx'])
-% end
+% crx2rnx
+% DESCRIPTION:
+%   Decompress Hatanaka compressed RINEX observation files (.**d, .crx) 
+%   using crx2rnx.exe 
+% INPUT:
+%   filename   - file to be decompressed
+% OUTPUT:
+%   status     - status output from crx2rnx.exe
+%
+% See also: navsu.readfiles.loadRinexObs 
+
 
 % get file path
 s = what('+navsu');

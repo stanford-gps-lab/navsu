@@ -208,7 +208,6 @@ while ~feof(fid)
         
     end
     
-    
     % also parse the actual iono data
     if contains(linetxt,'START OF TEC MAP')
         

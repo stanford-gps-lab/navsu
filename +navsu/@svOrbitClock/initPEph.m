@@ -5,7 +5,9 @@ p = inputParser;
 p.addParameter('FLAG_NO_LOAD',false);
 p.addParameter('atxData',[]);
 p.addParameter('FLAG_APC_OFFSET',false);
-p.addParameter('DOWNLOAD',true);   
+p.addParameter('TIME_STRIP',true);
+
+settings = obj.settings;
 
 % parse the results
 parse(p, varargin{:});
@@ -13,42 +15,25 @@ res = p.Results;
 FLAG_NO_LOAD = res.FLAG_NO_LOAD;       % Flag to not actually load the data- should probably not be used here
 atxData      = res.atxData;            % IGS ANTEX data
 FLAG_APC_OFFSET = res.FLAG_APC_OFFSET; % whether or not to add the antenna phase center offset
-DOWNLOAD        = res.DOWNLOAD;        % indicator to check for downloads and download
-
-settings = obj.settings;
+TIME_STRIP      = res.TIME_STRIP;      % strip output data to only current day
 
 % if there is no precise ephemeris already there, just make a new one
 if isempty(obj.PEph)
-    
-    if DOWNLOAD
-        [~,filenames,filenameFull] = loadPEph(years,doys,settings,true,atxData,FLAG_APC_OFFSET);
-        
-        % build a list of IGS AC codes to download
-        fileAvailable = cellfun(@exist,filenameFull);
-        igsCodes = cellfun(@(x) x(1:3),filenames,'UniformOutput',false);
-        
-        codesDownload = unique(igsCodes(~fileAvailable));
-        
-        for idx =1 :length(codesDownload)
-           ftpHelper(1,years,doys,settings,codesDownload{idx});
-        end
-    end
-    
-    Peph = loadPEph(years,doys,settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET);
+    Peph = utility.readfiles.loadPEph(years,doys,settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
     
     prnConstInds = unique([Peph.PRN Peph.constellation],'rows');
     prns = prnConstInds(:,1);
     constInds = prnConstInds(:,2);
     
     epochsPeph = unique(Peph.epochs);
-    Peph2.clock_bias  = zeros(length(epochsPeph),length(prns));
-    Peph2.clock_drift = zeros(length(epochsPeph),length(prns));
-    Peph2.position    = zeros(length(epochsPeph),3,length(prns));
-    Peph2.velocity    = zeros(length(epochsPeph),3,length(prns));
-    Peph2.event       = zeros(length(epochsPeph),length(prns));
-    Peph2.epochs      = epochsPeph;
-    Peph2.PRN = prns;
-    Peph2.constellation = constInds';
+    Peph2.clock_bias    = zeros(length(epochsPeph),length(prns));
+    Peph2.clock_drift   = zeros(length(epochsPeph),length(prns));
+    Peph2.position      = zeros(length(epochsPeph),3,length(prns));
+    Peph2.velocity      = zeros(length(epochsPeph),3,length(prns));
+    Peph2.event         = zeros(length(epochsPeph),length(prns));
+    Peph2.epochs        = epochsPeph;
+    Peph2.PRN           = prns;
+    Peph2.constellation = constInds;
     for pdx = 1:length(prns)
         indsi = find(Peph.PRN == prns(pdx) & Peph.constellation == constInds(pdx));
         [~,inds2] = ismember(epochsPeph,Peph.epochs(indsi));
