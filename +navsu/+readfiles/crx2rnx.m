@@ -1,6 +1,6 @@
 function [status, sysout] = crx2rnx(filename)
 % Wrapper function for using crx2rnx (Hatanaka de-compression .exe)
-[pathstr,name,ext] = fileparts(filename);
+% [pathstr,name,ext] = fileparts(filename);
 % need to change name of file to .crx
 % if ~strcmp(ext,'.crx')
 %     copyfile(filename,[pathstr '\' name '.crx'])

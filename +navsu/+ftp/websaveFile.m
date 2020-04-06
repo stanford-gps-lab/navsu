@@ -1,4 +1,23 @@
-function  [YearChange,dayChange] = websave_file(YearList,dayList,ftpStruc)
+function  [YearChange,dayChange] = websaveFile(YearList,dayList,ftpStruc)
+% websaveFile
+% DESCRIPTION:
+%   This should just be called by navsu.ftp.download. This was written to 
+%   download JPL real time products from a website that does not allow FTP
+%   access. Products are downloaded given a day, year, information pointing 
+%   to the specific product, and information about where to put the 
+%   downloaded products locally.  
+% INPUT:
+%   yearList = year corresponding to each day of desired downloads [Nx1]
+%   dayList  = day of year of desired downloads [Nx1]
+%   ftpStruc = MATLAB structure containing information about the structure
+%              of the ftp site as well as info about the local file
+%              structure. This is populated in navsu.ftp.download
+%
+% OUTPUT:
+%   yearChange = year corresponding to each day where products were updated  
+%   dayChange  = day of year when products were updated
+%
+% See also: navsu.ftp.download, navsu.ftp.ftpFile, navsu.ftp.ftpFileHr
 
 ftpSite      = ['' ftpStruc.ftpSite];
 sourceFormat = ftpStruc.sourceFormat;
@@ -43,18 +62,6 @@ for ddx = 1:length(YearList)
         
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 end

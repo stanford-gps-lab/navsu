@@ -1,5 +1,22 @@
-function [YearChange,dayChange] = ftp_file(YearList,dayList,ftpStruc,varargin)
-
+function [yearChange,dayChange] = ftpFile(yearList,dayList,ftpStruc,varargin)
+% ftpFile
+% DESCRIPTION:
+%   This should just be called by navsu.ftp.download. Downloads products 
+%   or data from IGS ftp sites given a day, year, information pointing to 
+%   the specific product, and information about where to put the downloaded
+%   products locally.  
+% INPUT:
+%   yearList = year corresponding to each day of desired downloads [Nx1]
+%   dayList  = day of year of desired downloads [Nx1]
+%   ftpStruc = MATLAB structure containing information about the structure
+%              of the ftp site as well as info about the local file
+%              structure. This is populated in navsu.ftp.download
+%
+% OUTPUT:
+%   yearChange = year corresponding to each day where products were updated  
+%   dayChange  = day of year when products were updated
+%
+% See also: navsu.ftp.download, navsu.ftp.ftpFileHr
 
 ftpSite      = ['' ftpStruc.ftpSite];
 sourceFormat = ftpStruc.sourceFormat;
@@ -9,7 +26,7 @@ fileFormat   = ftpStruc.fileFormat;
 unzipFlag    = ftpStruc.unzipFlag;
 
 % Years and days when files have been updated
-YearChange = [];
+yearChange = [];
 dayChange  = [];
 
 if nargin >= 4
@@ -24,18 +41,15 @@ mw = ftp(ftpSite);
 
 for ddx = 1:length(dayList)
     dayNum = dayList(ddx);
-    Year = YearList(ddx);
+    year = yearList(ddx);
     
-    jdi = navsu.time.doy2jd(Year,dayNum);
+    jdi = navsu.time.doy2jd(year,dayNum);
     [yri,mni,dyi] = navsu.time.jd2cal(jdi);
     [gpsWeek,gpsTow] = navsu.time.jd2gps(jdi);
     gpsDow = floor(gpsTow/86400);
     
     % Initial week of year
-    [gpsWeek0,tow0] = navsu.time.jd2gps(navsu.time.cal2jd(Year,1,1));
-%     if tow0 ~= 0
-%         gpsWeek0 = gpsWeek0+1;
-%     end
+    [gpsWeek0,tow0] = navsu.time.jd2gps(navsu.time.cal2jd(year,1,1));
     woy = gpsWeek-gpsWeek0+1;
     
     target_dir = [destDir eval(destFormat)];
@@ -87,12 +101,6 @@ for ddx = 1:length(dayList)
                 change = 1;
                 
                 if unzipFlag
-%                     [~,~,exti] = fileparts(serverName);
-%                     if strcmpi(exti,'.GZ') || strcmpi(exti,'.Z')
-%                         gunzip([target_dir '\' serverName]);
-%                     else
-%                         unzip([target_dir '\' serverName]);
-%                     end
                     navsu.readfiles.unzipFile([target_dir '\' serverName]);
                 end
             end
@@ -102,7 +110,7 @@ for ddx = 1:length(dayList)
     end
     if change
         disp(['File(s) updated on day ' int2str(dayNum)]);
-        YearChange = [YearChange; Year];
+        yearChange = [yearChange; year];
         dayChange  = [dayChange; dayNum];
     end
     

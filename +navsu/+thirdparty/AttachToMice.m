@@ -1,4 +1,4 @@
-function AttachToMice(miceDir)
+function attachToMice(miceDir)
 
 % Initialize MICE utility for solar/planetary ephemeris and earth rotation
 % parameters

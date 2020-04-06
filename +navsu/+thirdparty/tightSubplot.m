@@ -1,6 +1,6 @@
-function [ha, pos] = tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+function [ha, pos] = tightSubplot(Nh, Nw, gap, marg_h, marg_w)
 
-% tight_subplot creates "subplot" axes with adjustable gaps and margins
+% tightSubplot creates "subplot" axes with adjustable gaps and margins
 %
 % [ha, pos] = tight_subplot(Nh, Nw, gap, marg_h, marg_w)
 %

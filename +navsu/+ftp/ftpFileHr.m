@@ -1,5 +1,24 @@
-function [YearChange,dayChange] = ftp_file_hr(YearList,dayList,ftpStruc,varargin)
-
+function [YearChange,dayChange] = ftpFileHr(YearList,dayList,ftpStruc,varargin)
+% ftpFileHr
+% DESCRIPTION:
+%   This should just be called by navsu.ftp.download. Downloads products 
+%   or data from IGS ftp sites given a day, year, information pointing to 
+%   the specific product, and information about where to put the downloaded
+%   products locally.  This is different from navsu.ftp.ftpFile in that
+%   this function should be used specifically for IGS "high rate" products,
+%   which are stored in different directories for each hour of the day.
+% INPUT:
+%   yearList = year corresponding to each day of desired downloads [Nx1]
+%   dayList  = day of year of desired downloads [Nx1]
+%   ftpStruc = MATLAB structure containing information about the structure
+%              of the ftp site as well as info about the local file
+%              structure. This is populated in navsu.ftp.download
+%
+% OUTPUT:
+%   yearChange = year corresponding to each day where products were updated  
+%   dayChange  = day of year when products were updated
+%
+% See also: navsu.ftp.download, navsu.ftp.ftpFile
 
 ftpSite      = ['' ftpStruc.ftpSite];
 sourceFormat = ftpStruc.sourceFormat;
