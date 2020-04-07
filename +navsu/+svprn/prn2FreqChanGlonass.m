@@ -1,12 +1,16 @@
-function svn = prn2FreqChanGlonass(prn, epoch, source)
-%PRN = PRN2SVN(PRN, EPOCH,CONST)
-%converts prn number to svn numbers given the time
-% time is in fractional year (e.g 2012.233 very crudely) or
-% Julian day (e.g. 2444239.5)
-% CONST is index of GNSS constellation:
-% GPS = 1, GLO = 2, GAL = 3, BDS = 4
-%   If not included, defaults to GPS
-%SEE ALSO CAL2JD, DOY2JD SVN2PRN
+function freqChan = prn2FreqChanGlonass(prn, epoch, source)
+% prn2FreqChanGlonass
+% DESCRIPTION:
+%   Map from GLONASS PRN to the FDMA frequency channel at a given time.
+% INPUT:
+%   prn     - PRN
+%   epoch   - time is in fractional year (e.g 2012.233 very crudely) or 
+%             Julian day (e.g. 2444239.5)
+%   
+% OUTPUT:
+%   freqChan - GLONASS FDMA frequency channel (-7 to 7) 
+%
+% See also: navsu.svprn.prn2svn, navsu.svprn.svn2prn, navsu.time.cal2jd
 
 if nargin < 2
     error('You must specify an svn and a time');
@@ -39,26 +43,17 @@ svndata(:,end+1) = navsu.time.cal2jd_vect(svndata(:,8), svndata(:,9), ...
 % fix infinities
 svndata(svndata(:,8) == Inf,end) = Inf;
                 
-svn = NaN(size(prn));       
+freqChan = NaN(size(prn));       
 
-% for pdx = 1:size(svndata,1)
-%     sdx = svndata(pdx,2) == prn & ...
-%            epoch >= svndata(pdx,end-1) & epoch <= svndata(pdx,end); 
-%     if any(sdx)
-%         svn(sdx) = svndata(pdx,1);
-%         svn(sdx) = length(pdx);
-%     end
-% end
 
 for idx = 1:length(prn)
-
     prni = prn(idx);
     epochi = epoch(idx);
     sdx = find(svndata(:,2) == prni & epochi >= svndata(:,end-1) & epochi < svndata(:,end));
     if ~isempty(sdx)
-        svn(idx) = svndata(sdx,14);
+        freqChan(idx) = svndata(sdx,14);
     else
-        svn(idx) = NaN;
+        freqChan(idx) = NaN;
     end
 end
 

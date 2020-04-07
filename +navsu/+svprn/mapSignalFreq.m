@@ -1,15 +1,19 @@
 function [freqs, freqInds] = mapSignalFreq(freqDes,prns,constInds,jd)
-
-
-% INPUTS---------
-% freqDes:   a 5xN matrix, where N is the number of desired signals output,
-%            and 5 is the number of constellations we consider (GRECS)
-% prns:      vector length M, list of PRNs
-% constInds: vector length M, list of indices indicating constellation (GRECS) of PRNs
-% jd:        julian date, if necessary, to indicate GLONASS freq
-
-% OUTPUTS--------
+% mapSignalFreq
+% DESCRIPTION:
+%   Map from the signal number used in RINEX observation codes (1, 2, 5, 6,
+%   7, 8)  and the constellation to the actual frequency of the signal
+% INPUTS:
+%   freqDes   - a 5xN matrix, where N is the number of desired signals output,
+%               and 5 is the number of constellations we consider (GRECS)
+%   prns      - vector length M, list of PRNs
+%   constInds - vector length M, list of indices indicating constellation (GRECS) of PRNs
+%   jd        - julian date, if necessary, to indicate GLONASS freq
+%
+% OUTPUTS:
 % freqs:     MxN matrix of frequencies associated with each signal 
+%
+% See also: navsu.svprn.prn2svn, navsu.svprn.prn2svn
 
 
 fRinexLabels = [1 2 5 6 7 8]';

@@ -1,20 +1,20 @@
 function pvt = readSp3(filename, cmToApcFlag,strictConstNumFlag,constellationOut,atxData)
 % readSp3
 % DESCRIPTION:
-%   Parses .sp3 precise orbit and clock files! 
+%   Parses .sp3 precise orbit and clock files!
 % INPUT:
 %   filename    - name of the .sp3 file to parse
 % OPTIONAL INPUTS:
 %   cmToApcFlag - default is false.  Flag to indicate to offset the
-%                 positions from the default center of mass to antenna 
+%                 positions from the default center of mass to antenna
 %                 phase center.
-%   strictConstNumFlag - default is false.  Flag to indicate to force each 
+%   strictConstNumFlag - default is false.  Flag to indicate to force each
 %                 constellation to have a specific default number of satellites.
 %                 nGPS = 32, nGlonass = 24, nGalileo = 36, nBeidou = 35
 %   constellationOut - default is 1.  Constellation index indicating which
 %                 constellation to parse. 12345 = GRECS
 %   atxData     - antenna phase center data for converting from center of
-%                 mass to antenna phase center.  This should be from an IGS 
+%                 mass to antenna phase center.  This should be from an IGS
 %                 .atx file
 % OUTPUT:
 %   pvt           - structure containing all of the parsed data
@@ -55,8 +55,12 @@ if nargin < 5
     atxData = [];
 end
 
+if cmToApcFlag && isempty(atxData)
+    error(['Antenna phase center data (IGS .atx file) required to ' ...
+        'translate from center of mass to antenna phase center']);
+end
+   
 NumSV = -1;
-% a = [];
 % Default constellation is GPS
 const = 'GPS';
 while 1
@@ -121,15 +125,10 @@ while 1
             if length(s) < NumSV
                 s = [s; sscanf(tline(10:end), PRNformat)];
             end
-            %         case '++'
-            %             if length(a) < NumSV
-            %                 a = [a; sscanf(tline(10:end), '%d')];
-            %             end
         case '* '
             break
     end
 end
-% a = a(1 : NumSV);
 consts = 'GRECJ';
 C = [];
 while ~feof(fid)
@@ -138,7 +137,7 @@ while ~feof(fid)
         const = tline(2);
         
         constNum = strfind(consts,const);
-
+        
         Ci = textscan(tline(3:end),'%n%n%n%n%n%n%n%n%n%n%n%n%n');
         dataTemp = [Ci{1:5}];
         
@@ -227,7 +226,6 @@ if strictConstNumFlag
             end
         end
         array = outArray;
-        %         NumSV = NumSV;
     end
 end
 pvt = struct('filename', filename, ...
@@ -240,7 +238,7 @@ pvt = struct('filename', filename, ...
     'PRN', array(:, 1), ...
     'clock_bias', array(:, 5) .* 1e-6, ...
     'position', array(:, 2:4) .* 1000, ...
-    'Event',array(:, 5) .* 0); % SHOULD ACTUALLY CHECK FOR EVENTS
+    'Event',array(:, 5) .* 0); 
 
 pvt.Event(abs(pvt.clock_bias) >= 0.999999) = true;
 pvt.Event(any(pvt.position == 0, 2)) = true;
@@ -256,7 +254,7 @@ if cmToApcFlag
     jd = gps2jd(GPS_week_num,t);
     sunpos = zeros(3,length(t));
     for i = 1:length(jd)
-        et       = cspice_str2et(['jd ' num2str(jd(1))]);
+        et          = cspice_str2et(['jd ' num2str(jd(1))]);
         sunposi     = cspice_spkezr( 'sun',et , 'itrf93', 'none', 'earth');
         sunpos(:,i) = sunposi(1:3)*1000;
     end
@@ -271,33 +269,19 @@ if cmToApcFlag
     
     for pdx = 1:NumSV
         prn = PRNs(pdx);
-        if ~isempty(atxData)
-            svni = prn2svn(prn,jd(1),constNum);
-            if isnan(svni)
-                offset = nan(3,1);
-            else
-                adx = find([atxDatai.svn] == svni & [atxDatai.epochStart] <= epochi & [atxDatai.epochEnd] > epochi);
-                
-                if ~isempty(adx)
-                    offset = (atxDatai(adx).apc(1,:)')*1e-3;
-                else
-                    offset = nan(3,1);
-                end
-                
-            end
+        % Use the IGS antenna phase center file
+        svni = prn2svn(prn,jd(1),constNum);
+        if isnan(svni)
+            offset = nan(3,1);
         else
-            if constellationOut == 1
-                offset = antennaOffsetGPS(svn2block(prn2svn(prn,jd)));
-                %             offset = [0 0 0]';
-            elseif constellationOut == 2
-                offset = apcOffsetGlonass(prn,GPS_seconds+GPS_week_num*604800);
-            elseif constellationOut == 3
-                offset = apcOffsetGalileo(prn);
-            elseif constellationOut == 4
-                offset = [0.6 0 1.1]';
+            adx = find([atxDatai.svn] == svni & [atxDatai.epochStart] <= epochi & [atxDatai.epochEnd] > epochi);
+            
+            if ~isempty(adx)
+                offset = (atxDatai(adx).apc(1,:)')*1e-3;
             else
-                offset = [0 0 0]';
+                offset = nan(3,1);
             end
+            
         end
         
         inds = find(array(:,1) == prn);

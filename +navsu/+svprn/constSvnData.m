@@ -1,6 +1,26 @@
 function [svndata, blockText] = constSvnData(const,source)
-
-
+% constSvnData
+% DESCRIPTION:
+%   Contains tables of information about GNSS satellite mappings between
+%   PRN, SVN, and block at specific times.  At the time of the writing of
+%   this (April 2020), these tables are unfortunately out of date.  Might
+%   be worth swapping to using IGS ATX files. 
+% INPUT:
+%   const   - double, constellation index 12345 = GPS, GLONASS, GALILEO,
+%             BEIDOU, SBAS, respectively
+%
+% OPTIONAL INPUTS:
+%   source  - double, some of the constellation data has different options 
+%             for the source of the table.  See tables for more information. 
+%   
+% OUTPUT:
+%   svndata - table of SVN, PRN, block mappings with reference start time
+%             and end time for each entry.  Format labeled below.
+%   blockText - cell array of strings of the names of the blocks for the
+%             constellation of interest.  Index matches 'block' column in
+%             svndata. 
+%
+% See also: navsu.svprn.prn2svn, navsu.svprn.svn2prn, navsu.svprn.svn2block
 constNames = {'GPS','GLO','GAL','BDS'};
 if ischar(const)
     const = find(~cellfun(@isempty,strfind(constNames,const)));

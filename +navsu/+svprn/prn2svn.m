@@ -1,12 +1,17 @@
 function svn = prn2svn(prn, epoch, const, source)
-%PRN = PRN2SVN(PRN, EPOCH,CONST)
-%converts prn number to svn numbers given the time
-% time is in fractional year (e.g 2012.233 very crudely) or
-% Julian day (e.g. 2444239.5)
-% CONST is index of GNSS constellation:
-% GPS = 1, GLO = 2, GAL = 3, BDS = 4
-%   If not included, defaults to GPS
-%SEE ALSO CAL2JD, DOY2JD SVN2PRN
+% prn2svn
+% DESCRIPTION:
+%   Map from PRN to SVN at a given time.
+%
+% INPUT:
+%   prn     - PRN
+%   epoch   - time is in fractional year (e.g 2012.233 very crudely) or 
+%             Julian day (e.g. 2444239.5)
+%   
+% OUTPUT:
+%   svn     - satellite vehicle number.
+%
+% See also: navsu.svprn.svn2prn, navsu.time.cal2jd
 
 if nargin < 2
     error('You must specify an svn and a time');
