@@ -1,5 +1,5 @@
 function attachToMice(miceDir)
-
+% attachToMice
 % Initialize MICE utility for solar/planetary ephemeris and earth rotation
 % parameters
 if exist('src\mice\','dir')
