@@ -1,4 +1,4 @@
-function initPClock(obj,years,doys,varargin)
+function initClockData(obj,years,doys,varargin)
 
 p = inputParser;
 % 

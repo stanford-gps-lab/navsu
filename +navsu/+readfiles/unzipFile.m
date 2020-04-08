@@ -18,13 +18,12 @@ function [status,result] = unzipFile(filename,outLocation)
 if nargin == 1 
    outLocation = fileparts(filename); 
 end
-s = what('+utility');
+s = what('+navsu');
 
 utilityPath = [s.path '/+thirdparty/7zip/'];
 
 loc7zip = [utilityPath '7za.exe'];
-    % Use 7zip to open!
-    [status,result] = system(['"' loc7zip '" -y x ' '"' filename '"' ' -o' '"' outLocation '"']);
-% end
+% Use 7zip to open!
+[status,result] = system(['"' loc7zip '" -y x ' '"' filename '"' ' -o' '"' outLocation '"']);
 
 end

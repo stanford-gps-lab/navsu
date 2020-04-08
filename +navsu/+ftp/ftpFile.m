@@ -41,15 +41,15 @@ mw = ftp(ftpSite);
 
 for ddx = 1:length(dayList)
     dayNum = dayList(ddx);
-    year = yearList(ddx);
+    Year = yearList(ddx);
     
-    jdi = navsu.time.doy2jd(year,dayNum);
+    jdi = navsu.time.doy2jd(Year,dayNum);
     [yri,mni,dyi] = navsu.time.jd2cal(jdi);
     [gpsWeek,gpsTow] = navsu.time.jd2gps(jdi);
     gpsDow = floor(gpsTow/86400);
     
     % Initial week of year
-    [gpsWeek0,tow0] = navsu.time.jd2gps(navsu.time.cal2jd(year,1,1));
+    [gpsWeek0,tow0] = navsu.time.jd2gps(navsu.time.cal2jd(Year,1,1));
     woy = gpsWeek-gpsWeek0+1;
     
     target_dir = [destDir eval(destFormat)];
@@ -110,7 +110,7 @@ for ddx = 1:length(dayList)
     end
     if change
         disp(['File(s) updated on day ' int2str(dayNum)]);
-        yearChange = [yearChange; year];
+        yearChange = [yearChange; Year];
         dayChange  = [dayChange; dayNum];
     end
     

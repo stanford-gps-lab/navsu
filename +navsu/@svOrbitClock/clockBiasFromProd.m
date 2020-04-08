@@ -5,10 +5,8 @@ function cbias = clockBiasFromProd(obj,prns,constInds,epochs)
 orbClockData = obj;
 
 if strcmp(orbClockData.clkMode,'PRECISE')
-    cbias = obj.CClockInterp(prns,constInds,epochs,orbClockData.PClock);
-    
-    
-    
+    cbias = obj.clockInterp(prns,constInds,epochs,orbClockData.PClock);
+
 else
     cbias = nan(size(prns));
    % put broadcast clock stuff here 
@@ -34,14 +32,6 @@ else
     
     
 end
-
-
-
-
-
-
-
-
 
 
 

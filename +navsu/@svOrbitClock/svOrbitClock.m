@@ -1,13 +1,12 @@
 classdef svOrbitClock < handle
 
-    
     properties
         % structure containing file directories and ephemeris settings
         settings = struct(...
             'constUse',         [1 0 0 0 0],... % GPS GLO GAL BDS QZSS 
-            'miceDir',                   [], ...% Directory containing NASA MICE files
-            'preciseProdDir',            [], ...% Directory containing precise products
-            'obsDir',                    [],...% Directory containting IGS observations
+            'miceDir',                   [],... % Directory containing NASA MICE files
+            'preciseProdDir',            [],... % Directory containing precise products
+            'obsDir',                    [],... % Directory containting IGS observations
             'gpsEphCenter',           'com',... % IGS AC code for GPS precise eph
             'gloEphCenter',           'com',... % IGS AC code for GLO precise eph
             'galEphCenter',           'com',... % IGS AC code for GAL precise eph
@@ -23,20 +22,14 @@ classdef svOrbitClock < handle
             'dcbDir',                    [],...; % directory for differential code biases
             'mgxObsDir',                 [],... % MGEX obs files
             'mgxHrObsDir',               []); % MGEX hr obs files
-
-            % polynomial interpolation settings ...
-                % nPolyFit = number of nominal points to use for
-                % polynominal fit ...
-                % pfit     = order of fit for position interpolation ...
-                % cfit     = order of fit for clock interpolation...
-                
+        
         orbMode = 'PRECISE' % whether to use 'PRECISE' or 'BROADCAST' orbit
         clkMode = 'PRECISE' % whether to use 'PRECISE' or 'BROADCAST' clock
         
-        PClock % precise clock data
-        PEph   % precise orbit data
+        PClock % precise clock data structure
+        PEph   % precise orbit data structure
         
-        BEph   % broadcast orbit and clock data
+        BEph   % broadcast orbit and clock data 
         
         iono   % ionospheric data- could be TEC map
         
@@ -45,24 +38,45 @@ classdef svOrbitClock < handle
         dcb    % GNSS satellite differential code bias data
     end
 
-
     methods
-        function obj = svOrbitClock(varargin)
-            % Requires a config file
-            % Parse inputs
+        function obj = svOrbitClock(configFile,varargin)
+            % svOrbitClock
+            % DESCRIPTION:
+            %   Class to handle products for GNSS solutions.  This includes
+            %   orbit and clock (precise and/or broadcast), ionospheric
+            %   maps, antenna phase center data, and differential code bias
+            %   data.  This includes functionality to download the data as
+            %   well as use them to apply corrections. 
+            %   Also contains bunch of information about local product file
+            %   structure. 
+            %   
+            % INPUT:
+            %   configFile - configuration file.  Should match the file
+            %                default.ini file, but please name it something
+            %                else. 
+            %
+            % OPTIONAL INPUT:
+            %   constUse   - Constellation usage mask 1x5 boolean vector,
+            %                with GRECS for each spot.  For example, 
+            %                [1 0 1 0 0] means GPS and GLONASS are enabled
+            %
+            % OUTPUT:
+            %   obj        - the object!
+            %
+            % See also:  the rest of the methods in here!
+                      
+            %% Parse inputs
             p = inputParser;
-            p.addParameter('iniFile', 'config.ini');
             p.addParameter('constUse',[1 0 0 0 0]);
             parse(p, varargin{:});
             res = p.Results;
-            iniFile = res.iniFile;
             constUse = res.constUse;
             
             %% Pull info from the .ini file
-            iniData = utility.thirdparty.ini2struct(iniFile);
-            miceDir        = iniData.micedir;
+            iniData = navsu.thirdparty.ini2struct(configFile);
+            miceDir            = iniData.micedir;
             basePreciseProdDir = iniData.preciseproddir;
-            obsDir         = iniData.obsdir;
+            obsDir             = iniData.obsdir;
 
             obj.settings.miceDir        = miceDir;
             obj.settings.preciseProdDir = [basePreciseProdDir 'precise-daily/'];
@@ -72,35 +86,44 @@ classdef svOrbitClock < handle
             obj.settings.dcbDir         = [basePreciseProdDir 'dcb/'];
             obj.settings.constUse       = constUse;
 
-            %% Attach to mice
-            utility.thirdparty.AttachToMice(miceDir);
+            %% Attach to NASA SPICE/MICE
+            navsu.thirdparty.attachToMice(miceDir);
         end
     end
     
     % function signatures
     methods
         % Load precise orbit and clock
-        initPEph(obj,varargin)
-        % Interpolate precise orbit
+        initOrbitData(obj,varargin)
+        
+        % Interpolate precise orbit (and clock, but for precise, this is low rate clock)
         [svPos,svVel,iod,svClock] = propagate(obj,prns,constInds,epochs,varargin)
-        % Load precise clock
-        initPClock(obj,year,doy,varargin)
-        % Interpolate precise clock
+        
+        % Load precise clock (higher rate than clock with orbits)
+        initClockData(obj,year,doy,varargin)
+        
+        % Interpolate high rate precise clock
         cbias = clock(obj,prns,constInds,epochs);
+        
         % Load IGS TEC map
         initIonoData(obj,year,doy,varargin);
+        
         % Iono delay from TEC map
         [tecs,delays,tecSlant] = ionoDelay(obj,epoch,llh,varargin)    
+        
         % Load atx file
         initAtxData(obj,filenameAtx);
+        
         % Load DCB data
         initDcb(obj,year,doy)
+        
         % Use the clock data from the .sp3 to populate the precise clock
         % field
         initPClockFromPEph(obj)
         
+        %% The rest of the functions mostly help with the above functions. 
         % Helps with precise clock interpolation
-        cbias = CClockInterp(obj,prns,constInds,epochs,Clck);
+        cbias = clockInterp(obj,prns,constInds,epochs,Clck);
         % Helps with precise clock interpolation
         cbias = clockBiasFromProd(obj,prns,constInds,epochs)
         

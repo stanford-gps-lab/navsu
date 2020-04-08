@@ -35,13 +35,4 @@ for idx = 1:nProp
 end
 
  
- 
- 
- 
- 
- 
- 
- 
- 
- 
  end

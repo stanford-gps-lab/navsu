@@ -1,18 +1,21 @@
-function cbias = CClockInterp(obj,prns,constInds,epochs,Clck)
-%% CClockInterp
-% Very simple linear interpolation of IGS clock products
+function cbias = clockInterp(obj,prns,constInds,epochs,Clck)
+% clockInterp
+% DESCRIPTION:
+% Very simple linear interpolation of IGS clock products.  This is called
+% by navsu.svOrbitClock.clock
 %
-% Required Inputs:
+% INPUTS:
 %  prns                - N-length vector of PRN per desired interpolation
 %  constInds           - N-length vector of constellation index per desired
 %                        interpolation
 %  epochs              - N-length GPS epoch per desired interpolation
 %  Clck                - IGS precise clock structure output from loadCFst.m
 %
-% Outputs:
+% OUTPUTS:
 %  cbias               - N-length vector of interpolated clock bias per
 %                        desired interpolation
-
+%
+% See also: navsu.svOrbitClock.clock
 %%
 cbias = nan(size(prns));
 for idx = 1:length(prns)

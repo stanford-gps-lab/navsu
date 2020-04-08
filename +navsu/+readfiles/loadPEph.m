@@ -62,7 +62,9 @@ end
 if nargin < 6
     FLAG_APC_OFFSET = 1;
 end
-
+if nargin < 7
+    TIME_STRIP = 0;
+end
 
 if length(dayNum) > 1
     PFileName = {}; PFileNameFull = {};
@@ -172,8 +174,6 @@ else
                 
                 [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,1,TIME_STRIP);
                 
-                Peph.constellation = 1*ones(size(Peph.epochs));
-                
         end
         
     elseif all(settings.constUse ==  [0 1 0 0 0])
@@ -225,7 +225,6 @@ else
                 
                 [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,2,TIME_STRIP);
                 
-                Peph.constellation = 2*ones(size(Peph.epochs));
         end
         
     elseif all(settings.constUse ==  [0 0 1 0 0])
@@ -233,7 +232,6 @@ else
         ephCenter = settings.galEphCenter;
         
         [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,3,TIME_STRIP);
-        Peph.constellation = 3*ones(size(Peph.epochs));
         
     elseif all(settings.constUse ==  [0 0 0 1 0])
         % Only have an MGEX option here!
@@ -241,7 +239,6 @@ else
         
         [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,4,TIME_STRIP) ;
         
-        Peph.constellation= 4*ones(size(Peph.epochs));
     else
         % Multi-GNSS
         PRN           = [];
@@ -352,6 +349,7 @@ end
             Peph.epochs = Peph.epochs(:);
             
             Peph.Event(isnan(Peph.Event)) = 1;
+           
             
             % strip off epochs that aren't on correct day
             if TIME_STRIP
@@ -368,6 +366,7 @@ end
                 end
             end
             
+            Peph.constellation = constOut*ones(size(Peph.epochs));
         end
         PFileNameFull = {[tmp PFileName]};
         PFileName = {PFileName};
