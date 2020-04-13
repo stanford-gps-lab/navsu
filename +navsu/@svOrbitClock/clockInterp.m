@@ -18,6 +18,7 @@ function cbias = clockInterp(obj,prns,constInds,epochs,Clck)
 % See also: navsu.svOrbitClock.clock
 %%
 cbias = nan(size(prns));
+cbias = cbias(:);
 for idx = 1:length(prns)
    satInd = find(Clck.PRNs == prns(idx) & Clck.constInds == constInds(idx));   
    eInd1 = max(find(Clck.Cepochs <= epochs(idx))); 

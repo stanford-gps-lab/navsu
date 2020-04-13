@@ -1,5 +1,39 @@
-function [svPos,svVel,iod,svClock] = propagate(obj,prns,constInds,epochs,varargin)
-
+function [svPos,svVel,iod] = propagate(obj,prns,constInds,epochs,varargin)
+% Primary interpolation method for precise orbits
+% DESCRIPTION:
+%   Used to interpolate (typically lagrange interpolation) precise orbits
+%   that have been loaded into the svOrbitClock object using
+%   navsu.svOrbitClock.initOrbitData.  
+% INPUT:
+%   prns      - N-length vector list of PRNs to be interpolated
+%   constInds - N-length vector list of constellation indices associated
+%               the prns vector (1 = GPS, 2 = GLONASS, 3 = GAL, 4 = BDS, 5
+%               = SBAS)
+%   epochs    - N-length vector list of GPS epochs to propagate to (GPS
+%               epoch is seconds since GPS time start- see
+%               navsu.time.gps2epochs)
+%
+% OPTIONAL INPUTS: 
+%   sunPos    - ECEF sun position - can be input for speed
+%   atxData   - antenna phase center structure- this is nominally just
+%               whatever is already loaded into the object- see
+%               navsu.svOrbitClock.initAtxData
+%   FLAG_APC_OFFSET - flag indicating whether or not to offset the SV
+%               from the center of mass (what is in the .sp3 file) to the
+%               antenna phase center
+%   pPosInds  - helper interpolation indices    (prob should be removed)
+%   pPosPoly  - helper interpolation polynomial (prob should be removed)
+%   dttx      - time delta                      (prob should be removed)
+%   latency   - artificial latency for orbit prediction
+%
+% OUTPUT:
+%   svPos     - [Nx3] matrix of ECEF satellite positions- can be either
+%               CoM or APC depending on input [m]
+%   svVel     - [Nx3] matrix of ECEF satellite velocities [m/s]  
+%   iod       - issue of data (used for broadcast navigation data)
+%   
+% See also: navsu.svOrbitClock.initOrbitData, navsu.svOrbitClock.clock
+%           navsu.svOrbitClock.initClockData,
 
 % this is mostly a wrapper for svPosFromProd
 p = inputParser;
@@ -30,7 +64,7 @@ if ~strcmp(obj.orbMode,'PREDICT')
     [svPos,svVel,iod] = obj.svPosFromProd(prns, epochs,settings,...
         pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
 else
-    [svPos,svVel,iod,svClock] = obj.predictOrbit(prns,constInds,epochs,latency);
+    [svPos,svVel,iod] = obj.predictOrbit(prns,constInds,epochs,latency);
 end
 
 

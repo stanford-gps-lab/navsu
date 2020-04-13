@@ -98,7 +98,7 @@ for ddx = 1:length(yearList)
             end
             
             dcbDatai = [];
-            if found && isempty(navsu.strFindCell(filesRead,filenamei))
+            if found && isempty(find(~cellfun(@isempty, strfind(filesRead,filenamei))))
                 filesRead = [filesRead {filenamei}];
                 if ~FLAG_NO_LOAD
                     dcbDatai = navsu.readfiles.parseDcbBsxFile(filenamei);

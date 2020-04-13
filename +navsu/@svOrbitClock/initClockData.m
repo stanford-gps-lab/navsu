@@ -1,22 +1,53 @@
 function initClockData(obj,years,doys,varargin)
+% Download (if necessary) and load GNSS high rate (5 or 30 sec) clock data
+% DESCRIPTION:
+%   Initialize the precise clock structure from navsu.svOrbitClock.  This
+%   will load from local files or download from IGS FTP sites if necessary.
+%   
+% INPUT:
+%   years   - vector of years associated with the days of years when data
+%             should be downloaded
+%   doys    - vector of days of year for which data should be downloaded
+%  
+% OPTIONAL INPUTS:
+%   DOWNLOAD - boolean indcating whether or not to try to download the
+%             required products if they aren't found locally. Default is
+%             TRUE. 
+%             
+% OUTPUT:
+%   The object will have a brand new clock structure!  
+%
+% See also: navsu.svOrbitClock.clock, navsu.svOrbitClock.initOrbitData
+
 
 p = inputParser;
-% 
-% p.addParameter('FLAG_NO_LOAD',false);
-% p.addParameter('atxData',[]);
-% p.addParameter('FLAG_APC_OFFSET',true);
+p.addParameter('DOWNLOAD',true);
 
-settings = obj.settings;
 % parse the results
 parse(p, varargin{:});
 res = p.Results;
-% FLAG_NO_LOAD = res.FLAG_NO_LOAD;       % Flag to not actually load the data- should probably not be used here
-% atxData      = res.atxData;            % IGS ANTEX data
-% FLAG_APC_OFFSET = res.FLAG_APC_OFFSET; % whether or not to add the antenna phase center offset
+DOWNLOAD      = res.DOWNLOAD;         % flag to automatically download products if needed
+
+settings = obj.settings;
 
 % if there is no precise ephemeris already there, just make a new one
 if isempty(obj.PClock)
-    PClock = utility.readfiles.loadCFst(years,doys,settings);
+    
+    if DOWNLOAD
+        [~,filenames,filenameFull] = navsu.readfiles.loadCFst(years,doys,settings,true);
+        
+        % build a list of IGS AC codes to download
+        fileAvailable = cellfun(@exist,filenameFull);
+        igsCodes = cellfun(@(x) x(1:3),filenames,'UniformOutput',false);
+        
+        codesDownload = unique(igsCodes(~fileAvailable));
+        
+        for idx =1 :length(codesDownload)
+           navsu.ftp.download(2,years,doys,settings,codesDownload{idx});
+        end
+        
+    end
+    PClock = navsu.readfiles.loadCFst(years,doys,settings);
     obj.PClock = PClock;
 else
     % This will be added to the rest of it
