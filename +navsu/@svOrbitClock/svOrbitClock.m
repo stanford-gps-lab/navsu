@@ -74,11 +74,9 @@ classdef svOrbitClock < handle
             
             %% Pull info from the .ini file
             iniData = navsu.thirdparty.ini2struct(configFile);
-            miceDir            = iniData.micedir;
             basePreciseProdDir = iniData.preciseproddir;
             obsDir             = iniData.obsdir;
 
-            obj.settings.miceDir        = miceDir;
             obj.settings.preciseProdDir = [basePreciseProdDir 'precise-daily/'];
             obj.settings.mgxObsDir      = [obsDir 'mgex-obs/'];
             obj.settings.mgxHrObsDir    = [obsDir 'mgex-hr-obs/'];
@@ -86,8 +84,6 @@ classdef svOrbitClock < handle
             obj.settings.dcbDir         = [basePreciseProdDir 'dcb/'];
             obj.settings.constUse       = constUse;
 
-            %% Attach to NASA SPICE/MICE
-            navsu.thirdparty.attachToMice(miceDir);
         end
     end
     
