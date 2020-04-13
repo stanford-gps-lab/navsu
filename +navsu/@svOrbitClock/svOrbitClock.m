@@ -39,7 +39,7 @@ classdef svOrbitClock < handle
     end
 
     methods
-        function obj = svOrbitClock(configFile,varargin)
+        function obj = svOrbitClock(varargin)
             % svOrbitClock
             % DESCRIPTION:
             %   Class to handle products for GNSS solutions.  This includes
@@ -50,15 +50,15 @@ classdef svOrbitClock < handle
             %   Also contains bunch of information about local product file
             %   structure. 
             %   
-            % INPUT:
-            %   configFile - configuration file.  Should match the file
-            %                default.ini file, but please name it something
-            %                else. 
-         
             % OPTIONAL INPUT:
             %   constUse   - Constellation usage mask 1x5 boolean vector,
             %                with GRECS for each spot.  For example, 
             %                [1 1 0 0 0] means GPS and GLONASS are enabled
+            %   configFile - configuration file.  Should match the file
+            %                default.ini file, but please name it something
+            %                else. This tells the code where to put your
+            %                products on your local machine when they are
+            %                downloaded.
             %
             % OUTPUT:
             %   obj        - the object!
@@ -68,14 +68,23 @@ classdef svOrbitClock < handle
             %% Parse inputs
             p = inputParser;
             p.addParameter('constUse',[1 0 0 0 0]);
+            p.addParameter('configFile',[]);
             parse(p, varargin{:});
             res = p.Results;
             constUse = res.constUse;
+            configFile = res.configFile;
             
             %% Pull info from the .ini file
-            iniData = navsu.thirdparty.ini2struct(configFile);
-            basePreciseProdDir = iniData.preciseproddir;
-            obsDir             = iniData.obsdir;
+            if ~isempty(configFile)
+                iniData = navsu.thirdparty.ini2struct(configFile);
+                basePreciseProdDir = iniData.preciseproddir;
+                obsDir             = iniData.obsdir;
+            else
+                cdi = cd;
+                cdi(strfind(cdi,'\')) = '/';
+                basePreciseProdDir = [cdi '/data/'];
+                obsDir             = [cdi '/data/'];
+            end
 
             obj.settings.preciseProdDir = [basePreciseProdDir 'precise-daily/'];
             obj.settings.mgxObsDir      = [obsDir 'mgex-obs/'];
