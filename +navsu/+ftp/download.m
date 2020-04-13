@@ -8,7 +8,8 @@ function [dayChangei,YearChangei] = download(inChoice,YearList,dayList,settings,
 %                        desired download
 %  dayList             - N-length vector indicating desired days of years
 %                        of desired download
-%  settings            - typical settings structure
+%  settings            - typical settings structure (see
+%                        navsu.internal.initSettings, can also be omitted)
 %    .preciseProdDir   - location to put most precise products
 %    .galEphCenter     - three letter code indicating the IGS Analysis
 %                        Center (AC) to download the precise products from
@@ -46,6 +47,11 @@ function [dayChangei,YearChangei] = download(inChoice,YearList,dayList,settings,
 %
 % See also: navsu.ftp.ftpFile, navsu.ftp.ftpFileHr, navsu.ftp.websaveFile
 
+if nargin < 4
+    % No settings file available
+    settings = navsu.internal.initSettings; 
+end
+   
 dayChangei  = [];
 YearChangei = [];
 
