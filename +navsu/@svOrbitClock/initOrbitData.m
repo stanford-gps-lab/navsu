@@ -75,7 +75,7 @@ if isempty(obj.PEph)
     Peph2.event       = zeros(length(epochsPeph),length(prns));
     Peph2.epochs      = epochsPeph;
     Peph2.PRN = prns;
-    Peph2.constellation = constInds';
+    Peph2.constellation = constInds;
     for pdx = 1:length(prns)
         indsi = find(Peph.PRN == prns(pdx) & Peph.constellation == constInds(pdx));
         [~,inds2] = ismember(epochsPeph,Peph.epochs(indsi));

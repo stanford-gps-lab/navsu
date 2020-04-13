@@ -54,11 +54,11 @@ classdef svOrbitClock < handle
             %   configFile - configuration file.  Should match the file
             %                default.ini file, but please name it something
             %                else. 
-            %
+         
             % OPTIONAL INPUT:
             %   constUse   - Constellation usage mask 1x5 boolean vector,
             %                with GRECS for each spot.  For example, 
-            %                [1 0 1 0 0] means GPS and GLONASS are enabled
+            %                [1 1 0 0 0] means GPS and GLONASS are enabled
             %
             % OUTPUT:
             %   obj        - the object!

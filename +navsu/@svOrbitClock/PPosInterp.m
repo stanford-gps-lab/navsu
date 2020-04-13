@@ -143,9 +143,9 @@ for idx = 1:length(PRNs)
                 [posP(idx,2),~,~,pPosPoly(prn,2,:)] = polyinterp(Pepochsi(ind1:ind2),Pposi(ind1:ind2,2),pfit,epochi);
                 [posP(idx,3),~,~,pPosPoly(prn,3,:)] = polyinterp(Pepochsi(ind1:ind2),Pposi(ind1:ind2,3),pfit,epochi);
             case 'lagrange'
-                [posP(idx,1)] = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)'-epochi,Pposi(ind1:ind2,1)',epochi-epochi+dti);
-                [posP(idx,2)] = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)'-epochi,Pposi(ind1:ind2,2)',epochi-epochi+dti);
-                [posP(idx,3)] = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)'-epochi,Pposi(ind1:ind2,3)',epochi-epochi+dti);
+                [posP(idx,1)] = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi,Pposi(ind1:ind2,1)',epochi-epochi+dti);
+                [posP(idx,2)] = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi,Pposi(ind1:ind2,2)',epochi-epochi+dti);
+                [posP(idx,3)] = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi,Pposi(ind1:ind2,3)',epochi-epochi+dti);
         end
         
         if velCalc
@@ -158,9 +158,9 @@ for idx = 1:length(PRNs)
                         posP2 = polyinterp(Pepochsi(ind1:ind2),Pposi(ind1:ind2,2),pfit,epochi+dt);
                         posP3 = polyinterp(Pepochsi(ind1:ind2),Pposi(ind1:ind2,3),pfit,epochi+dt);
                     case 'lagrange'
-                        posP1 = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,1)',epochi+dt);
-                        posP2 = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,2)',epochi+dt);
-                        posP3 = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,3)',epochi+dt);
+                        posP1 = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,1)',epochi+dt);
+                        posP2 = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,2)',epochi+dt);
+                        posP3 = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,3)',epochi+dt);
                 end
                 
                 velP(idx,1) = (posP1-posP(idx,1))/dt;
@@ -187,9 +187,9 @@ for idx = 1:length(PRNs)
                 [posP(idx,2)] = polyinterp(Pepochsi(ind1:ind2),Pposi(ind1:ind2,2),pfit,epochi,0,0,squeeze(pPosPoly(prn,2,:)));
                 [posP(idx,3)] = polyinterp(Pepochsi(ind1:ind2),Pposi(ind1:ind2,3),pfit,epochi,0,0,squeeze(pPosPoly(prn,3,:)));
             case 'lagrange'
-                [posP(idx,1)] = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,1)',epochi);
-                [posP(idx,2)] = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,2)',epochi);
-                [posP(idx,3)] = utility.geo.LagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,3)',epochi);
+                [posP(idx,1)] = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,1)',epochi);
+                [posP(idx,2)] = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,2)',epochi);
+                [posP(idx,3)] = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)',Pposi(ind1:ind2,3)',epochi);
         end
         if velCalc
             if noVelData
