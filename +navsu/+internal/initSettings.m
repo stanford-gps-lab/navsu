@@ -2,10 +2,10 @@ function settings = initSettings(varargin)
 
 % Parse inputs
 p = inputParser;
-p.addParameter('iniFile', []); 
+p.addParameter('configFile', []); 
 parse(p, varargin{:});
 res = p.Results;
-iniFile = res.iniFile;
+iniFile = res.configFile;
 
 %% Pull info from the .ini file if available
 if ~isempty(iniFile)
@@ -22,13 +22,21 @@ end
 
 %% Data directories
 % GPS----------------------------------------------------------------------
-settings.preciseProdDir = ([baseDir 'precise-daily\']);
-
+% Daily precise products (orbit and clock)
 settings.preciseProdDir = [preciseProdDir 'precise-daily/'];
+% Observations from IGS stations
 settings.mgxObsDir      = [obsDir 'mgex-obs/'];
+% High rate observations
 settings.mgxHrObsDir    = [obsDir 'mgex-hr-obs/'];
+% Temporary directory
 settings.tempDir        = [preciseProdDir 'temp/'];
+% Differential code biases
 settings.dcbDir         = [preciseProdDir 'dcb/'];
+% GPS navigation data from IGS stations
+settings.navGpsDir      = [preciseProdDir 'nav-daily/gps/'];
+% Multi-GNSS navigation data from IGS stations
+settings.navMgxDir         = [preciseProdDir 'nav-daily/mgex/'];
+
 
 %% Precise clock and orbit centers
 % Precise ephemeris source

@@ -30,7 +30,7 @@ function [obsStruc, constellations, time, date, pos, interval, antoff, antmod,..
 %   antmod   = antenna model [string]
 %   rxmod    = receiver model 
 %
-% See also: 
+% See also:  navsu.readfiles.loadRinexNav
 %
 % This has been heavily modified from the original goGPS code.
 %----------------------------------------------------------------------------------------------

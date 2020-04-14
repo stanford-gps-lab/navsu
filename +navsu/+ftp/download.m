@@ -270,7 +270,7 @@ switch inChoice
         
     case 9 % GPS Broadcast Nav Message File
         
-        ftpStruc.destDir      = settings.rnxGpsNavDir;
+        ftpStruc.destDir      = settings.navGpsDir;
         ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
         ftpStruc.sourceFormat = '[''/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''n/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
@@ -287,7 +287,7 @@ switch inChoice
             statCodes = [];
         end
         
-        ftpStruc.destDir      = settings.mgxHRObsDir;
+        ftpStruc.destDir      = settings.mgxHrObsDir;
         ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
         ftpStruc.sourceFormat = '[''/highrate/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''d/'' num2str(hod,''%02d'') ''/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
@@ -311,7 +311,7 @@ switch inChoice
         [YearChangei,dayChangei] =navsu.ftp.ftpFileHr(YearList,dayList,ftpStruc3);
         
     case 11 % MGEX Mixed Navigation Files
-        ftpStruc.destDir      = settings.rnxMgexNavDir;
+        ftpStruc.destDir      = settings.navMgxDir;
         ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
         ftpStruc.sourceFormat = '[''/gnss/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''p/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
@@ -325,7 +325,7 @@ switch inChoice
         
         
     case 12 % GLONASS Broadcast Nav Message File
-        ftpStruc.destDir      = settings.rnxGloNavDir;
+        ftpStruc.destDir      = settings.navMgxDir;
         ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
         ftpStruc.sourceFormat = '[''/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''g/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
@@ -354,7 +354,7 @@ switch inChoice
         
         
     case 14 % CNAV data
-        ftpStruc.destDir      = settings.rnxCnavDir;
+        ftpStruc.destDir      = settings.navMgxDir;
         ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
         ftpStruc.sourceFormat = '[''/gnss/data/campaign/mgex/daily/rinex3/'' num2str(Year) ''/cnav'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'']';
@@ -387,7 +387,7 @@ switch inChoice
         [YearChangei,dayChangei] =navsu.ftp.ftpFile(YearList,dayList,ftpStruc);
         
     case 16 % BRDM combined nav files
-        ftpStruc.destDir      = settings.rnxMgexNavDir;
+        ftpStruc.destDir      = settings.navMgxDir;
         ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
         ftpStruc.sourceFormat = '[''/gnss/data/campaign/mgex/daily/rinex3/'' num2str(Year) ''/brdm/''  ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
