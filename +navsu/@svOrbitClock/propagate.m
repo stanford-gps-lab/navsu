@@ -1,4 +1,4 @@
-function [svPos,svVel,iod] = propagate(obj,prns,constInds,epochs,varargin)
+function [svPos,svVel,iod,sigma] = propagate(obj,prns,constInds,epochs,varargin)
 % Primary interpolation method for precise orbits
 % DESCRIPTION:
 %   Used to interpolate (typically lagrange interpolation) precise orbits
@@ -61,7 +61,7 @@ settings = obj.settings;
 
 
 if ~strcmp(obj.orbMode,'PREDICT')
-    [svPos,svVel,iod] = obj.svPosFromProd(prns, epochs,settings,...
+    [svPos,svVel,iod,sigma] = obj.svPosFromProd(prns, epochs,settings,...
         pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
 else
     [svPos,svVel,iod] = obj.predictOrbit(prns,constInds,epochs,latency);

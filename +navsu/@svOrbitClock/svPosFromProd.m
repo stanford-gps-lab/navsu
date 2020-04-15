@@ -1,4 +1,4 @@
-function [svPos,svVel,iod] = svPosFromProd(obj,prns, epochs,settings,...
+function [svPos,svVel,iod,sigOrbit] = svPosFromProd(obj,prns, epochs,settings,...
     pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx)
 
 if nargin < 8
@@ -27,6 +27,9 @@ if strcmp(orbClockData.orbMode,'PRECISE')
         orbClockData.PEph.PRN,orbClockData.PEph.epochs,settings,NaN,...
         [],[],constInds,orbClockData.PEph.constellation,FLAG_APC_OFFSET,...
         atxData,sunPos,dttx);
+    
+    % Just setting a standard orbit sigma here :)
+    sigOrbit = 0.03*ones(size(svPos,1),1);
         
 else
     % put broadcast orbit stuff here
@@ -57,6 +60,9 @@ else
         svPos(indsi,:) = [pos.x pos.y pos.z];
         svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
     end
+    
+     warning('sigma not set here yet :/- please use URA or something')
+     sigOrbit = nan*ones(size(svPos,1),1);
     
 end
 

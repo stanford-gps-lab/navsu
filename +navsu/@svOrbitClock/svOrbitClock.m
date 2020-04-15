@@ -102,7 +102,7 @@ classdef svOrbitClock < handle
         initOrbitData(obj,varargin)
         
         % Interpolate precise orbit (and clock, but for precise, this is low rate clock)
-        [svPos,svVel,iod,svClock] = propagate(obj,prns,constInds,epochs,varargin)
+        [svPos,svVel,iod,svClock,sigma] = propagate(obj,prns,constInds,epochs,varargin)
         
         % Load precise clock (higher rate than clock with orbits)
         initClockData(obj,year,doy,varargin)
@@ -133,7 +133,7 @@ classdef svOrbitClock < handle
         cbias = clockBiasFromProd(obj,prns,constInds,epochs)
         
         % Helps with precise orbit interpolation
-        [svPos,svVel,iod] = svPosFromProd(obj,prns, epochs,settings,...
+        [svPos,svVel,iod,sigOrbit] = svPosFromProd(obj,prns, epochs,settings,...
             pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
         % Helps with precise orbit interpolation
         [posP, velP,pPosInds,pPosPoly,ROut] = PPosInterp(obj,PRNs, epochs,Ppos,Pprns,...
