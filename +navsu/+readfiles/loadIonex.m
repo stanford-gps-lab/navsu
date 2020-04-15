@@ -1,7 +1,7 @@
 function [ionoData,dcbData,IFileName,IFileNameFull] = loadIonex(yearList,dayList,settings,FLAG_NO_LOAD,center)
 % loadIonex
 % DESCRIPTION:
-%   Find and parse IGS differential code bias corrections and ionospheric 
+%   Find and parse IGS differential code bias corrections and ionospheric
 %   data from .  The files to be parsed should already exist locally.
 %
 % INPUTS:
@@ -37,12 +37,39 @@ end
 
 if length(dayList) > 1
     IFileName = {}; IFileNameFull = {};
+    ionoDataTemp = []; dcbData = [];
     
     for idx = 1:length(dayList)
-        [ionoDatai,IFileNamei,IFileNameFulli] = navsu.readfiles.loadIonex(yearList(idx),dayList(idx),settings,FLAG_NO_LOAD,center);
+        [ionoDatai,~,IFileNamei,IFileNameFulli] = navsu.readfiles.loadIonex(yearList(idx),dayList(idx),settings,FLAG_NO_LOAD,center);
+        
+        IFileNameFull = [IFileNameFull; IFileNameFulli];
+        IFileName = [IFileName; IFileNamei];
+        ionoDataTemp{idx} = ionoDatai;
     end
     
-    % do something useful with all this
+    % combine the data that was just parsed
+    ionoData = [];
+    for idx = length(dayList):-1:1
+        if ~isempty(ionoDataTemp{idx})
+            if isempty(ionoData)
+                % Initialize
+                ionoData = ionoDataTemp{idx};
+            else
+                % Add the new data to the previously existing structure
+                ionoDatai = ionoDataTemp{idx};
+                ionoData.tecMap = cat(4,ionoData.tecMap,ionoDatai.tecMap);
+                ionoData.epochs = cat(1,ionoData.epochs,ionoDatai.epochs);
+                ionoData.datevecs = cat(1,ionoData.datevecs,ionoDatai.datevecs);
+            end
+        end
+    end
+    if ~isempty(ionoData)
+        % Sort everything just in case
+        [~,ixb] = sort(ionoData.epochs);
+        ionoData.tecMap = ionoData.tecMap(:,:,:,ixb);
+        ionoData.epochs = ionoData.epochs(ixb);
+        ionoData.datevecs = ionoData.datevecs(ixb,:);
+    end
     
 else
     ionoData = [];
@@ -50,10 +77,10 @@ else
     
     destDir      = settings.dcbDir;
     destPath   = [int2str(yearList) '\' num2str(dayList,'%03d') '\'];
-   
+    
     filenamei = [center 'g' num2str(dayList,'%03d') '0.' num2str(mod(yearList,100),'%02d') 'i'];
     target_dir = [destDir destPath];
-
+    
     filenameFulli = [target_dir filenamei];
     
     IFileName = {filenamei};
