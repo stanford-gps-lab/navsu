@@ -237,11 +237,12 @@ if FLAG_APC_OFFSET  && ~isempty(atxData)
                 lastEpoch = 0;
             end
             if lastEpoch ~= round(epochs(pdx))
-                jd = utility.time.epochs2jd(epochs(pdx));
-                et       = cspice_str2et(['jd ' num2str(jd)]);
-                sunposi  = cspice_spkezr( 'sun',et , 'itrf93', 'none', 'earth');
-                sunpos = sunposi(1:3)*1000;
+                jd = navsu.time.epochs2jd(epochs(pdx));
+%                 et       = cspice_str2et(['jd ' num2str(jd)]);
+%                 sunposi  = cspice_spkezr( 'sun',et , 'itrf93', 'none', 'earth');
+%                 sunpos = sunposi(1:3)*1000;
                 
+                sunpos = navsu.geo.sunVecEcef(jd)';
                 lastEpoch = round(epochs(pdx));
             end
             
