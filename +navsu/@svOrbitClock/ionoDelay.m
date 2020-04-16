@@ -50,7 +50,7 @@ obliq    = zeros(size(el));
 
 % build TEC for each LOS
 for sdx = 1:length(el)
-    [latPpi, lonPpi,obliq(sdx)] = iono_pierce_point(llh(1)*pi/180, ...
+    [latPpi, lonPpi,obliq(sdx)] = navsu.ppp.models.ionoPiercePoint(llh(1)*pi/180, ...
         llh(2)*pi/180,az(sdx),el(sdx));
     
     if isnan(latPpi)

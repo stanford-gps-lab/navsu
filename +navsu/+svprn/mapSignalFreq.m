@@ -44,7 +44,7 @@ for pdx = 1:length(prns)
         
         if consti == 2 && fDesi <= 3
             % NEED TO ACCOUNT FOR GLONASS FDMA OFFSET
-            freqChani = utility.svprn.prn2FreqChanGlonass(prns(pdx),jd);
+            freqChani = navsu.svprn.prn2FreqChanGlonass(prns(pdx),jd);
             freqi = freqi+gloChannels(fDesi)*freqChani;
         end
         freqs(pdx,idx) = freqi;
