@@ -1,14 +1,14 @@
 function [moonVec] = moonVecEcef(jds)
 % moonVecEcef
 % DESCRIPTION:
-%   Produce the line of sight vector in earth centered earth fixed (ECEF)
-%   coordinates.  This matches to within milliradians to the same output
+%   Produce the lunar position vector in earth centered earth fixed (ECEF)
+%   coordinates.  LOS matches to within milliradians to the same output
 %   from NASA MICE DE405(or 430?) ephemerides.  This was built from the
-%   LunarAzEl function written by Darin Koblick- more information below. 
+%   LunarAzEl function written by Darin Koblick- more information below.
 % INPUT:
 %   jd      - N-length vector of julian dates
 % OUTPUT:
-%   moonVec - [Nx3] matrix of solar line of sight vectors in ECEF
+%   moonVec - [Nx3] matrix of lunar positions in ECEF [m]
 %
 % See also: navsu.time.epochs2jd
 
@@ -40,10 +40,6 @@ function [moonVec] = moonVecEcef(jds)
 nEpochs = length(jds);
 
 moonVec = nan(nEpochs,3);
-
-Lat = 0;
-Lon = 0;
-Alt = 0;
 
 %Declare Earth Equatorial Radius Measurements in km
 EarthRadEq = 6378.1370/1000;
@@ -147,63 +143,37 @@ for idx = 1:nEpochs
     
     %Apply the rotational matrix to the ecliptic rectangular coordinates
     %Also, convert units to km instead of earth equatorial radii
-    sol = RotM*[xeclip yeclip zeclip]'.*EarthRadEq;
+    sol = RotM*[xeclip yeclip zeclip]'.*EarthRadEq*1000*1000;
     
-    %Find the equatorial rectangular coordinates of the location specified
-    [xel, yel, zel] = sph2cart(Lon.*(pi/180),Lat.*(pi/180),Alt+EarthRadEq);
+    xequat = sol(1);
+    yequat = sol(2);
+    zequat = sol(3);
     
-    %Find the equatorial rectangular coordinates of the location @ sea level
-    [xsl, ysl, zsl] = sph2cart(Lon.*(pi/180),Lat.*(pi/180),EarthRadEq);
+    %convert equatorial rectangular coordinates to RA and Decl:
+    Lon = 0;
     
-    %Find the Angle Between sea level coordinate vector and the moon vector
-    theta1 = 180 - acosd(dot([xsl ysl zsl],[sol(1)-xsl sol(2)-ysl sol(3)-zsl]) ...
-        ./(sqrt(xsl.^2 + ysl.^2 + zsl.^2) ...
-        .*sqrt((sol(1)-xsl).^2 + (sol(2)-ysl).^2 + (sol(3)-zsl).^2)));
-    
-    %Find the Angle Between the same coordinates but at the specified elevation
-    theta2 = 180 - acosd(dot([xel yel zel],[sol(1)-xel sol(2)-yel sol(3)-zel]) ...
-        ./(sqrt(xel.^2 + yel.^2 + zel.^2) ...
-        .*sqrt((sol(1)-xel).^2 + (sol(2)-yel).^2 + (sol(3)-zel).^2)));
-    
-    %Find the Difference Between the two angles (+|-) is important
-    thetaDiff = theta2 - theta1;
-    
-    % equatorial to horizon coordinate transformation
-    [RA,delta] = cart2sph(sol(1),sol(2),sol(3));
-    delta = delta.*(180/pi);
-    RA = RA.*(180/pi);
+    r = sqrt(xequat.^2 + yequat.^2 + zequat.^2);
+    RA = atan2(yequat,xequat).*(180/pi);
+    delta = asin(zequat./r).*(180/pi);
     
     %Following the RA DEC to Az Alt conversion sequence explained here:
     %http://www.stargazing.net/kepler/altaz.html
-    %
-    % %Find the J2000 value
+    
+    %Find the J2000 value
     J2000 = jd - 2451545.0;
     hourvec = datevec(navsu.time.epochs2datenum(navsu.time.jd2epochs(jd)));
-    UTH = hourvec(4) + hourvec(5)/60 + hourvec(6)/3600;
+    UTH = hourvec(:,4) + hourvec(:,5)/60 + hourvec(:,6)/3600;
     
     %Calculate local siderial time
+    GMST0=mod(L+180,360)./15;
+    
     LST = mod(100.46+0.985647.*J2000+Lon+15*UTH,360);
     
-    %Replace RA with hour angle HA
-    HA = LST-RA;
+    theta = -LST*pi/180;
+    posEcef = [xequat.*cos(theta)-yequat.*sin(theta)    xequat.*sin(theta)+yequat.*cos(theta) zequat];
     
-    %Find the h and AZ at the current LST
-    h = asin(sin(delta.*(pi/180)).*sin(Lat.*(pi/180)) + cos(delta.*(pi/180)).*cos(Lat.*(pi/180)).*cos(HA.*(pi/180))).*(180/pi);
-    Az = acos((sin(delta.*(pi/180)) - sin(h.*(pi/180)).*sin(Lat.*(pi/180)))./(cos(h.*(pi/180)).*cos(Lat.*(pi/180)))).*(180/pi);
-    
-    %Add in the angle offset due to the specified site elevation
-    h = h + thetaDiff;
-    
-    if sin(HA.*(pi/180)) >= 0
-        Az = 360-Az;
-    end
-    
-    azRad = Az*pi/180;
-    elRad = h*pi/180;
-    
-    moonVec(idx,:) = [sin(elRad)
-        sin(azRad)*cos(elRad); ...
-        cos(azRad)*cos(elRad)];
+    moonVec(idx,:) = posEcef;
+   
 end
 
 
