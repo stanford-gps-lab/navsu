@@ -1,8 +1,8 @@
 classdef pppFilter < matlab.mixin.Copyable
-
-
+    
+    
     properties
-
+        
         state   % the state of the filter -> should be of type pppanal.ppp.State
         cov     % covariance of the state
         
@@ -28,7 +28,7 @@ classdef pppFilter < matlab.mixin.Copyable
         
         % phase windup
         phWind = struct('phaseOffset',zeros(0,1),'PrnConstInd',zeros(0,2));
-                
+        
         StateMap % mapping matrix- indicates what the state is in each position of the state and covariance matrix
         
         % all satellites used in the solution- useful for solution
@@ -39,9 +39,11 @@ classdef pppFilter < matlab.mixin.Copyable
         
         PARAMS % parameters associated with the running of this filter!
         
+        resids % extra info for output about measurement residuals
+        
     end
-
-
+    
+    
     methods
         function obj = pppFilter()
             % TO DO: ALLOW FOR THE SETTING OF THE PARAMETERS WITH A
@@ -51,8 +53,8 @@ classdef pppFilter < matlab.mixin.Copyable
             
         end
     end
-
-
+    
+    
     % function signatures
     methods
         complete = initialize(obj,corrData,varargin)
@@ -61,16 +63,21 @@ classdef pppFilter < matlab.mixin.Copyable
         [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData,outStruc)
         
         manageStates(obj,epoch,gnssMeas,PARAMS,outStruc);
-        measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);        
+        measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);
         removeFlexState(obj,measInfoRemove);
         
         % This function basically just stores the default configuration of
         % the filter
         PARAMS = initParams(obj);
         
+        outData = saveState(obj,outData,epoch,obs);
     end
-
-
+    
+    methods(Static)
+        plotOutput(outputs,varargin)
+    end
+    
+    
 end
 
 

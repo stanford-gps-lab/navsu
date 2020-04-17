@@ -1,4 +1,4 @@
-function outStruc = runPpp(filter,obsGnss,corrData,varargin)
+function [outStruc,outData] = runPpp(filter,obsGnss,corrData,varargin)
 
 
 %% Sort all of the GNSS and IMU measurements
@@ -11,14 +11,15 @@ obsInfo = obsInfo(indStart:end,:);
 
 nEpochs = size(obsInfo,1);
 
-%% Initialize the object (not the solution)
-
 % Initialize the waitbar
 runTimeStart = tic;
 pctDone = 0;
 h = waitbar(0,'0 Percent Complete');
 
 neverInitialized = true;
+
+%% Data to save
+outData = [];
 
 %% Run the loop
 for tdx = 1:nEpochs
@@ -45,8 +46,7 @@ for tdx = 1:nEpochs
             navsu.ppp.manageStatesMulti(filter,epochi,obsi,outStruc);
             
             % Do the time and measurement updates
-            filter.update(epochi,obsi,corrData,outStruc);            
-            
+            filter.update(epochi,obsi,corrData,outStruc);
         else
             % or just do a least squares solution :)
             filter.initialize(corrData,'gnssMeas',obsi);
@@ -63,11 +63,13 @@ for tdx = 1:nEpochs
             
             outStruc.saveState(filter,filter.PARAMS,'tdx', tdx)
         end
-    end
+    end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
     
     if updated
         outStruc.saveState(filter,filter.PARAMS,'tdx',tdx);
     end
+    
+    outData = filter.saveState(outData,epochi,obsi);
     
     % Update the waitbar
     if mod(floor(tdx/nEpochs*100),1) == 0 && floor(tdx/nEpochs*100) > pctDone
@@ -83,17 +85,4 @@ outStruc.closeSaveState
 
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
 

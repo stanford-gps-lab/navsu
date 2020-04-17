@@ -1,6 +1,6 @@
 function plotSol(obj,varargin)
 
-% this is mostly a wrapper for svPosFromProd
+% 
 p = inputParser;
 
 p.addParameter('truePosEcef',[]);

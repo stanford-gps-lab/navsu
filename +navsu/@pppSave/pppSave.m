@@ -156,7 +156,7 @@ classdef pppSave < handle
     % function signatures
     methods
         saveNewValues(obj,filter,PARAMS,varargin)
-        saveResids(obj,measMat,residsPost,epoch,el,prnConstInds)
+         [rangeResids, doppResids, elFull, azFull]  = saveResids(obj,measMat,residsPost,epoch,el,az,prnConstInds)
         plotResidSummary(obj,varargin)
         [epochs,posTrue,posEst,pl,errEnu,plLoc] = plotAgainstTruth(obj,filenameTruth,PARAMS,varargin)
         midRunPlot(obj)

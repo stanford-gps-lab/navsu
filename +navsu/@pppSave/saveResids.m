@@ -1,4 +1,4 @@
-function saveResids(obj,measMat,resids,epoch,el,prnConstInds)
+function [rangeResids, doppResids, elFull, azFull] = saveResids(obj,measMat,resids,epoch,el,az,prnConstInds)
 
 % Save the range residuals
 [~,indsSave] = ismember(measMat(measMat(:,end) == 1 | ...
@@ -11,6 +11,8 @@ residsSavei(indsSave) = resids(measMat(:,6) == 1 | measMat(:,6) == 2);
 indEpoch = find(obj.gnssData.epochs == epoch);
 obj.gnssData.range.resids(:,:,indEpoch) = residsSavei;
 
+rangeResids = residsSavei;
+
 % Save the doppler residuals
 [~,indsSave] = ismember(measMat(measMat(:,end) == 3 ,[1 2 3]),...
     [obj.gnssData.doppler.PRN(:) obj.gnssData.doppler.constInds(:) ...
@@ -21,9 +23,16 @@ residsSavei(indsSave) = resids(measMat(:,6) == 3);
 indEpoch = find(obj.gnssData.epochs == epoch);
 obj.gnssData.doppler.resids(:,:,indEpoch) = residsSavei;
 
+doppResids = residsSavei;
+
 % Save elevation per satellite
 [~,indsEl] = ismember(prnConstInds,[obj.gnssData.PRN' obj.gnssData.constInds'],'rows');
 obj.gnssData.el(indsEl,indEpoch) = el;
 
+
+elFull = nan(size(el,1),1);
+elFull(indsEl) = el;
+azFull = nan(size(el,1),1);
+azFull(indsEl) = az;
 
 end

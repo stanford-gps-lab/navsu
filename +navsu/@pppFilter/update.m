@@ -674,6 +674,7 @@ end
 
 if nMeas  == 0
     el = [];
+    az = [];
     prnConstInds = zeros(0,2);
     measMatRemovedLow = zeros(0,2);
 end
@@ -802,11 +803,16 @@ obj.allSatsSeen = sortrows(unique([measMat(:,1:2); obj.allSatsSeen],'rows'),2);
 
 %% Save for output
 if ~isempty(outStruc)
-    outStruc.saveResids(measMat,residsPost,epoch0,el,prnConstInds)
+    [rangeResids,doppResids,elFull,azFull] = outStruc.saveResids(measMat,residsPost,epoch0,el,az,prnConstInds);
     
     outStruc.saveMeasRemoved(epoch0,measMatRemovedLow,measMatRemoved);
 end
 
+obj.resids.epoch = epoch0;
+obj.resids.range = rangeResids;
+obj.resids.doppler = doppResids;
+obj.resids.el      = elFull;
+obj.resids.az      = azFull;
 
 end
 

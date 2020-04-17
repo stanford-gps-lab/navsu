@@ -103,24 +103,25 @@ ifPairs = [1 3;
     obsDes,ifPairs,corrData,'downsampleFac',downsampleFac,'epochStart',epochStart);
 
 %% do the ppp lol
-outStruc = navsu.ppp.runPpp(filter,obsGnssi,corrData);
+[outStruc,outData] = navsu.ppp.runPpp(filter,obsGnssi,corrData);
 
 %%
 close all;
 
 % Plot measurement related outputs
-outStruc.plotResidSummary;
-outStruc.plotResids;
-outStruc.plotRemoved;
+% outStruc.plotResidSummary;
+% outStruc.plotResids;
+% outStruc.plotRemoved;
 
 %% Plot position error
-outStruc.plotSol('truePosEcef',truePosEcef);
+% outStruc.plotSol('truePosEcef',truePosEcef);
 
 %% plot the skyplot
 % figure;
 % navsu.geo.skyPlot(outStruc.gnssData.az'*180/pi,outStruc.gnssData.el'*180/pi);
 
-
+%%
+filter.plotOutput(outData,'truePosEcef',truePosEcef);
 
 
 
