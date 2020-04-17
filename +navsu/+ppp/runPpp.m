@@ -1,4 +1,4 @@
-function outStruc = runPpp(obsGnss,corrData,PARAMS,varargin)
+function outStruc = runPpp(filter,obsGnss,corrData,varargin)
 
 
 %% Sort all of the GNSS and IMU measurements
@@ -12,7 +12,6 @@ obsInfo = obsInfo(indStart:end,:);
 nEpochs = size(obsInfo,1);
 
 %% Initialize the object (not the solution)
-user = navsu.pppFilter;
 
 % Initialize the waitbar
 runTimeStart = tic;
@@ -39,28 +38,35 @@ for tdx = 1:nEpochs
     end
     
     % if not initialized, try to initialize :)
-    if user.initialized        
+    if filter.initialized
         % Do the ppp update
-        
-        % or just do a least squares solution :)
-        user.initialize(PARAMS,corrData,'gnssMeas',obsi);
-        
+        if 1
+            % Manage the states in the filter :)
+            navsu.ppp.manageStatesMulti(filter,epochi,obsi,outStruc);
+            
+            % Do the time and measurement updates
+            filter.update(epochi,obsi,corrData,outStruc);            
+            
+        else
+            % or just do a least squares solution :)
+            filter.initialize(corrData,'gnssMeas',obsi);
+        end
     else
         % need to initialize
-        user.initialize(PARAMS,corrData,'gnssMeas',obsi);
+        filter.initialize(corrData,'gnssMeas',obsi);
         
-        if user.initialized && neverInitialized
+        if filter.initialized && neverInitialized
             % IT WORKED!
-            outStruc = navsu.pppSave(obsInfo(:,1),length(user.clockBias),obsGnss,...
-                obsGnss.epochs,user.INDS_STATE,obsInfo(:,2),'gnssEpochsOnly',false);
+            outStruc = navsu.pppSave(obsInfo(:,1),length(filter.clockBias),obsGnss,...
+                obsGnss.epochs,filter.INDS_STATE,obsInfo(:,2),'gnssEpochsOnly',false);
             epochLastPlot = obsInfo(1,1);
             
-            outStruc.saveState(user,PARAMS,'tdx', tdx)
+            outStruc.saveState(filter,filter.PARAMS,'tdx', tdx)
         end
     end
     
     if updated
-        outStruc.saveState(user,PARAMS,'tdx',tdx);
+        outStruc.saveState(filter,filter.PARAMS,'tdx',tdx);
     end
     
     % Update the waitbar

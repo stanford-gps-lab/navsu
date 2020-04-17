@@ -1,4 +1,4 @@
-function complete = initialize(obj,PARAMS,corrData,varargin)
+function complete = initialize(obj,corrData,varargin)
 
 p = inputParser;
 
@@ -32,6 +32,9 @@ gnssMeas      = res.gnssMeas;
 epoch         = res.epoch;
 
 rangeStruc = gnssMeas.range;
+
+PARAMS = obj.PARAMS;
+
 %% Did the filter initialize successfully
 % complete = false;
 

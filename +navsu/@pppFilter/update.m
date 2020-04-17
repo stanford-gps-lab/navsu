@@ -1,13 +1,6 @@
-function [extraInputs, measMatRemoved,measMatRemovedLow] = ...
-    tcUpdate(obj,epoch,obs,corrData,PARAMS,outStruc,extraInputs,measMaskSubset)
+function [measMatRemoved,measMatRemovedLow] = ...
+    update(obj,epoch,obs,corrData,outStruc)
 
-if nargin < 7
-    extraInputs = [];
-end
-
-if nargin < 8
-    measMaskSubset = [];
-end
 
 R_b_e = obj.R_b_e;
 pos   = obj.pos;
@@ -16,7 +9,9 @@ imuBiasStates = obj.imuBiasStates;
 cov  = obj.cov;
 nState = size(cov,1);
 
-c = constants('c');
+c = navsu.constants.c;
+
+PARAMS = obj.PARAMS;
 
 if isempty(obj.lastAccMeas)
     accMeas = zeros(3,1);
@@ -29,7 +24,7 @@ else
     gyroMeas = obj.lastGyroMeas;
 end
 
-llhi = xyz2llh(pos');
+llhi = navsu.geo.xyz2llh(pos');
 latRad = llhi(1)*pi/180;
 
 pos0 = obj.posPrevTc;
@@ -44,7 +39,6 @@ tSinceInertialUpdate = epoch-obj.epochLastInertialUpdate;
 obj.epochLastGnssUpdate = epoch;
 
 % Constants (sone of these could be changed to inputs at a later date)
-c = 299792458; % Speed of light in m/s
 omega_ie = 7.292115E-5;  % Earth rotation rate in rad/s
 R_0 = 6378137; %WGS84 Equatorial radius in meters
 e = 0.0818191908425; %WGS84 eccentricity
@@ -168,7 +162,7 @@ if tSinceInertialUpdate < dtKf
         Q(indsTec,indsTec) = eye(length(indsTec))*PARAMS.Q.L1_IONO.^2*dtKf;
     end
     
-   if PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'TECSTATE')
+    if PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'TECSTATE')
         indsTec = obj.INDS_STATE.FLEX_STATES(obj.INDS_STATE.FLEX_STATES_INFO(:,3) == 2);
         Q(indsTec,indsTec) = eye(length(indsTec))*PARAMS.Q.L1_IONO.^2*dtKf;
     end
@@ -250,7 +244,7 @@ else
         Q(indsTec,indsTec) = eye(length(indsTec))*PARAMS.Q.L1_IONO.^2*dtKf;
     end
     
-     if PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'TECSTATE')
+    if PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'TECSTATE')
         indsTec = obj.INDS_STATE.FLEX_STATES(obj.INDS_STATE.FLEX_STATES_INFO(:,3) == 2);
         Q(indsTec,indsTec) = eye(length(indsTec))*PARAMS.Q.L1_IONO.^2*dtKf;
     end
@@ -297,37 +291,6 @@ else
     
 end
 
-% If we are doing "inflating" subsets, we can also increase process noise
-% added
-if ~isempty(measMaskSubset) && strcmp(PARAMS.solSep.outType,'INFLATE')
-    % Inflated measurement sigma "exclusion"
-    measMaskSubset = permute(measMaskSubset,[1 3 2]);
-    measMaskSubset = measMaskSubset(~isnan(measMaskSubset(:,1)),:);
-    
-    indsInflate = [];
-    for idx = 1:size(measMaskSubset)
-        indsInflate = [indsInflate; find(obj.INDS_STATE.FLEX_STATES_INFO(:,1) == measMaskSubset(idx,1) & obj.INDS_STATE.FLEX_STATES_INFO(:,2) == measMaskSubset(idx,2))];
-    end
-    
-    for idx = 1:length(indsInflate)
-        stateType = obj.INDS_STATE.FLEX_STATES_INFO(indsInflate(idx),3);
-        
-        switch stateType
-            case 1 % carrier phase amb
-                Qnew = 1^2;
-            case 2 % TEC state
-                Qnew = 1^2;
-            case 3 % sat DCB
-                Qnew = 1^2;
-            case 4 % code multipath
-                Qnew = 1^2;
-            case 5 % carrier multipath
-                Qnew = 1^2;
-        end
-        Q(obj.INDS_STATE.FLEX_STATES(indsInflate(idx)),obj.INDS_STATE.FLEX_STATES(indsInflate(idx))) = Qnew;
-    end
-end
-
 % 4. Propagate state estimation error covariance matrix using (3.46)
 cov_propagated = Phi_matrix * (cov + 0.5 * Q) *...
     Phi_matrix' + 0.5 * Q;
@@ -347,7 +310,7 @@ end
 measMat = [];
 
 % Wipe off measurements based on the desried measurement masking
-obs = measMask(obs,PARAMS.measMask);
+obs = navsu.ppp.measMask(obs,PARAMS.measMask);
 
 % Just using all PR measurements
 indsMeasPr = find(obs.range.obs ~= 0  & obs.range.ind == 1 );
@@ -389,129 +352,96 @@ nSats = length(unique(measMat(:,1:2),'rows'));
 
 if nMeas > 0
     %% Propagate orbit and clock for all measurements
-    if isempty(extraInputs)
-        prnConstInds = sortrows(unique(measMat(:,1:2),'rows'),2);
+    prnConstInds = sortrows(unique(measMat(:,1:2),'rows'),2);
+    
+    % transmission time for all satellites
+    % rough estimate of travel time- just use geometric range
+    [~,ib] = ismember(prnConstInds(:,2),obj.INDS_STATE.CLOCK_BIAS_CONSTS);
+    tRx = epoch-obj.clockBias(ib)./c;
+    [svPos,svVel] = corrData.propagate(prnConstInds(:,1),prnConstInds(:,2),tRx);
+    
+    % Might be missing some precise data- check and remove if so
+    if any(isnan(svPos(:,1)))
+        indsNan = find(isnan(svPos(:,1)));
         
-        % transmission time for all satellites
-        % rough estimate of travel time- just use geometric range
+        prnConstIndsNan = prnConstInds(indsNan,:);
+        
+        % Remove the associated measurements
+        indsMeasRemove = find(ismember(measMat(:,1:2),prnConstIndsNan,'rows'));
+        measMat(indsMeasRemove,:) = [];
+        
+        prnConstInds(indsNan,:) = [];
         [~,ib] = ismember(prnConstInds(:,2),obj.INDS_STATE.CLOCK_BIAS_CONSTS);
         tRx = epoch-obj.clockBias(ib)./c;
-        [svPos,svVel] = corrData.propagate(prnConstInds(:,1),prnConstInds(:,2),tRx);
         
-        % Might be missing some precise data- check and remove if so
-        if any(isnan(svPos(:,1)))
-            indsNan = find(isnan(svPos(:,1)));
-            
-            prnConstIndsNan = prnConstInds(indsNan,:);
-            
-            % Remove the associated measurements
-            indsMeasRemove = find(ismember(measMat(:,1:2),prnConstIndsNan,'rows'));
-            measMat(indsMeasRemove,:) = [];
-            
-            prnConstInds(indsNan,:) = [];
-            [~,ib] = ismember(prnConstInds(:,2),obj.INDS_STATE.CLOCK_BIAS_CONSTS);
-            tRx = epoch-obj.clockBias(ib)./c;
-            
-            svPos(indsNan,:) = [];
-            
-            nMeas = size(measMat,1);
-        end
+        svPos(indsNan,:) = [];
         
-        satBias = -c*corrData.clock(prnConstInds(:,1),prnConstInds(:,2),tRx);
-        gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
-        
-        % Need rough estimate of the receiver clock bias in case of reset
-        measMatPr = measMat(measMat(:,6) == 1,:);
-        % Pull one pseudorange for each satellite
-        [~,losIndPr] = ismember(measMatPr(:,1:2),prnConstInds,'rows');
-        
-        % bRxi = nanmedian(measi(measInfoi(:,4) == 1,1)- sqrt(sum((svPosRot-repmat(usrPos',size(svPosRot,1),1)).^2,2))-bSati(sIndsMap(measInfoi(:,4) == 1)));
-        if isempty(measMatPr) || 1
-            bRxi = obj.clockBias;
-            bRxi = x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1);
-        else
-            bRxi = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));
-            obj.clockBias(:) = bRxi;
-        end
-        x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1)   = bRxi;
-        
-        epoch = epoch-obj.clockBias(ib)./c;
-        
-        satBias = -c*corrData.clock(prnConstInds(:,1),prnConstInds(:,2),epoch);
-        [svPos,svVel] = corrData.propagate(prnConstInds(:,1),prnConstInds(:,2),epoch);
-        gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
-        
-        tTx = epoch-gRangeSv./c;
-        
-        [svPos,svVel] = corrData.propagate(prnConstInds(:,1),prnConstInds(:,2),tTx);
-        travelTime = epoch-tTx;
-        svPosRot = e_r_corr(travelTime,svPos);
-        
-        rxDrift   = obj.clockDrift(ib);
-        rxBias    = obj.clockBias(ib);
-        
-        % elevation and azimuth for each LOS
-        [el,az] = pos2elaz(obj.pos',svPosRot);
-        
-        %% Various range effects
-        % tropo delay for each LOS
-        % trop = saastamoinen_model_SU(llhi(1), llhi(2), llhi(3), el*180/pi);
-        % [trop0,m,tropDataSave] = tropo_error_correction_unb3(el,h,lat,doy);
-        doy = jd2doy(epochs2jd(epoch));
-        [trop,m,~] = tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
-        
-        % TEC for each LOS
-        if any(measMat(:,3) < 100 & measMat(:,6) < 3) %&& strcmp(PARAMS.states.ionoMode,'TEC')
-            [~,~,tecSlant] = corrData.ionoDelay(epoch,llhi,'az',az,'el',el);
-        else
-            tecSlant = zeros(size(prnConstInds,1),1);
-        end
-        
-        % solid tide adjustment to position
-        [~,stRangeOffset] = solidTide(epoch(1),pos,'svPos',svPosRot);
-        stRangeOffset = stRangeOffset;
-        
-        % relativistic corrections
-        relClockCorr = 2/c^2.*sum(svPos.*svVel,2)*c;
-        relRangeCorr = relativistic_range_error_correction(svPos',pos',PARAMS);
-        
-        % Carrier phase windup
-        [~,ib] = ismember(prnConstInds,obj.phWind.PrnConstInd,'rows');
-        phWind = carrierPhaseWindupGGM(epoch(1), repmat(pos',size(svPosRot,1)), svPosRot, obj.phWind.phaseOffset(ib));
-        obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
-        
-        
-    else
-        % Pre-computed range components have been provided
-        prnConstInds    = extraInputs.prnConstInds;
-        trop            = extraInputs.trop;
-        stRangeOffset   = extraInputs.stRangeOffset;
-        satBias         = extraInputs.satBias;
-        rxBias          = extraInputs.rxBias;
-        relClockCorr    = extraInputs.relClockCorr;
-        relRangeCorr    = extraInputs.relRangeCorr;
-        svPosRot        = extraInputs.svPosRot;
-        svVel           = extraInputs.svVel;
-        el              = extraInputs.el;
-        az              = extraInputs.az;
-        m               = extraInputs.m;
-        rxDrift         = extraInputs.rxDrift;
-        tecSlant        = extraInputs.tecSlant;
-        
-        phWind          = extraInputs.phWind;
-        
-        [~,ib] = ismember(prnConstInds,obj.phWind.PrnConstInd,'rows');
-        obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
-        
-        measMatRemovedAiv = extraInputs.measMatRemoved;
-        
-        losInds      = extraInputs.losInds;
-        indAmbStates = extraInputs.indAmbStates;
-        indIonos     = extraInputs.indIonos;
-        indGloDcbs   = extraInputs.indGloDcbs;
-        indMpCodes   = extraInputs.indMpCodes;
-        indMpCarrs   = extraInputs.indMpCarrs;
+        nMeas = size(measMat,1);
     end
+    
+    satBias = -c*corrData.clock(prnConstInds(:,1),prnConstInds(:,2),tRx);
+    gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
+    
+    % Need rough estimate of the receiver clock bias in case of reset
+    measMatPr = measMat(measMat(:,6) == 1,:);
+    % Pull one pseudorange for each satellite
+    [~,losIndPr] = ismember(measMatPr(:,1:2),prnConstInds,'rows');
+    
+    % bRxi = nanmedian(measi(measInfoi(:,4) == 1,1)- sqrt(sum((svPosRot-repmat(usrPos',size(svPosRot,1),1)).^2,2))-bSati(sIndsMap(measInfoi(:,4) == 1)));
+    if isempty(measMatPr) || 1
+        bRxi = obj.clockBias;
+        bRxi = x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1);
+    else
+        bRxi = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));
+        obj.clockBias(:) = bRxi;
+    end
+    x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1)   = bRxi;
+    
+    epoch = epoch-obj.clockBias(ib)./c;
+    
+    satBias = -c*corrData.clock(prnConstInds(:,1),prnConstInds(:,2),epoch);
+    [svPos,svVel] = corrData.propagate(prnConstInds(:,1),prnConstInds(:,2),epoch);
+    gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
+    
+    tTx = epoch-gRangeSv./c;
+    
+    [svPos,svVel] = corrData.propagate(prnConstInds(:,1),prnConstInds(:,2),tTx);
+    travelTime = epoch-tTx;
+    svPosRot = navsu.ppp.models.earthRotTravelCorr(travelTime,svPos);
+    
+    rxDrift   = obj.clockDrift(ib);
+    rxBias    = obj.clockBias(ib);
+    
+    % elevation and azimuth for each LOS
+    [el,az] = navsu.geo.pos2elaz(obj.pos',svPosRot);
+    
+    %% Various range effects
+    % tropo delay for each LOS
+    % trop = saastamoinen_model_SU(llhi(1), llhi(2), llhi(3), el*180/pi);
+    % [trop0,m,tropDataSave] = tropo_error_correction_unb3(el,h,lat,doy);
+    doy = navsu.time.jd2doy(navsu.time.epochs2jd(epoch));
+    [trop,m,~] = navsu.ppp.models.tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
+    
+    % TEC for each LOS
+    if any(measMat(:,3) < 100 & measMat(:,6) < 3) %&& strcmp(PARAMS.states.ionoMode,'TEC')
+        [~,~,tecSlant] = corrData.ionoDelay(epoch,llhi,'az',az,'el',el);
+    else
+        tecSlant = zeros(size(prnConstInds,1),1);
+    end
+    
+    % solid tide adjustment to position
+    [~,stRangeOffset] = navsu.ppp.models.solidTide(epoch(1),pos,'svPos',svPosRot);
+    
+    % relativistic corrections
+    relClockCorr = 2/c^2.*sum(svPos.*svVel,2)*c;
+    relRangeCorr = navsu.ppp.models.relRangeCorr(svPos',pos',PARAMS);
+    
+    % Carrier phase windup
+    [~,ib] = ismember(prnConstInds,obj.phWind.PrnConstInd,'rows');
+    phWind = navsu.ppp.models.carrierPhaseWindupGGM(epoch(1), repmat(pos',size(svPosRot,1)), svPosRot, obj.phWind.phaseOffset(ib));
+    obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
+    
+    
     
     % Geometry matrix
     A = (svPosRot-pos')./sqrt(sum((pos'-svPosRot).^2,2));
@@ -520,22 +450,19 @@ if nMeas > 0
     gRange = sqrt(sum((svPosRot-posRx').^2,2));
     dVel   = dot([+svVel-velRx']',-A')';
     dVel2 = velRx'-svVel;
-
+    
     
     %%
+    [~,losInds] = ismember(measMat(:,[1 2]),prnConstInds,'rows');
+    [~,indAmbStates] = ismember([measMat(:,[1 2 3]) ones(size(measMat,1),1)],obj.INDS_STATE.FLEX_STATES_INFO(:,[1 2 4 3]),'rows');
+    % indAmbStates = obj.INDS_STATES.FLEX_STATES(ia);
+    % indIono = obj.INDS_STATE.FLEX_STATES(ismember(obj.INDS_STATE.FLEX_STATES_INFO(:,1:3),[prni constIndi 2],'rows'));
+    [~,indIonos] =ismember([measMat(:,1:2) 2*ones(size(measMat,1),1)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:3),'rows');
+    [~,indGloDcbs] =ismember([measMat(:,1:2) 3*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
+    % [~,indGpsDcbs] =ismember([measMat(:,1:2) 3*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
     
-    if isempty(extraInputs)
-        [~,losInds] = ismember(measMat(:,[1 2]),prnConstInds,'rows');
-        [~,indAmbStates] = ismember([measMat(:,[1 2 3]) ones(size(measMat,1),1)],obj.INDS_STATE.FLEX_STATES_INFO(:,[1 2 4 3]),'rows');
-        % indAmbStates = obj.INDS_STATES.FLEX_STATES(ia);
-        % indIono = obj.INDS_STATE.FLEX_STATES(ismember(obj.INDS_STATE.FLEX_STATES_INFO(:,1:3),[prni constIndi 2],'rows'));
-        [~,indIonos] =ismember([measMat(:,1:2) 2*ones(size(measMat,1),1)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:3),'rows');
-        [~,indGloDcbs] =ismember([measMat(:,1:2) 3*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
-        % [~,indGpsDcbs] =ismember([measMat(:,1:2) 3*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
-        
-        [~,indMpCodes] =ismember([measMat(:,1:2) 4*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
-        [~,indMpCarrs] =ismember([measMat(:,1:2) 5*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
-    end
+    [~,indMpCodes] =ismember([measMat(:,1:2) 4*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
+    [~,indMpCarrs] =ismember([measMat(:,1:2) 5*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
     
     % build each measurement
     pred_meas = zeros(nMeas,1);
@@ -697,13 +624,6 @@ if nMeas > 0
                 
             case 3
                 % doppler
-                %             pred_meas(idx) = -dVel(losInd)-rxDrift(losInd);
-                %              pred_meas(idx) = -dVel(losInd)-rxDrift(losInd);
-                %            dVel2 = velRx'-svVel;
-                %
-                %             [hVel,hAtt] = velSensitivity(vel,svVel(losInd,:)',rxDrift(losInd),A(losInd,:),...
-                %                 gyroMeas,R_b_e,PARAMS.IMU_ARM,Omega_ie);
-                
                 if 0
                     [hVel,hAtt,hBias] = dopplerSensitivity(vel,svVel(losInd,:)',rxDrift(losInd),A(losInd,:),...
                         gyroMeas,R_b_e,PARAMS.IMU_ARM,Omega_ie);
@@ -728,51 +648,6 @@ if nMeas > 0
                 
                 measMat(idx,5) = -measMat(idx,5);
         end
-    end
-    
-    if ~isempty(measMaskSubset) && strcmp(PARAMS.solSep.outType,'INFLATE')
-        % Inflated measurement sigma "exclusion"
-        measMaskSubset = permute(measMaskSubset,[1 3 2]);
-        measMaskSubset = measMaskSubset(~isnan(measMaskSubset(:,1)),:);
-        
-        indsRemove = [];
-        for idx = 1:size(measMaskSubset)
-            indsRemove = [indsRemove; find(measMat(:,1) == measMaskSubset(idx,1) & measMat(:,2) == measMaskSubset(idx,2))];
-        end
-        
-        for idx = 1:length(indsRemove)
-            R(indsRemove(idx),indsRemove(idx)) = 100000^2;
-        end
-    elseif  ~isempty(measMaskSubset) && strcmp(PARAMS.solSep.outType,'EXCLUDE')
-        % Full on exclusion of measurements
-        measMaskSubset = permute(measMaskSubset,[1 3 2]);
-        measMaskSubset = measMaskSubset(~isnan(measMaskSubset(:,1)),:);
-        
-        indsRemove = [];
-        for idx = 1:size(measMaskSubset)
-            indsRemove = [indsRemove; find(measMat(:,1) == measMaskSubset(idx,1) & measMat(:,2) == measMaskSubset(idx,2))];
-        end
-        
-        H(indsRemove,:) = [];
-        R(indsRemove,:) = [];
-        R(:,indsRemove) = [];
-        measMat(indsRemove,:) = [];
-        pred_meas(indsRemove) = [];
-        losInds(indsRemove) = [];
-    end
-    
-    % Remove measurements that were excluded from the AIV solution
-    if ~isempty(extraInputs) && ~isempty(extraInputs.measMatRemoved)
-        indsRemove = find(ismember(measMat(:,[1 2 3 4 6]),extraInputs.measMatRemoved(:,[1 2 3 4 6]),'rows'));
-        indsRemove(indsRemove == 0) = [];
-        
-        H(indsRemove,:) = [];
-        R(indsRemove,:) = [];
-        R(:,indsRemove) = [];
-        measMat(indsRemove,:) = [];
-        pred_meas(indsRemove) = [];
-        losInds(indsRemove) = [];
-        
     end
     
     % Remove measurements from satellites that are too low
@@ -859,7 +734,7 @@ nMeas = size(H,1);
 if nMeas > 0
     % Measurement were available- do the update.
     [H,delta_z,residsPost,K,measMat,~,measMatRemoved,R] = ...
-        measUpdateExclude(H,cov_propagated,R,measMat,pred_meas,PARAMS);
+        navsu.ppp.measUpdateExclude(H,cov_propagated,R,measMat,pred_meas,PARAMS);
     
     % 9. Update state estimates
     x_est_new = x_est_propagated + K * delta_z;
@@ -880,7 +755,7 @@ end
 % CLOSED-LOOP CORRECTION
 
 % Correct attitude, velocity, and position using (14.7-9)
-R_b_e = (eye(3) - crossProdMatrix(x_est_new(obj.INDS_STATE.ATTITUDE))) * R_b_e;
+R_b_e = (eye(3) - navsu.geo.crossProdMatrix(x_est_new(obj.INDS_STATE.ATTITUDE))) * R_b_e;
 
 if tSinceInertialUpdate < dtKf
     velRx = velRx - x_est_new(obj.INDS_STATE.VEL);
@@ -921,17 +796,6 @@ if ~isempty(measMatRemoved)
     end
 end
 
-if ~isempty(extraInputs)
-    if ~isempty(measMatRemovedAiv)
-        for jdx = 1:size(measMatRemovedAiv,1)
-            if measMatRemovedAiv(jdx,6) == 2 %|| measMatRemovedAiv(jdx,6) == 1
-                % carrier phase- reset ambiguity by just removing the state
-                obj.removeFlexState([measMatRemovedAiv(jdx,[1 2]) 1 measMatRemovedAiv(jdx,3)] );
-            end
-        end
-    end
-end
-
 %% Update the list of measurements used (if any haven't been included yet)
 satsUsedi = unique(measMat(:,1:2),'rows');
 obj.allSatsSeen = sortrows(unique([measMat(:,1:2); obj.allSatsSeen],'rows'),2);
@@ -941,41 +805,6 @@ if ~isempty(outStruc)
     outStruc.saveResids(measMat,residsPost,epoch0,el,prnConstInds)
     
     outStruc.saveMeasRemoved(epoch0,measMatRemovedLow,measMatRemoved);
-end
-
-%% Build range outputs
-% extraInputs
-if ~isempty(prnConstInds)
-    extraInputs.prnConstInds    = prnConstInds;
-    extraInputs.trop            = trop;
-    extraInputs.stRangeOffset   = stRangeOffset;
-    extraInputs.satBias         = satBias;
-    extraInputs.rxBias          = rxBias;
-    extraInputs.relClockCorr    = relClockCorr;
-    extraInputs.relRangeCorr    = relRangeCorr;
-    extraInputs.svPosRot        = svPosRot;
-    extraInputs.svVel           = svVel;
-    extraInputs.phWind          = phWind;
-    extraInputs.el              = el;
-    extraInputs.az              = az;
-    extraInputs.m               = m;
-    extraInputs.rxDrift         = rxDrift;
-    extraInputs.tecSlant        = tecSlant;
-    extraInputs.measMatRemoved  = measMatRemoved;
-    
-    extraInputs.losInds      = losInds;
-    extraInputs.indAmbStates = indAmbStates;
-    extraInputs.indIonos     = indIonos;
-    extraInputs.indGloDcbs   = indGloDcbs;
-    extraInputs.indMpCodes   = indMpCodes;
-    extraInputs.indMpCarrs   = indMpCarrs;
-    
-else
-    extraInputs = struct('prnConstInds',[],'trop',[],'stRangeOffste',[],...
-        'satBias',[],'rxBias',[],'relClockCorr',[],'relRangeCorr',[]...
-        ,'svPosRot',[],'svVel',[],'phWind',[],'el',[],'az',[],'m',[],...
-        'rxDrift',[],'tecSlant',[],'measMatRemoved',[],'losInds',[],...
-        'indAmbStates',[],'indIonos',[],'indGloDcbs',[],'indMpCodes',[],'indMpCarrs',[]);
 end
 
 

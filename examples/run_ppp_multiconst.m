@@ -18,15 +18,20 @@ igsAc = 'GRG';
 % this should be multi-constellation!
 constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
-% Initialize
-PARAMS = navsu.pppParams;
+% Initialize the filter
+filter = navsu.pppFilter;
 
-PARAMS.states.RX_DCB_GLO = false;
-PARAMS.Q.POS = 0;
-PARAMS.Q.VEL = 0;
+filter.PARAMS.states.RX_DCB_GLO = false;
+filter.PARAMS.Q.POS = 0;
+filter.PARAMS.Q.VEL = 0;
+
+filter.PARAMS.measMask.f1 = [0 0 0]';
+filter.PARAMS.measMask.f2 = [0 0 0]';
+filter.PARAMS.measMask.f3 = [0 0 0]';
 
 %% Read observation file
 if ~exist('obsStruc','var')   
+    disp('Reading observation file')
     [obsStruc, constellations, epochs, date, pos, interval, antoff, antmod,...
         rxmod] = navsu.readfiles.loadRinexObs(filenameGnss,'constellations',...
         navsu.readfiles.initConstellation(constUse(1),constUse(2),constUse(3),constUse(4),constUse(5)));
@@ -43,6 +48,7 @@ downsampleFac = 30;
 
 %%
 if ~exist('corrData','var')
+    disp('Loading corrections')
     % looking for most recent products
     jdRange0 = floor([navsu.time.epochs2jd(min(epochs)) navsu.time.epochs2jd(max(epochs))]+0.5)-0.5;
     jdRangeProd = (min(jdRange0)-1):(max(jdRange0)+1);
@@ -96,16 +102,16 @@ ifPairs = [1 3;
 [obsGnssi, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,obsInds,signalInds,...
     obsDes,ifPairs,corrData,'downsampleFac',downsampleFac,'epochStart',epochStart);
 
-%% do the ppp lol!!
-outStruc = navsu.ppp.runPpp(obsGnssi,corrData,PARAMS);
+%% do the ppp lol
+outStruc = navsu.ppp.runPpp(filter,obsGnssi,corrData);
 
 %%
 close all;
 
 % Plot measurement related outputs
-% outStruc.plotResidSummary;
-% outStruc.plotResids;
-% outStruc.plotRemoved;
+outStruc.plotResidSummary;
+outStruc.plotResids;
+outStruc.plotRemoved;
 
 %% Plot position error
 outStruc.plotSol('truePosEcef',truePosEcef);

@@ -37,35 +37,37 @@ classdef pppFilter < matlab.mixin.Copyable
         
         initialized = false % whether or not the fitler has been initialized
         
+        PARAMS % parameters associated with the running of this filter!
+        
     end
 
 
     methods
-        function obj = EKF()
-            if nargin < 1
-                % if no values are provided (this is the only option right
-                % now)
-                obj.QVals = [];
-                obj.RVals = [];
-            else
-                % if values are provided
-                obj.QVals = QVals;
-                obj.QVals = QVals;
-            end
+        function obj = pppFilter()
+            % TO DO: ALLOW FOR THE SETTING OF THE PARAMETERS WITH A
+            % CONFIGURATION FILE OR SOMETHING
+            
+            obj.PARAMS = obj.initParams;
+            
         end
     end
 
 
     % function signatures
     methods
-        complete = initialize(obj,varargin)
-        inertialNavEquationsEcef(obj,epoch,accMeasi,gyroMeasi);
-        lcUpdate(obj,epoch,posMeasi,velMeasi,accMeasi,gyroMeasi,PARAMS)
-        [extraInputs,measMatRemoved,measMatLow] = tcUpdate(obj,epoch,gnssMeas,...
-            accMeasi,gyroMeasi,PARAMS,outStruc,extraInputs,measMask)
+        complete = initialize(obj,corrData,varargin)
+        
+        % the time AND measurement update :O
+        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData,outStruc)
+        
         manageStates(obj,epoch,gnssMeas,PARAMS,outStruc);
         measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);        
         removeFlexState(obj,measInfoRemove);
+        
+        % This function basically just stores the default configuration of
+        % the filter
+        PARAMS = initParams(obj);
+        
     end
 
 
