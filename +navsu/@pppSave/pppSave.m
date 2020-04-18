@@ -162,7 +162,7 @@ classdef pppSave < handle
         midRunPlot(obj)
         plotResids(obj)
         closeSaveState(obj)
-        saveMeasRemoved(obj,epoch,measLow,measResids,measSlip)
+        [measRemove,epoch] = saveMeasRemoved(obj,epoch,measLow,measResids,measSlip)
         plotRemoved(obj)
         plotSol(obj,varargin)
     end

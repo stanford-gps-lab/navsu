@@ -8,6 +8,7 @@ outState.epoch = epoch;
 outState.pos   = obj.pos; 
 outState.resids = obj.resids;
 outState.residsInfo = [];
+outState.measRemoved = obj.measRemoved;
 
 if isempty(outData)
     % this is the first one- include some more information
@@ -21,6 +22,5 @@ if isempty(outData)
 end
 
 outData = [outData; outState];
-
 
 end

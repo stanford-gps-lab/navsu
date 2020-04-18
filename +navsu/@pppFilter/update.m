@@ -805,7 +805,7 @@ obj.allSatsSeen = sortrows(unique([measMat(:,1:2); obj.allSatsSeen],'rows'),2);
 if ~isempty(outStruc)
     [rangeResids,doppResids,elFull,azFull] = outStruc.saveResids(measMat,residsPost,epoch0,el,az,prnConstInds);
     
-    outStruc.saveMeasRemoved(epoch0,measMatRemovedLow,measMatRemoved);
+    [measRemoveSave,epochRemoveSave] = outStruc.saveMeasRemoved(epoch0,measMatRemovedLow,measMatRemoved);
 end
 
 obj.resids.epoch = epoch0;
@@ -813,6 +813,9 @@ obj.resids.range = rangeResids;
 obj.resids.doppler = doppResids;
 obj.resids.el      = elFull;
 obj.resids.az      = azFull;
+
+obj.measRemoved.measRemove = measRemoveSave;
+obj.measRemoved.epoch      = epochRemoveSave;
 
 end
 

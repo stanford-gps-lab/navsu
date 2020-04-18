@@ -1,4 +1,4 @@
-function saveMeasRemoved(obj,epoch,measLow,measResids,measSlip)
+function [measRemove,epochRemoved] = saveMeasRemoved(obj,epoch,measLow,measResids,measSlip)
 
 if nargin < 5
     measSlip = zeros(0,4);
@@ -37,6 +37,6 @@ obj.epochsRemoved(indsAdd) = epoch;
 
 obj.indRemoved = obj.indRemoved+nMeasRemove;
 
-
+epochRemoved = epoch*ones(length(indsAdd),1);
 
 end
