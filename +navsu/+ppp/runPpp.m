@@ -1,5 +1,4 @@
-function [outStruc,outData] = runPpp(filter,obsGnss,corrData,varargin)
-
+function outData = runPpp(filter,obsGnss,corrData,varargin)
 
 %% Sort all of the GNSS and IMU measurements
 % 1 = GNSS, 2 = IMU
@@ -16,8 +15,6 @@ runTimeStart = tic;
 pctDone = 0;
 h = waitbar(0,'0 Percent Complete');
 
-neverInitialized = true;
-
 %% Data to save
 outData = [];
 
@@ -28,10 +25,6 @@ for tdx = 1:nEpochs
     
     epochi = obsInfo(tdx,1);
     
-    measType = obsInfo(tdx,2);
-    
-    updated = true;
-    
     % GNSS measurements
     if ~any(obsi.range.obs(:))
         updated = false;
@@ -41,32 +34,12 @@ for tdx = 1:nEpochs
     % if not initialized, try to initialize :)
     if filter.initialized
         % Do the ppp update
-        if 1
-            % Manage the states in the filter :)
-            navsu.ppp.manageStatesMulti(filter,epochi,obsi,outStruc);
-            
-            % Do the time and measurement updates
-            filter.update(epochi,obsi,corrData,outStruc);
-        else
-            % or just do a least squares solution :)
-            filter.initialize(corrData,'gnssMeas',obsi);
-        end
+        % Do the time and measurement updates
+        filter.update(epochi,obsi,corrData);
+        
     else
         % need to initialize
         filter.initialize(corrData,'gnssMeas',obsi);
-        
-        if filter.initialized && neverInitialized
-            % IT WORKED!
-            outStruc = navsu.pppSave(obsInfo(:,1),length(filter.clockBias),obsGnss,...
-                obsGnss.epochs,filter.INDS_STATE,obsInfo(:,2),'gnssEpochsOnly',false);
-            epochLastPlot = obsInfo(1,1);
-            
-            outStruc.saveState(filter,filter.PARAMS,'tdx', tdx)
-        end
-    end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
-    
-    if updated
-        outStruc.saveState(filter,filter.PARAMS,'tdx',tdx);
     end
     
     outData = filter.saveState(outData,epochi,obsi);
@@ -81,7 +54,6 @@ for tdx = 1:nEpochs
 end
 
 close(h);
-outStruc.closeSaveState
 
 
 end

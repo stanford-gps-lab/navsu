@@ -1,5 +1,9 @@
 function [measMatRemoved,measMatRemovedLow] = ...
-    update(obj,epoch,obs,corrData,outStruc)
+    update(obj,epoch,obs,corrData)
+
+
+% Manage the states in the filter :)
+measRemovedSlip = navsu.ppp.manageStatesMulti(obj,epoch,obs);
 
 
 R_b_e = obj.R_b_e;
@@ -802,11 +806,43 @@ satsUsedi = unique(measMat(:,1:2),'rows');
 obj.allSatsSeen = sortrows(unique([measMat(:,1:2); obj.allSatsSeen],'rows'),2);
 
 %% Save for output
-if ~isempty(outStruc)
-    [rangeResids,doppResids,elFull,azFull] = outStruc.saveResids(measMat,residsPost,epoch0,el,az,prnConstInds);
+% if ~isempty(outStruc)
+    %     [rangeResids,doppResids,elFull,azFull] = outStruc.saveResids(measMat,residsPost,epoch0,el,az,prnConstInds);
     
-    [measRemoveSave,epochRemoveSave] = outStruc.saveMeasRemoved(epoch0,measMatRemovedLow,measMatRemoved);
-end
+%     [measRemoveSave,epochRemoveSave] = outStruc.saveMeasRemoved(epoch0,measMatRemovedLow,measMatRemoved);
+% end
+
+% Save the range residuals
+[~,indsSave] = ismember(measMat(measMat(:,end) == 1 | ...
+    measMat(:,end) == 2,[1 2 3 6]),[obs.range.PRN(:) obs.range.constInds(:) ...
+    obs.range.sig(:) obs.range.ind(:)],'rows');
+rangeResids = nan(size(obs.range.obs));
+rangeResids(indsSave) = residsPost(measMat(:,6) == 1 | measMat(:,6) == 2);
+
+% Save the doppler residuals
+[~,indsSave] = ismember(measMat(measMat(:,end) == 3 ,[1 2 3]),...
+    [obs.doppler.PRN(:) obs.doppler.constInds(:) ...
+    obs.doppler.sig(:) ],'rows');
+doppResids = nan(size(obs.doppler.obs));
+doppResids(indsSave) = residsPost(measMat(:,6) == 3);
+
+[~,indsEl] = ismember(prnConstInds,[obs.PRN' obs.constInds'],'rows');
+
+elFull = nan(size(el,1),1);
+elFull(indsEl) = el;
+azFull = nan(size(el,1),1);
+azFull(indsEl) = az;
+
+% Actually only keep the prn, const, and reason for elevation removals
+measLow = unique(measMatRemovedLow(:,[1 2]),'rows');
+
+% PRN | CONST | SIG  | MEAS TYPE (1=CODE,2=CARR,3=DOP) | REMOVAL REASON (1=ELEVATION,2=RESIDUALS, 3 = SLIP)
+measRemoveSave = [measLow(:,1:2) 0*ones(size(measLow,1),2) 1*ones(size(measLow,1),1);
+    measMatRemoved(:,[1:3 6]) 2*ones(size(measMatRemoved,1),1);
+    measRemovedSlip(:,[1 2 4]) 2*ones(size(measRemovedSlip,1),1) 3*ones(size(measRemovedSlip,1),1)];
+
+epochRemoveSave = epoch0*ones(size(measRemoveSave,1),1);
+
 
 obj.resids.epoch = epoch0;
 obj.resids.range = rangeResids;

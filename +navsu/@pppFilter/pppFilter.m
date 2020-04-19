@@ -62,7 +62,7 @@ classdef pppFilter < matlab.mixin.Copyable
         complete = initialize(obj,corrData,varargin)
         
         % the time AND measurement update :O
-        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData,outStruc)
+        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)
         
         manageStates(obj,epoch,gnssMeas,PARAMS,outStruc);
         measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);

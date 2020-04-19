@@ -5,7 +5,7 @@ function measRemovedFull = checkCycleSlips(obj,epoch,gnssMeas,PARAMS)
 % Compute current geometry free combination
 
 
-measRemovedFull = [];
+measRemovedFull = zeros(0,4);
 
 switch PARAMS.measUse.slipDetector
     case 'GFREE'

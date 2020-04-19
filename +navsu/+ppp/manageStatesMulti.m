@@ -1,4 +1,4 @@
-function measRemovedSlip = manageStatesMulti(obj,epoch,gnssMeas,outStruc)
+function measRemovedSlip = manageStatesMulti(obj,epoch,gnssMeas)
 
 if length(obj) > 1
     objList = obj;
@@ -21,10 +21,6 @@ if multiFilter && ~isempty(measRemovedSlip)
             objList(fdx).removeFlexState(measRemovedSlip(mdx,:));
         end
     end
-end
-
-if ~isempty(measRemovedSlip) && ~isempty(outStruc)
-    outStruc.saveMeasRemoved(epoch,zeros(0,2),zeros(0,6),measRemovedSlip);
 end
 
 %% Include new states in the filter.
