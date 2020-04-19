@@ -20,7 +20,8 @@ igsAc = 'GRG';
 constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 % Initialize the filter
-filter = navsu.pppFilter;
+filter = navsu.estimators.pppFilter;
+filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;
@@ -108,14 +109,6 @@ outData = navsu.ppp.runPpp(filter,obsGnssi,corrData);
 
 %%
 close all;
-
-% Plot measurement related outputs
-% outStruc.plotResidSummary;
-% outStruc.plotResids;
-% outStruc.plotRemoved;
-
-%% Plot position error
-% outStruc.plotSol('truePosEcef',truePosEcef);
 
 %% plot the skyplot
 % figure;
