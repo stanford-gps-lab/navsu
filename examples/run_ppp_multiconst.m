@@ -3,7 +3,7 @@
 %% inputs
 % RINEX v3 observation file
 filenameGnss = 'D:\PNT Data\Roof logs\swift-gnss-20200312-093212.sbp.obs';
-filenameGnss = 'C:\Users\kazgu\Desktop\Stanford\swift-gnss-20200312-093212.sbp.obs';
+% filenameGnss = 'C:\Users\kazgu\Desktop\Stanford\swift-gnss-20200312-093212.sbp.obs';
 
 % need a configutation file to set where to put downloaded products.  The
 % default included is called default.ini
@@ -21,7 +21,7 @@ constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 % Initialize the filter
 filter = navsu.estimators.pppFilter;
-filter = navsu.estimators.leastSq;
+% filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;

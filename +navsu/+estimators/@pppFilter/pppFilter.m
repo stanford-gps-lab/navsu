@@ -73,6 +73,14 @@ classdef pppFilter < matlab.mixin.Copyable
         PARAMS = initParams(obj);
         
         outData = saveState(obj,outData,epoch,obs);
+        
+    end
+    
+    methods (Access = private)
+        timeUpdate(obj,epoch)
+        
+        measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
+
     end
     
     methods(Static)
