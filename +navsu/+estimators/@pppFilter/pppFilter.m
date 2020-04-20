@@ -80,7 +80,17 @@ classdef pppFilter < matlab.mixin.Copyable
         timeUpdate(obj,epoch)
         
         measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
-
+        
+        [predMeas,H,sig] = doppModel(obj,nState,dVel,A,rxDrift,constInd)
+        
+        [predMeas,H,sig] = carrierModel(obj,nState,sigi,freqi,tecSlant,state,m,indIonosi, ...
+            indMpCarrsi,indAmbStatesi,phWind,gRange,satBias,rxBias,trop,stRangeOffset,...
+            relClockCorr,relRangeCorr,A,constIndi)
+        
+        [predMeas,H,sig] = codeModel(obj,nState,sigi,freqi,tecSlant,state,...
+            constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
+            relClockCorr,relRangeCorr,A)
+        
     end
     
     methods(Static)

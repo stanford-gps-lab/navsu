@@ -27,7 +27,7 @@ filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;
 filter.PARAMS.Q.VEL = 0;
 
-filter.PARAMS.measMask.f1 = [0 0 0]';
+filter.PARAMS.measMask.f1 = [0 0 1]';
 filter.PARAMS.measMask.f2 = [0 0 0]';
 filter.PARAMS.measMask.f3 = [0 0 0]';
 

@@ -61,7 +61,7 @@ constIndDopMat = repmat(obs.constInds,size(obs.doppler.obs,1),1);
 % 1 PRN | 2 const | 3 signal (sf/df) | 4 freq | 5 meas | 6 (1=pr,2=ph,3=dop)
 measMat = [measMat; [prnDopMat(indsMeasDop) constIndDopMat(indsMeasDop) ...
     obs.doppler.sig(indsMeasDop) obs.doppler.freqs(indsMeasDop) ...
-    -obs.doppler.obs(indsMeasDop) 3*ones(size(indsMeasDop))]];
+    obs.doppler.obs(indsMeasDop) 3*ones(size(indsMeasDop))]];
 
 nMeas = size(measMat,1);
 
@@ -163,14 +163,13 @@ if nMeas > 0
     
     % geometric range
     gRange = sqrt(sum((svPosRot-pos').^2,2));
-    dVel   = dot([+svVel-vel']',-A')';
-    dVel2 = vel'-svVel;
+    dVel = vel'-svVel;
     
     %%
     [~,losInds] = ismember(measMat(:,[1 2]),prnConstInds,'rows');
     [~,indAmbStates] = ismember([measMat(:,[1 2 3]) ones(size(measMat,1),1)],obj.INDS_STATE.FLEX_STATES_INFO(:,[1 2 4 3]),'rows');
     [~,indIonos]   =ismember([measMat(:,1:2) 2*ones(size(measMat,1),1)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:3),'rows');
-    [~,indGloDcbs] =ismember([measMat(:,1:2) 3*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');    
+    [~,indGloDcbs] =ismember([measMat(:,1:2) 3*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
     [~,indMpCodes] =ismember([measMat(:,1:2) 4*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
     [~,indMpCarrs] =ismember([measMat(:,1:2) 5*ones(size(measMat,1),1) measMat(:,3)],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
     
@@ -189,160 +188,40 @@ if nMeas > 0
         losInd = losInds(idx);
         weighti = 1 ./ (sin(el(losInd)).^2);
         
-        if nSats < 0
-            %             weighti = weighti * 10000;
-            sigAddRange = 100^2;
-            sigAddDoppler = 100^2;
-        else
-            sigAddRange = 0;
-            sigAddDoppler = 0;
-        end
-        
         switch measTypei
             case 1
-                %% code
-                if sigi < 100 && strcmp(PARAMS.states.ionoMode,'TEC')
-                    % If it's single frequency, need to include iono correction
-                    ionoCorri = -tecSlant(losInd)*40.3*10^15./freqi.^2;
-                    
-                elseif sigi < 100 && strcmp(PARAMS.states.ionoMode,'L1DELAYSTATE')
-                    
-                    ionoCorrModel = -tecSlant(losInd)*40.3*10^15./freqi.^2;
-                    
-                    indIono = obj.INDS_STATE.FLEX_STATES(indIonos(idx));
-                    delayL1i = x_est_propagated(indIono);
-                    
-                    hi = -(1575.42e6).^2./freqi.^2;
-                    H(idx,indIono) = hi;
-                    ionoCorri = delayL1i*hi+ionoCorrModel;
-                else
-                    ionoCorri = 0;
-                end
+                % Code phase measurement
+                [predMeasi,Hii,sigMeasi] = codeModel(obj,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
+                    constIndi,indGloDcbs(idx),indMpCodes(idx),m(losInd),gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),stRangeOffset(losInd),...
+                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));
                 
-                if PARAMS.states.RX_DCB && ~(PARAMS.states.RX_DCB_GLO && constIndi == 2) ...
-                        && ~(PARAMS.states.RX_DCB_GPS && constIndi == 1)
-                    indRxDcb = find(obj.INDS_STATE.RX_DCB.sig == sigi & obj.INDS_STATE.RX_DCB.constInds == constIndi, 1);
-                    if ~isempty(indRxDcb)
-                        rxDcb = x_est_propagated(obj.INDS_STATE.RX_DCB.INDS(indRxDcb));
-                        H(idx,obj.INDS_STATE.RX_DCB.INDS(indRxDcb)) = 1;
-                    else
-                        rxDcb = 0;
-                    end
-                else
-                    rxDcb = 0;
-                end
-                
-                if PARAMS.states.RX_DCB_GPS && constIndi == 1 && indGloDcbs(idx)~= 0
-                    indDcbGlo = obj.INDS_STATE.FLEX_STATES(indGloDcbs(idx));
-                    dcbGpsi = x_est_propagated(indDcbGlo);
-                    H(idx,indDcbGlo) = 1;
-                else
-                    dcbGpsi = 0;
-                end
-                
-                if PARAMS.states.RX_DCB_GLO && constIndi == 2 && indGloDcbs(idx)~= 0
-                    indDcbGlo = obj.INDS_STATE.FLEX_STATES(indGloDcbs(idx));
-                    dcbGloi = x_est_propagated(indDcbGlo);
-                    H(idx,indDcbGlo) = 1;
-                else
-                    dcbGloi = 0;
-                end
-                
-                if PARAMS.states.MP_CODE
-                    indMpCode = obj.INDS_STATE.FLEX_STATES(indMpCodes(idx));
-                    mpCodei   = x_est_propagated(indMpCode);
-                    H(idx,indMpCode) = 1;
-                else
-                    mpCodei = 0;
-                end
-                
-                if PARAMS.states.trop
-                    dtrop = m(losInd)*x_est_propagated(obj.INDS_STATE.TROP);
-                    H(idx,obj.INDS_STATE.TROP) = m(losInd);
-                else
-                    dtrop = 0;
-                end
-                
-                pred_meas(idx) = gRange(losInd)+satBias(losInd)+rxBias(losInd)+trop(losInd)+dtrop+...
-                    stRangeOffset(losInd)+relClockCorr(losInd)+relRangeCorr(losInd)+ionoCorri+rxDcb+...
-                    dcbGloi+dcbGpsi+mpCodei;
-                
-                H(idx,obj.INDS_STATE.POS)        = A(losInd,:);
-                H(idx,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;
-                
-                if sigi < 100
-                    R(idx,idx) = weighti.*3^2+sigAddRange;
-                else
-                    R(idx,idx) = weighti.*3^2+sigAddRange;
-                end
+                ri = weighti.*sigMeasi^2;
                 
             case 2
-                %% carrier
-                if sigi < 100 && strcmp(PARAMS.states.ionoMode,'TEC')
-                    % If it's single frequency, need to include iono correction
-                    ionoCorri = +tecSlant(losInd)*40.3*10^15./freqi.^2;
-                    
-                elseif sigi < 100 && strcmp(PARAMS.states.ionoMode,'L1DELAYSTATE')
-                    ionoCorrModel = -tecSlant(losInd)*40.3*10^15./freqi.^2;
-                    
-                    indIono = obj.INDS_STATE.FLEX_STATES(indIonos(idx));
-                    delayL1i = x_est_propagated(indIono);
-                    
-                    hi = (1575.42e6).^2./freqi.^2;
-                    H(idx,indIono) = hi;
-                    
-                    ionoCorri = hi*delayL1i+ionoCorrModel;
-                else
-                    ionoCorri = 0;
-                end
+                % Carrier phase measurement
+                [predMeasi,Hii,sigMeasi] = carrierModel(obj,nState,sigi,freqi,...
+                    tecSlant(losInd),x_est_propagated,m(losInd),indIonos(idx), ...
+                    indMpCarrs(idx),indAmbStates(idx),phWind(losInd),...
+                    gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),...
+                    stRangeOffset(losInd),relClockCorr(losInd),relRangeCorr(losInd),...
+                    A(losInd,:),constIndi);
                 
-                if PARAMS.states.MP_CARR
-                    indMpCarr = obj.INDS_STATE.FLEX_STATES(indMpCarrs(idx));
-                    mpCarri   = x_est_propagated(indMpCarr);
-                    H(idx,indMpCarr) = 1;
-                else
-                    mpCarri = 0;
-                end
-                
-                if PARAMS.states.trop
-                    dtrop = m(losInd)*x_est_propagated(obj.INDS_STATE.TROP);
-                    H(idx,obj.INDS_STATE.TROP) = m(losInd);
-                else
-                    dtrop = 0;
-                end
-                
-                indAmbState = obj.INDS_STATE.FLEX_STATES(indAmbStates(idx));
-                
-                ambEst = x_est_propagated(indAmbState);
-                
-                % Carrier phase windup
-                phWindi = phWind(losInd)*c/freqi;
-                
-                pred_meas(idx) = gRange(losInd)+satBias(losInd)+rxBias(losInd)+...
-                    trop(losInd)+dtrop+stRangeOffset(losInd)+relClockCorr(losInd)+...
-                    relRangeCorr(losInd)+ionoCorri+ambEst+phWindi+mpCarri;
-                
-                H(idx,obj.INDS_STATE.POS)        = A(losInd,:);
-                H(idx,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;
-                H(idx,indAmbState)              = 1;
-                
-                if sigi < 100
-                    R(idx,idx) = weighti.*0.03^2+sigAddRange;
-                else
-                    R(idx,idx) = weighti.*0.03^2+sigAddRange;
-                end
+                ri = weighti.*sigMeasi^2;
                 
             case 3
-                % doppler
-                pred_meas(idx) = -dot(dVel2(losInd,:),-A(losInd,:))-rxDrift(losInd);
+                % Doppler measurement
+                [predMeasi,Hii,sigMeasi] = obj.doppModel(nState,dVel(losInd,:),...
+                    A(losInd,:),rxDrift(losInd),constIndi);
                 
-                H(idx,obj.INDS_STATE.VEL) = -A(losInd,:);
-                H(idx,obj.INDS_STATE.CLOCK_DRIFT(constIndi)) = -1;
-                 
-                R(idx,idx) = weighti*0.05^2+sigAddDoppler;
-                
-                measMat(idx,5) = -measMat(idx,5);
+                ri = weighti*sigMeasi^2;
         end
+        
+        % Put computed predicted measurement, sensitivity, and
+        % measurement sigma into their respective places.
+        
+        pred_meas(idx) = predMeasi;
+        H(idx,:) = Hii;
+        R(idx,idx) = ri;
     end
     
     % Remove measurements from satellites that are too low
