@@ -193,9 +193,7 @@ if nMeas > 0
                 % Code phase measurement
                 [predMeasi,Hii,sigMeasi] = codeModel(obj,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
                     constIndi,indGloDcbs(idx),indMpCodes(idx),m(losInd),gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),stRangeOffset(losInd),...
-                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));
-                
-                ri = weighti.*sigMeasi^2;
+                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));                
                 
             case 2
                 % Carrier phase measurement
@@ -206,22 +204,18 @@ if nMeas > 0
                     stRangeOffset(losInd),relClockCorr(losInd),relRangeCorr(losInd),...
                     A(losInd,:),constIndi);
                 
-                ri = weighti.*sigMeasi^2;
-                
             case 3
                 % Doppler measurement
                 [predMeasi,Hii,sigMeasi] = obj.doppModel(nState,dVel(losInd,:),...
                     A(losInd,:),rxDrift(losInd),constIndi);
                 
-                ri = weighti*sigMeasi^2;
         end
         
         % Put computed predicted measurement, sensitivity, and
         % measurement sigma into their respective places.
-        
         pred_meas(idx) = predMeasi;
         H(idx,:) = Hii;
-        R(idx,idx) = ri;
+        R(idx,idx) = weighti*sigMeasi^2;
     end
     
     % Remove measurements from satellites that are too low
