@@ -11,7 +11,7 @@ PARAMS.measUse = struct(...
     'L1_THRESH',         20,...            % SNR threshold for L1
     'L2_THRESH',         20,...            % SNR threshold for L2
     'excludeThreshLarge',[50 10 10*Inf Inf],...    % Code, carrier, and doppler and pseudo-meas large residuals thresholds
-    'excludeThresh',     [10 0.05 0.05 Inf],... % Code, carrier, and doppler and pseudo-meas residuals thresholds
+    'excludeThresh',     [10 0.05 0.5 Inf],... % Code, carrier, and doppler and pseudo-meas residuals thresholds
     'gFreeSlipThresh',   0.05,...          % Threshold for cycle slip- geometry free [m]
     'slipDetector',      'GFREE',...   % Cycle slip detector ('RX_OUTPUT','GFREE')
     'noVertVel',         false);          % 0 vertical velocity constraint
