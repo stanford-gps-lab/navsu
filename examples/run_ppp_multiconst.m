@@ -31,6 +31,8 @@ filter.PARAMS.measMask.f1 = [0 0 1]';
 filter.PARAMS.measMask.f2 = [0 0 0]';
 filter.PARAMS.measMask.f3 = [0 0 0]';
 
+filter.PARAMS.measUse.noVertVel = 1;
+
 %% Read observation file
 if ~exist('obsStruc','var')   
     disp('Reading observation file')
@@ -96,7 +98,6 @@ obsDes  = {{'C1C'} {'L1C'} {'S1C'}  {'D1C'} {'C2S'} {'L2S'} {'S2S'} {'D2S'} {'C2
     {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
     {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}  };
 
-
 % signal pairs to include as iono-free combinations
 ifPairs = [1 3;
     1 2];
@@ -107,16 +108,11 @@ ifPairs = [1 3;
 %% do the ppp lol
 outData = navsu.ppp.runPpp(filter,obsGnssi,corrData);
 
+
 %%
 close all;
 
-%% plot the skyplot
-% figure;
-% navsu.geo.skyPlot(outStruc.gnssData.az'*180/pi,outStruc.gnssData.el'*180/pi);
-
-%%
 filter.plotOutput(outData,'truePosEcef',truePosEcef);
-
 
 
 

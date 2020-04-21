@@ -42,6 +42,7 @@ for tdx = 1:nEpochs
         filter.initialize(corrData,'gnssMeas',obsi);
     end
     
+    % Save some things for output
     outData = filter.saveState(outData,epochi,obsi);
     
     % Update the waitbar
