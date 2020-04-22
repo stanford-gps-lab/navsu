@@ -9,7 +9,7 @@ PARAMS = obj.PARAMS;
 c = navsu.constants.c;
 
 % State- has been propagated in the time update
-x_est_propagated = obj.state;
+statePropagated = obj.state;
 
 % Receiver position
 pos = obj.pos;
@@ -18,20 +18,20 @@ pos = obj.pos;
 vel = obj.vel;
 
 % 
-cov_propagated  = obj.cov;
-nState = size(cov_propagated,1);
+covPropagated  = obj.cov;
+nState = size(covPropagated,1);
 
 epoch0 = epoch;
 
 %% GNSS Measurements
-[pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch0,obs,corrData);
+[predMeas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch0,obs,corrData);
 
 %% Pseudomeasurements
 if PARAMS.measUse.noVertVel
    [predMeasi,Hi,Ri,measMati] = handleVehicleConstraintPseudomeas(obj);
 
     % Add everything
-    pred_meas = [pred_meas; predMeasi];
+    predMeas = [predMeas; predMeasi];
     H         = [H; Hi];
     measMat   = [measMat; measMati];
     
@@ -46,36 +46,36 @@ nMeas = size(H,1);
 if nMeas > 0
     % Measurement were available- do the update.
     [H,delta_z,residsPost,K,measMat,~,measMatRemoved,R] = ...
-        navsu.ppp.measUpdateExclude(H,cov_propagated,R,measMat,pred_meas,PARAMS);
+        navsu.ppp.measUpdateExclude(H,covPropagated,R,measMat,predMeas,PARAMS);
     
     % 9. Update state estimates
-    x_est_new = x_est_propagated + K * delta_z;
+    stateNew = statePropagated + K * delta_z;
     
     % Update covariance
-    cov = (eye(nState) - K * H) * cov_propagated;
+    cov = (eye(nState) - K * H) * covPropagated;
     
 else
     % No measurement update
-    x_est_new = x_est_propagated;
+    stateNew = statePropagated;
     
-    cov = cov_propagated;
+    cov = covPropagated;
     
     measMatRemoved = zeros(0,6);
     residsPost = [];
 end
 
 %% Update the position and velocity values
-vel = vel - x_est_new(obj.INDS_STATE.VEL);
-pos = pos - x_est_new(obj.INDS_STATE.POS);
+vel = vel - stateNew(obj.INDS_STATE.VEL);
+pos = pos - stateNew(obj.INDS_STATE.POS);
 
-obj.clockBias  = x_est_new(obj.INDS_STATE.CLOCK_BIAS);
-obj.clockDrift = x_est_new(obj.INDS_STATE.CLOCK_DRIFT);
+obj.clockBias  = stateNew(obj.INDS_STATE.CLOCK_BIAS);
+obj.clockDrift = stateNew(obj.INDS_STATE.CLOCK_DRIFT);
 
 % put updated values into object
 obj.vel   = vel;
 obj.pos   = pos;
 obj.cov  = cov;
-obj.state = x_est_new;
+obj.state = stateNew;
 obj.posPrevTc = pos;
 
 % Deal with resets if any of the removed measurements were carrier phases
@@ -131,3 +131,11 @@ obj.measRemoved.measRemove = measRemoveSave;
 obj.measRemoved.epoch      = epochRemoveSave;
 
 end
+
+
+% function catMeas(predMeas,predMeasi,
+% concatenate the measurement information!
+
+
+
+% end
