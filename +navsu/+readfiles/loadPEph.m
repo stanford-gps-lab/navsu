@@ -295,7 +295,14 @@ end
         dayFrac = rem(dayNum,1);
         dayNum = floor(dayNum);
         
-        Peph          = [];
+        Peph.PRN           = [];
+        Peph.clock_bias    = [];
+        Peph.clock_drift   = [];
+        Peph.position      = [];
+        Peph.velocity      = [];
+        Peph.Event         = [];
+        Peph.epochs        = [];
+        Peph.constellation = [];        
         PFileName     = [];
         PFileNameFull = [];
         % look for RINEX3 format file first, then fall back on old
