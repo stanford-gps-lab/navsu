@@ -78,7 +78,8 @@ if isempty(obj.PEph)
     Peph2.constellation = constInds;
     for pdx = 1:length(prns)
         indsi = find(Peph.PRN == prns(pdx) & Peph.constellation == constInds(pdx));
-        [~,inds2] = ismember(epochsPeph,Peph.epochs(indsi));
+%         [~,inds2] = ismember(epochsPeph,Peph.epochs(indsi));
+        [~,inds2] = ismember(Peph.epochs(indsi),epochsPeph);
         
         Peph2.clock_bias(inds2,pdx) = Peph.clock_bias(indsi);
         Peph2.clock_drift(inds2,pdx) = Peph.clock_drift(indsi);
