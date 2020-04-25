@@ -2,7 +2,6 @@ classdef leastSq < matlab.mixin.Copyable
     
     
     properties
-        
         state   % the state of the filter -> should be of type pppanal.ppp.State
         cov     % covariance of the state
         
@@ -17,9 +16,7 @@ classdef leastSq < matlab.mixin.Copyable
         % all satellites used in the solution- useful for solution
         % separation :)
         allSatsSeen
-        
-%         INDS_STATE
-        
+                
         initialized = true % it's always initialized :)
         
         PARAMS % parameters associated with the running of this filter!

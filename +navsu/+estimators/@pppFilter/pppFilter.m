@@ -59,7 +59,7 @@ classdef pppFilter < matlab.mixin.Copyable
     
     % function signatures
     methods
-        complete = initialize(obj,corrData,varargin)
+        complete = initialize(obj,corrData,obs,varargin)
         
         % the time AND measurement update :O
         [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)

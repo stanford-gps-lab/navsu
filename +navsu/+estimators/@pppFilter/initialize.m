@@ -1,4 +1,4 @@
-function complete = initialize(obj,corrData,varargin)
+function complete = initialize(obj,corrData,obs,varargin)
 
 p = inputParser;
 
@@ -27,16 +27,22 @@ clockDrift    = res.clockDrift;
 clockBias     = res.clockBias;
 PRN           = res.PRN(:);
 constInds     = res.constInds(:);
-rangeStruc    = res.range;
-gnssMeas      = res.gnssMeas;
-epoch         = res.epoch;
+
+
+%% Sort out what is available in the measurements
+
+gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+
+if isempty(gnssMeas)
+    % Currently, we need a GNSS measurement in order to proceed.
+    return;
+end
 
 rangeStruc = gnssMeas.range;
 
 PARAMS = obj.PARAMS;
 
-%% Did the filter initialize successfully
-% complete = false;
+%% 
 
 %% If any values weren't provided directly, need to just try some least squares
 % Did the filter initialize successfully

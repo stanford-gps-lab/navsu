@@ -20,11 +20,13 @@ vel = obj.vel;
 % 
 covPropagated  = obj.cov;
 nState = size(covPropagated,1);
-
 epoch0 = epoch;
 
+%% Pull out what measurements are available
+gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+
 %% GNSS Measurements
-[predMeas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch0,obs,corrData);
+[predMeas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch0,gnssMeas,corrData);
 
 %% Pseudomeasurements
 if PARAMS.measUse.noVertVel
@@ -92,19 +94,19 @@ end
 obj.allSatsSeen = sortrows(unique([measMat(:,1:2); obj.allSatsSeen],'rows'),2);
 
 [~,indsSave] = ismember(measMat(measMat(:,end) == 1 | ...
-    measMat(:,end) == 2,[1 2 3 6]),[obs.range.PRN(:) obs.range.constInds(:) ...
-    obs.range.sig(:) obs.range.ind(:)],'rows');
-rangeResids = nan(size(obs.range.obs));
+    measMat(:,end) == 2,[1 2 3 6]),[gnssMeas.range.PRN(:) gnssMeas.range.constInds(:) ...
+    gnssMeas.range.sig(:) gnssMeas.range.ind(:)],'rows');
+rangeResids = nan(size(gnssMeas.range.obs));
 rangeResids(indsSave) = residsPost(measMat(:,6) == 1 | measMat(:,6) == 2);
 
 % Save the doppler residuals
 [~,indsSave] = ismember(measMat(measMat(:,end) == 3 ,[1 2 3]),...
-    [obs.doppler.PRN(:) obs.doppler.constInds(:) ...
-    obs.doppler.sig(:) ],'rows');
-doppResids = nan(size(obs.doppler.obs));
+    [gnssMeas.doppler.PRN(:) gnssMeas.doppler.constInds(:) ...
+    gnssMeas.doppler.sig(:) ],'rows');
+doppResids = nan(size(gnssMeas.doppler.obs));
 doppResids(indsSave) = residsPost(measMat(:,6) == 3);
 
-[~,indsEl] = ismember(prnConstInds,[obs.PRN' obs.constInds'],'rows');
+[~,indsEl] = ismember(prnConstInds,[gnssMeas.PRN' gnssMeas.constInds'],'rows');
 
 elFull = nan(size(el,1),1);
 elFull(indsEl) = el;

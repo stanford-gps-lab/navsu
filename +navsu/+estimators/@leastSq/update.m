@@ -1,4 +1,4 @@
-function update(obj,epoch,gnssMeas,corrData)
+function update(obj,epoch,obs,corrData)
 
 PARAMS = obj.PARAMS;
 
@@ -9,6 +9,10 @@ pos = nan(3,1);
 vel = nan(3,1);
 clockBias = [];
 clockDrift = [];
+
+%%
+gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+
 
 %% If any values weren't provided directly, need to just try some least squares
 % Did the filter initialize successfully

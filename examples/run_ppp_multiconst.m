@@ -1,4 +1,4 @@
-% Sctipt to run a simple PPP algorithm using the xona-pnt repo
+% Sctipt to run a simple PPP algorithm using the navsu repo
 
 %% inputs
 % RINEX v3 observation file
@@ -20,8 +20,8 @@ igsAc = 'GRG';
 constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 % Initialize the filter
-filter = navsu.estimators.pppFilter;
-% filter = navsu.estimators.leastSq;
+% filter = navsu.estimators.pppFilter;
+filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;
@@ -102,12 +102,15 @@ obsDes  = {{'C1C'} {'L1C'} {'S1C'}  {'D1C'} {'C2S'} {'L2S'} {'S2S'} {'D2S'} {'C2
 ifPairs = [1 3;
     1 2];
 
-[obsGnssi, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,obsInds,signalInds,...
+[gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,obsInds,signalInds,...
     obsDes,ifPairs,corrData,'downsampleFac',downsampleFac,'epochStart',epochStart);
 
-%% do the ppp lol
-outData = navsu.ppp.runPpp(filter,obsGnssi,corrData);
 
+% Sync all measurements
+fullMeas = navsu.ppp.syncMeas(gnssMeas);
+
+%% do the ppp lol
+outData = navsu.ppp.runPpp(filter,fullMeas,corrData);
 
 %%
 close all;

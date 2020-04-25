@@ -12,7 +12,7 @@ truePosEcef          = res.truePosEcef;          % truth position to compare to
 % Plot the position and clock bias in ENU
 xyz = [outputs.pos]';
 epochs = [outputs.epoch]';
-b = nan(size(epochs));
+b = zeros(size(epochs));
 
 llh0 = navsu.geo.xyz2llh(xyz(1,:));
 

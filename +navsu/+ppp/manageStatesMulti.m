@@ -1,4 +1,4 @@
-function measRemovedSlip = manageStatesMulti(obj,epoch,gnssMeas)
+function measRemovedSlip = manageStatesMulti(obj,epoch,obs)
 
 if length(obj) > 1
     objList = obj;
@@ -11,6 +11,14 @@ else
 end
 
 PARAMS = obj.PARAMS;
+
+gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+
+if isempty(gnssMeas)
+    % Currently, we need a GNSS measurement in order to proceed.
+    measRemovedSlip = [];
+    return;
+end
 
 % Check for cycle slips so that these can be removed and reset
 measRemovedSlip = obj.checkCycleSlips(epoch,gnssMeas,PARAMS);

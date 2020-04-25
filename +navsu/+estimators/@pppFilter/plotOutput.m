@@ -12,7 +12,7 @@ truePosEcef          = res.truePosEcef;          % truth position to compare to
 % Plot the position and clock bias in ENU
 xyz = [outputs.pos]';
 epochs = [outputs.epoch]';
-b = nan(size(epochs));
+b = zeros(size(epochs));
 
 llh0 = navsu.geo.xyz2llh(xyz(1,:));
 
@@ -99,7 +99,7 @@ axes(ha(3))
 residsDoppler = reshape(residsDoppler,size(residsDoppler,1)*size(residsDoppler,2),size(residsDoppler,3));
 
 % plot(tPlot,residsPh(constsPh == 1,:),'-')
-plot(tPlot,residsDoppler)
+plot(tPlot,residsDoppler,'.')
 
 xlim([0 max(tPlot)]); grid on;
 xlabel('Minutes into run')

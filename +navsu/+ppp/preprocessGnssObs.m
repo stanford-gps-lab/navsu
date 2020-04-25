@@ -1,4 +1,4 @@
-function [obsGnss dcbCorr] = preprocessGnssObs(obsGnssRaw,obsInds,signalInds,obsDes,...
+function [outCells, dcbCorr] = preprocessGnssObs(obsGnssRaw,obsInds,signalInds,obsDes,...
     ifPairs,corrData,varargin)
 
 % this is mostly a wrapper for svPosFromProd
@@ -464,4 +464,25 @@ obsGnss.range.obs   = obsGnss.range.obs(:,:,indsGnssMeas);
 obsGnss.doppler.obs = obsGnss.doppler.obs(:,:,indsGnssMeas);
 obsGnss.snr.obs     = obsGnss.snr.obs(:,:,indsGnssMeas);
 
+%% Now, convert to a cell array output :)
+outCells = cell(length(obsGnss.epochs),1);
+cell0 = obsGnss;
+cell0.epochs = [];
+cell0.range.obs = [];
+cell0.doppler.obs = [];
+cell0.snr.obs = [];
+cell0.type = navsu.internal.MeasEnum.GNSS;
+
+for idx = 1:length(obsGnss.epochs)
+    celli = cell0;
+    celli.epochs = obsGnss.epochs(idx);
+    celli.range.obs = obsGnss.range.obs(:,:,idx);
+    celli.doppler.obs = obsGnss.doppler.obs(:,:,idx);
+    celli.snr.obs     = obsGnss.snr.obs(:,:,idx);
+    
+    if ~isempty(obsGnss.range.lockTime)
+       obsGnss.range.lockTime = obsGnss.range.lockTime(:,:,idx); 
+    end
+    
+    outCells{idx} = celli;
 end

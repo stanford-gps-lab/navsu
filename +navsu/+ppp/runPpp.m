@@ -1,14 +1,8 @@
-function outData = runPpp(filter,obsGnss,corrData,varargin)
+function outData = runPpp(filter,obs,corrData,varargin)
 
-%% Sort all of the GNSS and IMU measurements
-% 1 = GNSS, 2 = IMU
-%                      EPOCH      |        GNSS/IMU            |  INDEX WITHIN TYPE
-obsInfo = sortrows([obsGnss.epochs 1*ones(size(obsGnss.epochs)) [1:size(obsGnss.epochs)]'],1);
+%% 
 
-indStart = min(find(obsInfo(:,2) == 1));
-obsInfo = obsInfo(indStart:end,:);
-
-nEpochs = size(obsInfo,1);
+nEpochs = size(obs,1);
 
 % Initialize the waitbar
 runTimeStart = tic;
@@ -21,25 +15,17 @@ outData = [];
 %% Run the loop
 for tdx = 1:nEpochs
     % Pull the measurement from the full list
-    obsi = navsu.ppp.stripMeas({obsGnss},obsInfo(tdx,2),obsInfo(tdx,3));
+    obsi = obs{tdx};
     
-    epochi = obsInfo(tdx,1);
-    
-    % GNSS measurements
-    if ~any(obsi.range.obs(:))
-        updated = false;
-        continue;
-    end
+    epochi = obsi{1}.epochs;
     
     % if not initialized, try to initialize :)
     if filter.initialized
-        % Do the ppp update
         % Do the time and measurement updates
         filter.update(epochi,obsi,corrData);
-        
     else
         % need to initialize
-        filter.initialize(corrData,'gnssMeas',obsi);
+        filter.initialize(corrData,obsi);
     end
     
     % Save some things for output
