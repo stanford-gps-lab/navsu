@@ -94,6 +94,8 @@ classdef pppFilter < matlab.mixin.Copyable
         [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch,obs,corrData)
        
         [pred_measi,Hi,ri,measMati] = handleVehicleConstraintPseudomeas(obj)
+        
+        [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,posMeas)
 
     end
     

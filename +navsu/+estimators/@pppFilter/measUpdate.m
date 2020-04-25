@@ -26,21 +26,19 @@ epoch0 = epoch;
 gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
 
 %% GNSS Measurements
+gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
 [predMeas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch0,gnssMeas,corrData);
 
+%% Position measurment
+[predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.Position));
+
+[predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri);
+
 %% Pseudomeasurements
-if PARAMS.measUse.noVertVel
+if PARAMS.measUse.noVertVel 
    [predMeasi,Hi,Ri,measMati] = handleVehicleConstraintPseudomeas(obj);
 
-    % Add everything
-    predMeas = [predMeas; predMeasi];
-    H         = [H; Hi];
-    measMat   = [measMat; measMati];
-    
-    R2 = zeros(size(R,1)+2,size(R,1)+2);
-    R2(1:size(R,1),1:size(R,1)) = R;
-    R2((end-1):end,(end-1):end) = Ri;
-    R = R2;
+    [predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri);
 end
 
 nMeas = size(H,1);
@@ -135,9 +133,17 @@ obj.measRemoved.epoch      = epochRemoveSave;
 end
 
 
-% function catMeas(predMeas,predMeasi,
+function [predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri)
 % concatenate the measurement information!
+% Add everything
+    predMeas = [predMeas; predMeasi];
+    H         = [H; Hi];
+    measMat   = [measMat; measMati];
+    
+    R2 = zeros(size(R,1)+size(Ri,1),size(R,1)+size(Ri,1));
+    R2(1:size(R,1),1:size(R,1)) = R;
+    R2((end-(size(Ri,1)-1)):end,(end-(size(Ri,1)-1)):end) = Ri;
+    R = R2;
 
 
-
-% end
+end

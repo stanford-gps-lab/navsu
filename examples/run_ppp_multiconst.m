@@ -2,8 +2,8 @@
 
 %% inputs
 % RINEX v3 observation file
-filenameGnss = 'D:\PNT Data\Roof logs\swift-gnss-20200312-093212.sbp.obs';
-% filenameGnss = 'C:\Users\kazgu\Desktop\Stanford\swift-gnss-20200312-093212.sbp.obs';
+% filenameGnss = 'D:\PNT Data\Roof logs\swift-gnss-20200312-093212.sbp.obs';
+filenameGnss = 'C:\Users\kazgu\Desktop\Stanford\swift-gnss-20200312-093212.sbp.obs';
 
 % need a configutation file to set where to put downloaded products.  The
 % default included is called default.ini
@@ -15,13 +15,13 @@ truePosEcef = [-2706115.1823 -4278731.1983 3866392.5504];
 % Three letter code indicating desired IGS analysis center
 igsAc = 'GRG';
 
-%%
+%
 % this should be multi-constellation!
 constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 % Initialize the filter
-% filter = navsu.estimators.pppFilter;
-filter = navsu.estimators.leastSq;
+filter = navsu.estimators.pppFilter;
+% filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;
@@ -107,10 +107,10 @@ ifPairs = [1 3;
 
 
 % Sync all measurements
-fullMeas = navsu.ppp.syncMeas(gnssMeas);
+% fullMeas = navsu.ppp.syncMeas(gnssMeas);
 
 %% do the ppp lol
-outData = navsu.ppp.runPpp(filter,fullMeas,corrData);
+outData = navsu.ppp.runPpp(filter,{gnssMeas},corrData);
 
 %%
 close all;

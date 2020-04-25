@@ -1,8 +1,23 @@
 function outData = runPpp(filter,obs,corrData,varargin)
 
-%% 
+%% Sync all measurements 
+% measTypeEnums = enumeration(navsu.internal.MeasEnum.GNSS);
+% measStruc = cell2struct(repmat({[]},length(measTypeEnums),1),cellstr(measTypeEnums));
 
-nEpochs = size(obs,1);
+% go through each measurement struct given and put it in here
+epochsFull =[];
+for idx = 1:length(obs)
+    epochsFull = [epochsFull; obs{idx}.epochs];
+end
+epochs = unique(epochsFull);
+obsMap = nan(length(epochs),length(obs));
+for idx = 1:length(obs)
+    [~,ixb] = ismember(epochs,obs{idx}.epochs);
+    obsMap(:,idx) = ixb;
+end
+
+%%
+nEpochs = length(epochs);
 
 % Initialize the waitbar
 runTimeStart = tic;
@@ -15,9 +30,9 @@ outData = [];
 %% Run the loop
 for tdx = 1:nEpochs
     % Pull the measurement from the full list
-    obsi = obs{tdx};
+    obsi = navsu.ppp.stripMeas(tdx,obs,obsMap);
     
-    epochi = obsi{1}.epochs;
+    epochi = epochs(tdx);
     
     % if not initialized, try to initialize :)
     if filter.initialized
