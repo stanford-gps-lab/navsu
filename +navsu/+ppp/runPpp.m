@@ -1,20 +1,7 @@
 function outData = runPpp(filter,obs,corrData,varargin)
 
 %% Sync all measurements 
-% measTypeEnums = enumeration(navsu.internal.MeasEnum.GNSS);
-% measStruc = cell2struct(repmat({[]},length(measTypeEnums),1),cellstr(measTypeEnums));
-
-% go through each measurement struct given and put it in here
-epochsFull =[];
-for idx = 1:length(obs)
-    epochsFull = [epochsFull; obs{idx}.epochs];
-end
-epochs = unique(epochsFull);
-obsMap = nan(length(epochs),length(obs));
-for idx = 1:length(obs)
-    [~,ixb] = ismember(epochs,obs{idx}.epochs);
-    obsMap(:,idx) = ixb;
-end
+[obsMap,epochs] = navsu.ppp.syncMeas(obs);
 
 %%
 nEpochs = length(epochs);

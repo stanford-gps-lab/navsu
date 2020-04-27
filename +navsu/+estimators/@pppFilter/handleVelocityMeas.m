@@ -1,18 +1,18 @@
-function [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,posMeas)
+function [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,velMeas)
 
 
 nState = size(obj.state,1);
-if ~isempty(posMeas)
-    predMeasi = obj.pos;
+if ~isempty(velMeas)
+    predMeasi = obj.vel;
     
     Hi = zeros(3,nState);
-    Hi(:,obj.INDS_STATE.POS) = -diag(ones(3,1));
+    Hi(:,obj.INDS_STATE.VEL) = -diag(ones(3,1));
     
-    Ri = posMeas.cov;
+    Ri = velMeas.cov;
     
     measMati = zeros(3,6);
     measMati(:,6) = 4;
-    measMati(:,5) = posMeas.obs;
+    measMati(:,5) = velMeas.obs;
     
 else
    % Return empty stuff

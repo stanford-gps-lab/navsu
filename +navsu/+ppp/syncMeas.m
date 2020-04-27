@@ -1,22 +1,14 @@
-function fullMeas = syncMeas(varargin)
+function [obsMap,epochs] = syncMeas(obs)
 
-measUngrouped = cat(1,varargin{:});
-
-nMeasUngrouped = length(measUngrouped);
-
-epochsUngrouped = nan(nMeasUngrouped,1);
-
-for idx = 1:nMeasUngrouped
-   epochsUngrouped(idx) = measUngrouped{idx}.epochs; 
+epochsFull =[];
+for idx = 1:length(obs)
+    epochsFull = [epochsFull; obs{idx}.epochs];
 end
-
-epochsUnique = unique(epochsUngrouped);
-
-fullMeas = cell(length(epochsUnique),1);
-
-for idx =1:length(epochsUnique)
-    fullMeas{idx} = measUngrouped(epochsUngrouped == epochsUnique(idx));
+epochs = unique(epochsFull);
+obsMap = nan(length(epochs),length(obs));
+for idx = 1:length(obs)
+    [~,ixb] = ismember(epochs,obs{idx}.epochs);
+    obsMap(:,idx) = ixb;
 end
-
 
 end

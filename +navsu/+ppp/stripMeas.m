@@ -30,6 +30,13 @@ for idx = 1:length(obsMapi)
                 obsi.type   = obsFulli.type;
                 obsOut = [obsOut; {obsi}];
                 
+            case navsu.internal.MeasEnum.Velocity
+                obsi = [];
+                obsi.epochs = obsFulli.epochs(obsMapi(idx));
+                obsi.obs    = obsFulli.obs(:,obsMapi(idx));
+                obsi.cov    = obsFulli.cov(:,:,obsMapi(idx));
+                obsi.type   = obsFulli.type;
+                obsOut = [obsOut; {obsi}];
         end
     end
 end
