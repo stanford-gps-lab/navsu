@@ -50,7 +50,8 @@ for idx = 1:length(obs)
             
         case navsu.internal.MeasEnum.Velocity
             [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,obsi);
-            
+        otherwise
+            continue;
     end
     [predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri);
 end

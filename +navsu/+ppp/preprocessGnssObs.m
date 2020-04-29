@@ -206,7 +206,8 @@ dayListDcb = dayList;
 epochDcb = navsu.time.jd2epochs(navsu.time.doy2jd(YearListDcb,dayListDcb))+100;
 
 dcbData = corrData.dcb;
-dcbType = corrData.settings.dcbSource;
+dcbType = dcbData.type;
+dcbType = 2;
 
 %% Correct L1C-L1P for ISC (using GPS and Galileo MGEX precise products, this should be the only necessary change)
 %     dcbData2 = [];

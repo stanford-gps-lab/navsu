@@ -11,6 +11,9 @@ classdef MeasEnum
         % Direct Velocity Measurement in ECEF in m/s
         Velocity
         
+        % Inertial measurements :)
+        IMU
+        
     end
 end
 
