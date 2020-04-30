@@ -59,6 +59,9 @@ classdef pppFilter < matlab.mixin.Copyable
     
     % function signatures
     methods
+        
+        obs = checkMeas(obj,obs);
+        
         complete = initialize(obj,corrData,obs,varargin)
         
         % the time AND measurement update :O
@@ -76,7 +79,7 @@ classdef pppFilter < matlab.mixin.Copyable
         
     end
     
-    methods (Access = private)
+    methods %(Access = private)       
         timeUpdate(obj,epoch)
         
         measUpdate(obj,epoch,obs,corrData,measRemovedSlip)

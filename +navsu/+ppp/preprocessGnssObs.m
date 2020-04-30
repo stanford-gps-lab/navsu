@@ -7,6 +7,7 @@ p.addParameter('epochStart',-Inf);
 p.addParameter('epochEnd',Inf);
 p.addParameter('downsampleFactor',1);
 p.addParameter('obsDesired',[]);
+% p.addParameter('duration',Inf);
 
 % parse the results
 parse(p, varargin{:});

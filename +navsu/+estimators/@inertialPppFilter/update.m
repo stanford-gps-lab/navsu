@@ -6,14 +6,25 @@ function update(obj,epoch,obs,corrData)
 % IMU updates only run the mechanization
 % other measurement updates can run the entire thing
 
-% Manage the states in the filter :)
-% measRemovedSlip = navsu.ppp.manageStatesMulti(obj,epoch,obs);
+% If there is an IMU measurement in here, then
+measTypes = cellfun(@(x) getfield(x,'type'),obs);
 
-% Time update
-% obj.timeUpdate(epoch)
+% run the inertial mechanization to propagate to the current time step
+obj.mechanization(epoch,obs);
+
+if length(measTypes) == 1 && ismember(measTypes,navsu.internal.MeasEnum.IMU)
+    return;
+end
+
+% Manage the states in the filter :)
+measRemovedSlip = navsu.ppp.manageStatesMulti(obj,epoch,obs);
+
+% Time update (this is update of non-position, velocity, and attitude
+% states as well as covariance propagation)
+obj.timeUpdate(epoch)
 
 % Measurement update
-% obj.measUpdate(epoch,obs,corrData,measRemovedSlip);
+obj.measUpdate(epoch,obs,corrData,measRemovedSlip);
 
 end
 
