@@ -9,11 +9,13 @@ c = navsu.constants.c;
 
 x_est_propagated = obj.state;
 
-% Receiver position
-pos = obj.pos;
+% Antenna phase center position and velocity
+[pos,vel] = obj.posVelApc;
+
+% pos = obj.pos;
 
 % Receiver velocity
-vel = obj.vel;
+% vel = obj.vel;
 
 llhi = navsu.geo.xyz2llh(pos');
 

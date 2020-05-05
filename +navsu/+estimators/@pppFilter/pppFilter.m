@@ -79,7 +79,7 @@ classdef pppFilter < matlab.mixin.Copyable
         
     end
     
-    methods %(Access = private)       
+    methods %(Access = private)
         timeUpdate(obj,epoch)
         
         measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
@@ -101,6 +101,8 @@ classdef pppFilter < matlab.mixin.Copyable
         [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,posMeas)
         
         [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,velMeas)
+        
+        [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center. 
         
     end
     

@@ -5,7 +5,7 @@ function outData = saveState(obj,outData,epoch,obs)
 outState = [];
 
 outState.epoch = epoch;
-outState.pos   = obj.pos;
+outState.pos   = obj.posVelApc;
 outState.resids = obj.resids;
 outState.residsInfo = [];
 outState.measRemoved = obj.measRemoved;

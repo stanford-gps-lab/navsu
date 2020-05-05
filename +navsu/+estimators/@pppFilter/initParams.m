@@ -25,7 +25,7 @@ PARAMS.measMask = table([1 1 1]',[1 0 0]',[1 0 0]',[1 1 0]',[1 1 0]',...
 % measurement uncertainty
 PARAMS.sigMeas = struct(...
     'pr',                1,...             % pseudorange   [m]
-    'cp',             0.03,...             % carrier phase [m]
+    'cp',             0.003,...             % carrier phase [m]
     'dopp',           0.05,...             % doppler       [m/s]
     'iono',           1000,...             % iono sigma- no correction [m]
     'ionoRate',        100);               % iono rate sigma- no correction [m/s]
@@ -85,8 +85,8 @@ PARAMS.Q = struct(...
     'ACC',             3.2,...               % Acceleration
     'ATTTITUDE',       [20 20 20]*pi/180,... % Attitude
     'ATT_RATE',        [40 40 40]*pi/180,... % Atttitude rate
-    'W_BIAS',          2e-5*1,...%/100,...   % Gyro bias
-    'ACC_BIAS',        1e-3*1,...%/100,...             % Accelerometer bias
+    'W_BIAS',          2e-5*1/100,...%/100,...   % Gyro bias
+    'ACC_BIAS',        1e-3*1/100,...%/100,...             % Accelerometer bias
     'ACC_SCALE',       1e-5,...              % Accelerometer scale
     'W_SCALE',         1e-5,...              % Gyro scale
     'RXB',             10,...                % Receiver clock bias
