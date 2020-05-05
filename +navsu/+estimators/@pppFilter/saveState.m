@@ -6,6 +6,7 @@ outState = [];
 
 outState.epoch = epoch;
 outState.pos   = obj.pos;
+outState.covPos = obj.cov(obj.INDS_STATE.POS,obj.INDS_STATE.POS);
 outState.resids = obj.resids;
 outState.residsInfo = [];
 outState.measRemoved = obj.measRemoved;

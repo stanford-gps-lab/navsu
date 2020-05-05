@@ -14,6 +14,7 @@ truthFile            = res.truthFile;      %
 % Plot the position and clock bias in ENU
 %% Pull out saved values
 xyz = [outputs.pos]';
+xyzCov = cat(3,outputs.covPos);
 epochs = [outputs.epoch]';
 b = zeros(size(epochs));
 
@@ -22,16 +23,21 @@ llh0 = navsu.geo.xyz2llh(xyz(1,:));
 utmZone = navsu.thirdparty.findUtmZone(llh0(1),llh0(2));
 
 % Convert estimated position to enu
-enu = nan(size(xyz));
+enu    = nan(size(xyz));
+enuStd = nan(size(xyz));
 for idx = 1:size(xyz,1)
     [enu(idx,1),enu(idx,2),enu(idx,3)] = ...
         navsu.thirdparty.cart2utm(xyz(idx,1),xyz(idx,2),xyz(idx,3),utmZone);
+    
+    [~,RxyzEnu] = navsu.geo.xyz2enu([0 0 0],llh0(1)*pi/180,llh0(2)*pi/180);
+    
+    covEnui = RxyzEnu'*squeeze(xyzCov(:,:,idx))*RxyzEnu;
+    enuStd(idx,:) = sqrt(diag(covEnui));
 end
 estim.pos = xyz;
 estim.epochs = epochs;
 estim.enuPos = enu;
-estim.enuStd = nan(size(enu));
-
+estim.enuStd = enuStd;
 
 if ~isempty(truthFile)
     % Parse the truth data
@@ -86,12 +92,18 @@ if ~isempty(truth)
     figure;
     ha = navsu.thirdparty.tightSubplot(4,1,0.02,[0.1 0.1],[0.07 0.05]);
     
-    yplot = [enu-truth.enuPosInterp b*navsu.constants.c]';
+    yplot = [estim.enuPos-truth.enuPosInterp b*navsu.constants.c]';
+    yplotStd = [estim.enuStd b*navsu.constants.c]';
     tplot = (epochs-epochs(1))/60; % minutes
     ylabels = {'East [m]' 'North [m]' 'Up [m]' 'Clock [m]'};
     for idx = 1:4
         axes(ha(idx))
+        
         plot(tplot,yplot(idx,:))
+        hold on;
+        plot(tplot,2*yplotStd(idx,:),'k')
+        plot(tplot,2*-yplotStd(idx,:),'k')
+        
         ylabel(ylabels{idx})
         grid on
         if idx < 4

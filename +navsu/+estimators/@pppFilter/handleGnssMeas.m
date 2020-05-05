@@ -125,8 +125,6 @@ if nMeas > 0
     
     %% Various range effects
     % tropo delay for each LOS
-    % trop = saastamoinen_model_SU(llhi(1), llhi(2), llhi(3), el*180/pi);
-    % [trop0,m,tropDataSave] = tropo_error_correction_unb3(el,h,lat,doy);
     doy = navsu.time.jd2doy(navsu.time.epochs2jd(epoch));
     [trop,m,~] = navsu.ppp.models.tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
     

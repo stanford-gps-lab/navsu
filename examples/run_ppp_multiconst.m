@@ -20,8 +20,8 @@ igsAc = 'GRG';
 constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 % Initialize the filter
-filter = navsu.estimators.pppFilter;
-% filter = navsu.estimators.leastSq;
+% filter = navsu.estimators.pppFilter;
+filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;
@@ -99,7 +99,7 @@ outData = navsu.ppp.runPpp(filter,{gnssMeas},corrData);
 %%
 close all;
 
-filter.plotOutput(outData,'truePosEcef',truePosEcef);
+filter.plotOutput(outData,'truthFile',truePosEcef);
 
 
 

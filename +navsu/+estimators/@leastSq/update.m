@@ -35,6 +35,7 @@ obj.clockDrift = clockDrift;
 
 obj.allSatsSeen = sortrows(satsUsed,2);
 
+% if isempty(obj.INDS_STATE)
 INDS_STATE = [];
 INDS_STATE.ATTITUDE = 1:3;
 INDS_STATE.VEL = 4:6;
@@ -50,6 +51,8 @@ lastInd = lastInd+length(constsUnique);
 INDS_STATE.CLOCK_DRIFT = (lastInd+1):(lastInd+length(constsUnique));
 INDS_STATE.CLOCK_DRIFT_CONSTS = constsUnique;
 lastInd = lastInd+length(constsUnique);
+
+obj.INDS_STATE = INDS_STATE;
 
 %% Initialize covariance and state
 % Attitude

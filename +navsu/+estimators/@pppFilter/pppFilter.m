@@ -42,7 +42,6 @@ classdef pppFilter < matlab.mixin.Copyable
         resids % extra info for output about measurement residuals
         
         measRemoved % extra info for measurements that were removed :)
-        
     end
     
     
