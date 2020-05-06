@@ -13,6 +13,9 @@ classdef leastSq < matlab.mixin.Copyable
         clockDrift         % receiever clock drift(s)
         carrierAmbiguities % carrier phase ambiguity estimates
         
+        % state indices
+        INDS_STATE
+        
         % all satellites used in the solution- useful for solution
         % separation :)
         allSatsSeen
@@ -50,6 +53,8 @@ classdef leastSq < matlab.mixin.Copyable
         PARAMS = initParams(obj);
         
         outData = saveState(obj,outData,epoch,obs);
+        
+        obs = checkMeas(obj,obs0)
     end
     
     methods(Static)

@@ -7,6 +7,7 @@ p.addParameter('epochStart',-Inf);
 p.addParameter('epochEnd',Inf);
 p.addParameter('downsampleFactor',1);
 p.addParameter('obsDesired',[]);
+% p.addParameter('duration',Inf);
 
 % parse the results
 parse(p, varargin{:});
@@ -206,7 +207,8 @@ dayListDcb = dayList;
 epochDcb = navsu.time.jd2epochs(navsu.time.doy2jd(YearListDcb,dayListDcb))+100;
 
 dcbData = corrData.dcb;
-dcbType = corrData.settings.dcbSource;
+dcbType = dcbData.type;
+dcbType = 2;
 
 %% Correct L1C-L1P for ISC (using GPS and Galileo MGEX precise products, this should be the only necessary change)
 %     dcbData2 = [];

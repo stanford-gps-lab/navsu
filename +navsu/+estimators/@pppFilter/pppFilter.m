@@ -42,7 +42,6 @@ classdef pppFilter < matlab.mixin.Copyable
         resids % extra info for output about measurement residuals
         
         measRemoved % extra info for measurements that were removed :)
-        
     end
     
     
@@ -59,6 +58,9 @@ classdef pppFilter < matlab.mixin.Copyable
     
     % function signatures
     methods
+        
+        obs = checkMeas(obj,obs);
+        
         complete = initialize(obj,corrData,obs,varargin)
         
         % the time AND measurement update :O
@@ -76,7 +78,7 @@ classdef pppFilter < matlab.mixin.Copyable
         
     end
     
-    methods (Access = private)
+    methods %(Access = private)
         timeUpdate(obj,epoch)
         
         measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
@@ -98,6 +100,8 @@ classdef pppFilter < matlab.mixin.Copyable
         [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,posMeas)
         
         [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,velMeas)
+        
+        [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center. 
         
     end
     

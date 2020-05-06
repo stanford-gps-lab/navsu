@@ -79,8 +79,24 @@ Hii(1,obj.INDS_STATE.POS)        = A;
 Hii(1,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;
 
 
+% Also include lever arm sensitivity lol
+% just constructing things
 
-
+% z axis (
+rArmBody = obj.PARAMS.IMU_ARM;
+if norm(rArmBody) > 0
+    
+    rArmBodyNorm = rArmBody./norm(rArmBody);
+    
+    % Convert the LOS to the body frame
+    rhoBody = obj.R_b_e'*A';
+    
+    Hangle(1) = sum(norm(rArmBody([2 3])).*cross([1 0 0]',rArmBodyNorm).*rhoBody);
+    Hangle(2) = sum(norm(rArmBody([1 3])).*cross([0 1 0]',rArmBodyNorm).*rhoBody);
+    Hangle(3) = sum(norm(rArmBody([1 2])).*cross([0 0 1]',rArmBodyNorm).*rhoBody);
+    Hii(1,obj.INDS_STATE.ATTITUDE) = Hangle;
+    
+end
 sig = 3;
 
 

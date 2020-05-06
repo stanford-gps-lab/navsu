@@ -50,7 +50,8 @@ for idx = 1:length(obs)
             
         case navsu.internal.MeasEnum.Velocity
             [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,obsi);
-            
+        otherwise
+            continue;
     end
     [predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri);
 end
@@ -86,6 +87,9 @@ else
 end
 
 %% Update the position and velocity values
+
+obj.R_b_e = (eye(3) - navsu.geo.crossProdMatrix(stateNew(obj.INDS_STATE.ATTITUDE))) * obj.R_b_e;
+
 vel = vel - stateNew(obj.INDS_STATE.VEL);
 pos = pos - stateNew(obj.INDS_STATE.POS);
 
@@ -93,11 +97,15 @@ obj.clockBias  = stateNew(obj.INDS_STATE.CLOCK_BIAS);
 obj.clockDrift = stateNew(obj.INDS_STATE.CLOCK_DRIFT);
 
 % put updated values into object
+% obj.R_b_e = R_b_e;
 obj.vel   = vel;
 obj.pos   = pos;
 obj.cov  = cov;
 obj.state = stateNew;
 obj.posPrevTc = pos;
+
+obj.imuBiasStates = obj.imuBiasStates + stateNew([obj.INDS_STATE.ACC_BIAS obj.INDS_STATE.W_BIAS]);
+
 
 % Deal with resets if any of the removed measurements were carrier phases
 if ~isempty(measMatRemoved)

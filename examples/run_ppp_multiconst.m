@@ -97,10 +97,6 @@ end
      corrData,'downsampleFac',downsampleFac,'epochStart',epochStart,...
      'epochEnd',epochStart+60*3*Inf);
 
-
-% Sync all measurements
-% fullMeas = navsu.ppp.syncMeas(gnssMeas);
-
 %% do the ppp lol
 
 corrData.orbMode = 'BROADCAST';
@@ -115,7 +111,7 @@ outData = navsu.ppp.runPpp(filter,{gnssMeas},corrData);
 %%
 close all;
 
-filter.plotOutput(outData,'truePosEcef',truePosEcef);
+filter.plotOutput(outData,'truthFile',truePosEcef);
 
 
 

@@ -1,5 +1,8 @@
 function outData = runPpp(filter,obs,corrData,varargin)
 
+%% Check what measurements are in here and sort out what's usable
+obs = filter.checkMeas(obs);
+
 %% Sync all measurements 
 [obsMap,epochs] = navsu.ppp.syncMeas(obs);
 
