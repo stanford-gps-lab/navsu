@@ -17,11 +17,11 @@ igsAc = 'GRG';
 
 %
 % this should be multi-constellation!
-constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
+constUse = [1 0 0 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 % Initialize the filter
-filter = navsu.estimators.pppFilter;
-% filter = navsu.estimators.leastSq;
+% filter = navsu.estimators.pppFilter;
+filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;
@@ -75,6 +75,9 @@ if ~exist('corrData','var')
     % load MGEX clock data into our correction object
     corrData.initClockData(yearProd,doyProd);
     
+    % Load broadcast data
+    corrData.initBroadcastData(yearProd,doyProd);
+    
     % load antenna phase center data for satellites
     filenameAtx = 'igs14_sats_only.atx';
     
@@ -89,27 +92,24 @@ if ~exist('corrData','var')
 end
 
 %% preprocess observations
-% obsInds    = repmat([1 2 3 4],1,3); % 1 = code, 2 = carrier, 3 = snr, 4 = doppler
-% signalInds = kron(1:3,ones(1,4));
-%           1                               2                               3                               4                                5
-% obsDes  = {{'C1C'} {'L1C'} {'S1C'}  {'D1C'} {'C2S'} {'L2S'} {'S2S'} {'D2S'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
-%     {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
-%     {'C1B'} {'L1B'} {'S1B'} {'D1B'} {'C7I'} {'L7I'} {'S7I'} {'D7I'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
-%     {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
-%     {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}  };
-
-% signal pairs to include as iono-free combinations
-% ifPairs = [1 3;
-%     1 2];
 
 [gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,...
-     corrData,'downsampleFac',downsampleFac,'epochStart',epochStart);
+     corrData,'downsampleFac',downsampleFac,'epochStart',epochStart,...
+     'epochEnd',epochStart+60*3*Inf);
 
 
 % Sync all measurements
 % fullMeas = navsu.ppp.syncMeas(gnssMeas);
 
 %% do the ppp lol
+
+corrData.orbMode = 'BROADCAST';
+corrData.clkMode = 'BROADCAST';
+
+
+% corrData.orbMode = 'PRECISE';
+% corrData.clkMode = 'PRECISE';
+
 outData = navsu.ppp.runPpp(filter,{gnssMeas},corrData);
 
 %%

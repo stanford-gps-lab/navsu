@@ -91,6 +91,8 @@ classdef svOrbitClock < handle
             obj.settings.mgxHrObsDir    = [obsDir 'mgex-hr-obs/'];
             obj.settings.tempDir        = [basePreciseProdDir 'temp/'];
             obj.settings.dcbDir         = [basePreciseProdDir 'dcb/'];
+            obj.settings.navMgxDir      = [basePreciseProdDir 'nav-daily/'];
+            
             obj.settings.constUse       = constUse;
 
         end
@@ -125,6 +127,9 @@ classdef svOrbitClock < handle
         % Use the clock data from the .sp3 to populate the precise clock
         % field
         initPClockFromPEph(obj)
+        
+        % Load broadcast data
+        initBroadcastData(obj,years,doys,varargin)
         
         %% The rest of the functions mostly help with the above functions. 
         % Helps with precise clock interpolation
