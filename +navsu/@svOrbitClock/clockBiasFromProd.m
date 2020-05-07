@@ -29,6 +29,19 @@ else
         cbias(indsi) = pos.clock_bias;
     end
     
+    if ismember(3,constUn)
+        % galileo    
+        indsi = find(constInds == 3);
+        pos = navsu.geo.propNavMsg(orbClockData.BEph.gal,prns(indsi),weeks(indsi),tows(indsi),'GAL');
+        cbias(indsi) = pos.clock_bias-pos.TGD*0;
+    end
+    
+     if ismember(4,constUn)
+        % beidou    
+        indsi = find(constInds == 4);
+        pos = navsu.geo.propNavMsg(orbClockData.BEph.bds,prns(indsi),weeks(indsi),tows(indsi),'BDS');
+        cbias(indsi) = pos.clock_bias-pos.TGD*0;
+    end
     
 end
 

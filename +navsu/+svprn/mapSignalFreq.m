@@ -11,22 +11,22 @@ function [freqs, freqInds] = mapSignalFreq(freqDes,prns,constInds,jd)
 %   jd        - julian date, if necessary, to indicate GLONASS freq
 %
 % OUTPUTS:
-% freqs:     MxN matrix of frequencies associated with each signal 
+% freqs:     MxN matrix of frequencies associated with each signal
 %
 % See also: navsu.svprn.prn2svn, navsu.svprn.prn2svn
 
 
 fRinexLabels = [1 2 5 6 7 8]';
 
-fTable = [1575.42	1602	1575.42     nan      nan	1575.42;
-          1227.6	1246	nan         1561.098 nan	1227.6;
-          1176.45	1201	1176.45     nan      nan    1176.45;
-          nan	    nan     1278.75     1268.52	 nan	1278.75;
-          nan       nan     1207.14     1207.14	 nan	nan;
-          nan       nan     1191.795	nan      nan	nan];
+fTable = [1575.42	1602	 1575.42     nan      nan	1575.42;
+          1227.6	1246	 nan         1561.098 nan	1227.6;
+          1176.45	1201	 1176.45     nan      nan    1176.45;
+          1561.098  1561.098 nan         1268.52  1207.14	nan;
+          nan       nan      1207.14     1207.14  nan	nan;
+          nan       nan      1191.795	 nan       nan	nan];
 
 % GLONASS FDMA channel separation
-gloChannels = [0.5625 0.4375 0.4375];      
+gloChannels = [0.5625 0.4375 0.4375];
 
 freqs = nan(length(prns),size(freqDes,2));
 freqInds = nan(length(prns),size(freqDes,2));

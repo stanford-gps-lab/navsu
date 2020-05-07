@@ -37,10 +37,6 @@ for loop = 1:tmArrayLen
     acc = eph.A(I,:)'/1000;
     acc(abs(acc) > 1e-5) = acc(abs(acc) > 1e-5)*1e-10;
     toe = mod(eph.ToE(I),7*86400);
-    %     if isempty(eph.leapSecond) || isnan(eph.leapSecond)
-    %         eph.leapSecond = 16;
-    %     end
-    tfinal = GPSsec(loop)-toe-eph.leapSecond;
     tfinal = tmArray(loop)-eph.ToE(I)-eph.leapSecond;
     
     
@@ -106,17 +102,13 @@ for loop = 1:tmArrayLen
     pos.tslu(loop) = eph.AoOper(I)*86400;
     
     pos.toe_m_ttom(loop) = eph.ToE(I) - eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.tk(I);
-    
-    if abs( pos.toe_m_ttom(loop)) > 900
-        'breakpoint';
-    end
+
     pos.Fit_interval(loop) = 900;
     pos.freqNum(loop) = eph.freqNum(I);
 end
 
 
 end
-
 
 
 function dstate = orbitDifEqGlonass(state,acc,constants)
@@ -144,11 +136,9 @@ yb = y/r;
 zb = z/r;
 mub = mu/r^2;
 
-% 'breakpoint';
 dvx = -mub*xb+3/2*C20*mub*xb*p^2*(1-5*zb^2)+ax+we^2*x+2*we*vy;
 dvy = -mub*yb+3/2*C20*mub*yb*p^2*(1-5*zb^2)+ay+we^2*y-2*we*vx;
 dvz = -mub*zb+3/2*C20*mub*zb*p^2*(3-5*zb^2)+az;
-
 
 dstate = [vx vy vz dvx dvy dvz]';
 

@@ -125,8 +125,8 @@ for loop = 1:tmArrayLen
             
         case 'BDS'
             % pull age of data straight from nav data (need to translate)
-            aodi = eph.aodClock(I)*3600;
-            
+%             aodi = eph.aodClock(I)*3600;
+            aodi = 0;
             
     end
     % check health
