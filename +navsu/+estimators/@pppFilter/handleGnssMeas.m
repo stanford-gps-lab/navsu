@@ -31,10 +31,15 @@ indsMeasPr = find(obs.range.obs ~= 0  & obs.range.ind == 1 );
 prnObsMat      = repmat(obs.PRN,size(obs.range.obs,1),1);
 constIndObsMat = repmat(obs.constInds,size(obs.range.obs,1),1);
 
+idList = [];
+measList = [];
+
 % 1 PRN | 2 const | 3 signal (sf/df) | 4 freq | 5 meas | 6 (1=pr,2=ph,3=dop)
 measMat = [measMat; [prnObsMat(indsMeasPr) constIndObsMat(indsMeasPr) ...
     obs.range.sig(indsMeasPr) obs.range.freqs(indsMeasPr) obs.range.obs(indsMeasPr) ...
     1*ones(size(indsMeasPr))]];
+idList = [idList; obs.range.ID(indsMeasPr)];
+measList = [measList; obs.range.obs(indsMeasPr)];
 
 % Add carrier phase measurements
 indsMeasPh = find(obs.range.obs ~= 0  & obs.range.ind == 2 );
@@ -46,6 +51,9 @@ constIndObsMat = repmat(obs.constInds,size(obs.range.obs,1),1);
 measMat = [measMat; [prnObsMat(indsMeasPh) constIndObsMat(indsMeasPh) ...
     obs.range.sig(indsMeasPh) obs.range.freqs(indsMeasPh) obs.range.obs(indsMeasPh) ...
     2*ones(size(indsMeasPh))]];
+idList = [idList; obs.range.ID(indsMeasPh)];
+measList = [measList; obs.range.obs(indsMeasPh)];
+
 
 % Add doppler measurements
 indsMeasDop = find(obs.doppler.obs ~= 0);
@@ -58,12 +66,17 @@ measMat = [measMat; [prnDopMat(indsMeasDop) constIndDopMat(indsMeasDop) ...
     obs.doppler.sig(indsMeasDop) obs.doppler.freqs(indsMeasDop) ...
     obs.doppler.obs(indsMeasDop) 3*ones(size(indsMeasDop))]];
 
+idList = [idList; obs.doppler.ID(indsMeasDop)];
+measList = [measList; obs.doppler.obs(indsMeasDop)];
+
+
 nMeas = size(measMat,1);
 
 if nMeas > 0
     %% Propagate orbit and clock for all measurements
-    prnConstInds = sortrows(unique(measMat(:,1:2),'rows'),2);
-    
+%     prnConstInds = sortrows(unique(measMat(:,1:2),'rows'),2);
+    prnConstInds = sortrows(unique([[idList.prn]' [idList.const]'],'rows'),2); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     % transmission time for all satellites
     % rough estimate of travel time- just use geometric range
     [~,ib] = ismember(prnConstInds(:,2),obj.INDS_STATE.CLOCK_BIAS_CONSTS);
@@ -77,8 +90,10 @@ if nMeas > 0
         prnConstIndsNan = prnConstInds(indsNan,:);
         
         % Remove the associated measurements
-        indsMeasRemove = find(ismember(measMat(:,1:2),prnConstIndsNan,'rows'));
+        indsMeasRemove = find(ismember([[idList.prn]' [idList.const]'],prnConstIndsNan,'rows'));
         measMat(indsMeasRemove,:) = [];
+        idList(indsMeasRemove) = [];
+        measList(indsMeasRemove) = [];
         
         prnConstInds(indsNan,:) = [];
         [~,ib] = ismember(prnConstInds(:,2),obj.INDS_STATE.CLOCK_BIAS_CONSTS);
@@ -86,18 +101,22 @@ if nMeas > 0
         
         svPos(indsNan,:) = [];
         
-        nMeas = size(measMat,1);
+%         nMeas = size(measMat,1);
+        nMeas = length(idList);
     end
     
     satBias = -c*corrData.clock(prnConstInds(:,1),prnConstInds(:,2),tRx);
     gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
     
     % Need rough estimate of the receiver clock bias in case of reset
-    measMatPr = measMat(measMat(:,6) == 1,:);
+    measMatPr0 = measMat(measMat(:,6) == 1,:);
+    indPr = find([idList.subtype]' == 1);
+    measPr = measList(indPr,:);
+    idPr   = idList(indPr);
     % Pull one pseudorange for each satellite
-    [~,losIndPr] = ismember(measMatPr(:,1:2),prnConstInds,'rows');
+    [~,losIndPr] = ismember([[idPr.prn]' [idPr.const]'],prnConstInds,'rows');
     
-    if isempty(measMatPr) || 1
+    if isempty(measPr) || 1
         bRxi = x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1);
     else
         bRxi = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));

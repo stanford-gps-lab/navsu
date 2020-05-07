@@ -13,7 +13,6 @@ clockDrift = [];
 %%
 gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
 
-
 %% If any values weren't provided directly, need to just try some least squares
 % Did the filter initialize successfully
 [state,dstate,~,~,covState,covdState,satsUsed] = navsu.ppp.lsSolGnss(gnssMeas,corrData,PARAMS);
@@ -59,7 +58,9 @@ obj.INDS_STATE = INDS_STATE;
 cov(INDS_STATE.ATTITUDE,INDS_STATE.ATTITUDE)       = eye(3) * PARAMS.SIGMA0.ATTITUDE^2;
 
 % Velocity
-cov(INDS_STATE.VEL,INDS_STATE.VEL)             = covdState(1:3,1:3);
+if ~isempty(covdState)
+    cov(INDS_STATE.VEL,INDS_STATE.VEL)             = covdState(1:3,1:3);
+end
 
 % Position
 cov(INDS_STATE.POS,INDS_STATE.POS)             = covState(1:3,1:3);
@@ -68,7 +69,9 @@ cov(INDS_STATE.POS,INDS_STATE.POS)             = covState(1:3,1:3);
 cov(INDS_STATE.CLOCK_BIAS,INDS_STATE.CLOCK_BIAS)   = covState(4:end,4:end);
 
 % Clock rate
-cov(INDS_STATE.CLOCK_DRIFT,INDS_STATE.CLOCK_DRIFT) = covdState(4:end,4:end);
+if ~isempty(covdState)
+    cov(INDS_STATE.CLOCK_DRIFT,INDS_STATE.CLOCK_DRIFT) = covdState(4:end,4:end);
+end
 
 obj.cov = cov;
 

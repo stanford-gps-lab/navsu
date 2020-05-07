@@ -13,14 +13,14 @@ for idx = 1:length(obsMapi)
                 obsi.epochs = obsFulli.epochs(obsMapi(idx));
                 obsi.range.obs   = obsFulli.range.obs(:,:,obsMapi(idx));
                 obsi.doppler.obs = obsFulli.doppler.obs(:,:,obsMapi(idx));
-                obsi.snr.obs     = obsFulli.snr.obs(:,:,obsMapi(idx));
+                obsi.snr.obs     = obsFulli.snr.obs(:,:,obsMapi(idx));                
                 
                 % Receiver output time of lock
                 if ~isempty(obsi.range.lockTime)
                     obsi.range.lockTime = obsi.range.lockTime(:,:,obsMapi(idx));
                 end
                 
-%                 obsOut = [obsOut; {obsi}];
+                
                 
             case navsu.internal.MeasEnum.Position
                 obsi = [];
@@ -28,7 +28,6 @@ for idx = 1:length(obsMapi)
                 obsi.obs    = obsFulli.obs(:,obsMapi(idx));
                 obsi.cov    = obsFulli.cov(:,:,obsMapi(idx));
                 obsi.type   = obsFulli.type;
-%                 obsOut = [obsOut; {obsi}];
                 
             case navsu.internal.MeasEnum.Velocity
                 obsi = [];
@@ -36,7 +35,6 @@ for idx = 1:length(obsMapi)
                 obsi.obs    = obsFulli.obs(:,obsMapi(idx));
                 obsi.cov    = obsFulli.cov(:,:,obsMapi(idx));
                 obsi.type   = obsFulli.type;
-%                 obsOut = [obsOut; {obsi}];
                 
             case navsu.internal.MeasEnum.IMU
                 imuFields = fields(obsFulli);

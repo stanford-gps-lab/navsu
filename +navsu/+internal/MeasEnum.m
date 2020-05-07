@@ -1,18 +1,18 @@
-classdef MeasEnum
+classdef MeasEnum < uint8
     % MeasEnum     enumeration of the types of measurements available
     
     enumeration
         % GNSS observation 
-        GNSS
+        GNSS (1)
         
         % Direct Position Measurement  the ECEF position in [m]
-        Position
+        Position (2)
         
         % Direct Velocity Measurement in ECEF in m/s
-        Velocity
+        Velocity (3)
         
         % Inertial measurements :)
-        IMU
+        IMU (4)
         
     end
 end

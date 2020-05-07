@@ -43,6 +43,11 @@ if isempty(obsDes) || 1
                 % GALILEO
                 sigRankings = {{'1B' '1C' '1X' '1Z'};...
                     {'5X' '8X' '6X' '7I' '7X' '7Q'}};
+            case 4
+                % BDS
+                sigRankings = {{'1I' '1Q' '1X' '2I' '2Q' '2X' };...
+                    {'7I' '6I' '7Q' '6Q' '7X' '6X'}};
+                
             otherwise
                 continue
         end
@@ -554,6 +559,8 @@ obsGnss.range.freqs       = freqs';
 obsGnss.range.PRN         = repmat(prns,size(obsGnss.range.obs,1),1);
 obsGnss.range.constInds   = repmat(constInds,size(obsGnss.range.obs,1),1);
 obsGnss.range.lockTime    = permute(lockTime,[1 3 2]);
+obsGnss.range.ID = navsu.internal.MeasIdGnss(obsGnss.range.PRN,obsGnss.range.constInds,obsGnss.range.sig,obsGnss.range.ind);
+
 
 obsGnss.doppler.obs       = permute(dop12,[1 3 2]);
 obsGnss.doppler.rnxCode   = repmat(dopType',1,size(obsGnss.doppler.obs,2));
@@ -561,6 +568,7 @@ obsGnss.doppler.sig       = repmat(dopSig',1,size(obsGnss.doppler.obs,2));
 obsGnss.doppler.freqs     = freqsDop';
 obsGnss.doppler.PRN       = repmat(prns,size(obsGnss.doppler.obs,1),1);
 obsGnss.doppler.constInds = repmat(constInds,size(obsGnss.doppler.obs,1),1);
+obsGnss.doppler.ID = navsu.internal.MeasIdGnss(obsGnss.doppler.PRN,obsGnss.doppler.constInds,obsGnss.doppler.sig,3*ones(size(obsGnss.doppler.PRN)));
 
 obsGnss.snr.obs           = permute(snr12,[1 3 2]);
 obsGnss.snr.rnxCode       = repmat(snrType',1,size(obsGnss.snr.obs,2));
@@ -578,28 +586,3 @@ obsGnss.doppler.obs = obsGnss.doppler.obs(:,:,indsGnssMeas);
 obsGnss.snr.obs     = obsGnss.snr.obs(:,:,indsGnssMeas);
 
 obsGnss.type = navsu.internal.MeasEnum.GNSS;
-
-%% Now, convert to a cell array output :)
-% outCells = cell(length(obsGnss.epochs),1);
-% cell0 = obsGnss;
-% cell0.epochs = [];
-% cell0.range.obs = [];
-% cell0.doppler.obs = [];
-% cell0.snr.obs = [];
-% cell0.type = navsu.internal.MeasEnum.GNSS;
-%
-% for idx = 1:length(obsGnss.epochs)
-%     celli = cell0;
-%     celli.epochs = obsGnss.epochs(idx);
-%     celli.range.obs = obsGnss.range.obs(:,:,idx);
-%     celli.doppler.obs = obsGnss.doppler.obs(:,:,idx);
-%     celli.snr.obs     = obsGnss.snr.obs(:,:,idx);
-%
-%     if ~isempty(obsGnss.range.lockTime)
-%        obsGnss.range.lockTime = obsGnss.range.lockTime(:,:,idx);
-%     end
-%
-%     outCells{idx} = celli;
-% end
-
-% 'dafa';

@@ -17,11 +17,11 @@ igsAc = 'GRG';
 
 %
 % this should be multi-constellation!
-constUse = [1 0 0 0 0];  % GPS | GLO | GAL | BDS | QZSS
+constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 % Initialize the filter
-% filter = navsu.estimators.pppFilter;
-filter = navsu.estimators.leastSq;
+filter = navsu.estimators.pppFilter;
+% filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
 filter.PARAMS.Q.POS = 0;
@@ -47,7 +47,7 @@ if ~exist('obsStruc','var')
     obsGnssRaw.tLock     = [];
 end
 
-epochStart = min(epochs)+200*60;
+epochStart = min(epochs)+200*60+60*10;
 downsampleFac = 30;
 
 %%
@@ -92,19 +92,16 @@ if ~exist('corrData','var')
 end
 
 %% preprocess observations
-
 [gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,...
      corrData,'downsampleFac',downsampleFac,'epochStart',epochStart,...
      'epochEnd',epochStart+60*3*Inf);
 
-%% do the ppp lol
-
+%% Estimate!
 corrData.orbMode = 'BROADCAST';
 corrData.clkMode = 'BROADCAST';
 
-
-% corrData.orbMode = 'PRECISE';
-% corrData.clkMode = 'PRECISE';
+corrData.orbMode = 'PRECISE';
+corrData.clkMode = 'PRECISE';
 
 outData = navsu.ppp.runPpp(filter,{gnssMeas},corrData);
 
