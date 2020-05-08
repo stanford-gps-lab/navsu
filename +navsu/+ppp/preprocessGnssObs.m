@@ -559,16 +559,25 @@ obsGnss.range.freqs       = freqs';
 obsGnss.range.PRN         = repmat(prns,size(obsGnss.range.obs,1),1);
 obsGnss.range.constInds   = repmat(constInds,size(obsGnss.range.obs,1),1);
 obsGnss.range.lockTime    = permute(lockTime,[1 3 2]);
-obsGnss.range.ID = navsu.internal.MeasIdGnss(obsGnss.range.PRN,obsGnss.range.constInds,obsGnss.range.sig,obsGnss.range.ind);
 
+
+temp = repelem(navsu.internal.MeasEnum.Code,size(obsGnss.range.ind,1),size(obsGnss.range.ind,2));
+temp(obsGnss.range.ind == 1) = navsu.internal.MeasEnum.Code;
+temp(obsGnss.range.ind == 2) = navsu.internal.MeasEnum.Carrier;
+obsGnss.range.subtype     = temp;
+
+obsGnss.range.ID = navsu.internal.MeasIdGnss(obsGnss.range.PRN,obsGnss.range.constInds,obsGnss.range.sig,temp);
 
 obsGnss.doppler.obs       = permute(dop12,[1 3 2]);
-obsGnss.doppler.rnxCode   = repmat(dopType',1,size(obsGnss.doppler.obs,2));
+obsGnss.doppler.rnxCode   = dopType;
 obsGnss.doppler.sig       = repmat(dopSig',1,size(obsGnss.doppler.obs,2));
 obsGnss.doppler.freqs     = freqsDop';
 obsGnss.doppler.PRN       = repmat(prns,size(obsGnss.doppler.obs,1),1);
 obsGnss.doppler.constInds = repmat(constInds,size(obsGnss.doppler.obs,1),1);
-obsGnss.doppler.ID = navsu.internal.MeasIdGnss(obsGnss.doppler.PRN,obsGnss.doppler.constInds,obsGnss.doppler.sig,3*ones(size(obsGnss.doppler.PRN)));
+temp = repelem(navsu.internal.MeasEnum.Doppler,size(obsGnss.doppler.sig,1),size(obsGnss.doppler.sig,2));
+obsGnss.doppler.subtype     = temp;
+
+obsGnss.doppler.ID = navsu.internal.MeasIdGnss(obsGnss.doppler.PRN,obsGnss.doppler.constInds,obsGnss.doppler.sig,temp);
 
 obsGnss.snr.obs           = permute(snr12,[1 3 2]);
 obsGnss.snr.rnxCode       = repmat(snrType',1,size(obsGnss.snr.obs,2));

@@ -95,11 +95,11 @@ classdef pppFilter < matlab.mixin.Copyable
         
         [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat,idList,measList] = handleGnssMeas(obj,epoch,obs,corrData)
         
-        [pred_measi,Hi,ri,measMati] = handleVehicleConstraintPseudomeas(obj)
+        [pred_measi,Hi,ri,measIdi,measi] = handleVehicleConstraintPseudomeas(obj)
         
         [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,posMeas)
         
-        [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,velMeas)
+        [predMeasi,Hi,Ri,measIdi,measi] = handleVelocityMeas(obj,velMeas)
         
         [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center. 
         

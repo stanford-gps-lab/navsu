@@ -32,7 +32,6 @@ classdef MeasIdGnss < navsu.internal.MeasID
                     obj(idx,jdx).freq    = freq(idx,jdx);
                     
                     obj(idx,jdx).subtype = subtype(idx,jdx);
-                    
 
                 end
             end

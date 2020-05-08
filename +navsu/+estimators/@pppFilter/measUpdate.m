@@ -48,7 +48,7 @@ for idx = 1:length(obs)
             [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,obsi);
             
         case navsu.internal.MeasEnum.Velocity
-            [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,obsi);
+            [predMeasi,Hi,Ri,measIdi,measi] = handleVelocityMeas(obj,obsi);
         otherwise
             continue;
     end
@@ -57,7 +57,7 @@ end
 
 %% Pseudomeasurements
 if PARAMS.measUse.noVertVel && 0
-    [predMeasi,Hi,Ri,measMati] = handleVehicleConstraintPseudomeas(obj);
+    [predMeasi,Hi,Ri,measIdi,measi] = handleVehicleConstraintPseudomeas(obj);
     
     [predMeas,H,R] = catMeas(predMeas,predMeasi,H,Hi,R,Ri);
 end
@@ -108,7 +108,7 @@ obj.imuBiasStates = obj.imuBiasStates + stateNew([obj.INDS_STATE.ACC_BIAS obj.IN
 % Deal with resets if any of the removed measurements were carrier phases
 if ~isempty(measIdRemoved)
     for jdx = 1:size(measIdRemoved,1)
-        if measIdRemoved(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemoved(jdx).subtype == 2 
+        if measIdRemoved(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemoved(jdx).subtype == navsu.internal.MeasEnum.Carrier 
             % carrier phase- reset ambiguity by just removing the state
             obj.removeFlexState([measIdRemoved(jdx).prn measIdRemoved(jdx).const 1 measIdRemoved(jdx).freq] );
         end

@@ -17,6 +17,7 @@ posMeas.epochs = epochs;
 posMeas.obs    = pos;
 posMeas.cov    = cov;
 posMeas.type   = navsu.internal.MeasEnum.Position;
-posMeas.ID     = navsu.internal.MeasIdPos(idNum*ones(3,1),[1 2 3]');
+posMeas.ID     = navsu.internal.MeasIdPos(idNum*ones(3,1),...
+    [navsu.internal.MeasEnum.PosX navsu.internal.MeasEnum.PosY navsu.internal.MeasEnum.PosZ]');
 
 end

@@ -1,4 +1,4 @@
-function velMeas = buildVelMeas(epochs,vel,sig)
+function velMeas = buildVelMeas(epochs,vel,sig,idNum)
 
 velMeas = [];
 
@@ -17,5 +17,7 @@ velMeas.epochs = epochs;
 velMeas.obs    = vel;
 velMeas.cov    = cov;
 velMeas.type   = navsu.internal.MeasEnum.Velocity;
+velMeas.ID     = navsu.internal.MeasIdVel(idNum*ones(3,1),...
+    [navsu.internal.MeasEnum.VelX navsu.internal.MeasEnum.VelY navsu.internal.MeasEnum.VelZ]');
 
 end

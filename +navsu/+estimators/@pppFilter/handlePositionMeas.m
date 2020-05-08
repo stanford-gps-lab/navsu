@@ -11,12 +11,11 @@ if ~isempty(posMeas)
     Ri = posMeas.cov;
     measIdi = posMeas.ID;
     measi = posMeas.obs;
-
 else
-   % Return empty stuff
-   predMeasi = [];
-   Hi = zeros(0,nState);
-   Ri = [];
+    % Return empty stuff
+    predMeasi = [];
+    Hi = zeros(0,nState);
+    Ri = [];
     measIdi = [];
     measi = [];
 end

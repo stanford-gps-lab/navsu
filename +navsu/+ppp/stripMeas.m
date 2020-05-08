@@ -36,6 +36,7 @@ for idx = 1:length(obsMapi)
                 obsi.obs    = obsFulli.obs(:,obsMapi(idx));
                 obsi.cov    = obsFulli.cov(:,:,obsMapi(idx));
                 obsi.type   = obsFulli.type;
+                obsi.ID     = obsFulli.ID;
                 
             case navsu.internal.MeasEnum.IMU
                 imuFields = fields(obsFulli);

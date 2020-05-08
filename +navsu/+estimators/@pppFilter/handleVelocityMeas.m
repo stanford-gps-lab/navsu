@@ -1,4 +1,4 @@
-function [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,velMeas)
+function [predMeasi,Hi,Ri,measIdi,measi] = handleVelocityMeas(obj,velMeas)
 
 
 nState = size(obj.state,1);
@@ -10,17 +10,17 @@ if ~isempty(velMeas)
     
     Ri = velMeas.cov;
     
-    measMati = zeros(3,6);
-    measMati(:,6) = 4;
-    measMati(:,5) = velMeas.obs;
+    measIdi = velMeas.ID;
+    measi = velMeas.obs;
     
 else
-   % Return empty stuff
-   predMeasi = [];
-   Hi = zeros(0,nState);
-   Ri = [];
-   measMati = zeros(0,6);
-    
+    % Return empty stuff
+    predMeasi = [];
+    Hi = zeros(0,nState);
+    Ri = [];
+    measIdi = [];
+    measi = [];
+
 end
 
 end

@@ -1,4 +1,4 @@
-function [predMeas,H,R,measMat] = handleVehicleConstraintPseudomeas(obj)
+function [predMeas,H,R,measIdi,measi] = handleVehicleConstraintPseudomeas(obj)
 
 nState = size(obj.state,1);
 
@@ -9,7 +9,7 @@ R_b_e = obj.R_b_e;
 predMeas = zeros(2,1);
 H = zeros(2,nState);
 R = zeros(2,2);
-measMat = zeros(2,6);
+measi = zeros(2,1);
 
 %% No vertical velocity constraint (vehicle only moves forward)
 pseudoMeasi = 0;
@@ -19,8 +19,7 @@ R(1,1) = 1^2;
 
 H(1,obj.INDS_STATE.VEL) = -[0 0 1]*R_b_e';
 
-measMat(1,:) = [0 0 0 0 pseudoMeasi 4];
-
+measi(1) = pseudoMeasi;
 
 %% No slipping to the right or left constraint
 pseudoMeasi = 0;
@@ -30,8 +29,8 @@ R(2,2) = 1^2;
 
 H(2,obj.INDS_STATE.VEL) = -[0 1 0]*R_b_e';
 
-measMat(2,:) = [0 0 0 0 pseudoMeasi 4];
+measi(2) = pseudoMeasi;
 
-
+measIdi = navsu.internal.MeasIdVehicleConstraint([1 1]',[navsu.internal.MeasEnum.NoSlipVertical; navsu.internal.MeasEnum.NoSlipCross]);
 
 end

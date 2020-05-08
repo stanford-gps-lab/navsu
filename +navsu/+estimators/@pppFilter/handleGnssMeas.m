@@ -80,7 +80,7 @@ if nMeas > 0
     gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
     
     % Need rough estimate of the receiver clock bias in case of reset
-    indPr = find([idList.subtype]' == 1);
+    indPr = find([idList.subtype]' == navsu.internal.MeasEnum.Code);
     measPr = measList(indPr,:);
     idPr   = idList(indPr);
     % Pull one pseudorange for each satellite
@@ -118,7 +118,7 @@ if nMeas > 0
     [trop,m,~] = navsu.ppp.models.tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
     
     % TEC for each LOS
-    if any([idList.freq] < 100 & [idList.subtype] < 3) %&& strcmp(PARAMS.states.ionoMode,'TEC')
+    if any([idList.freq] < 100 & (([idList.subtype] == navsu.internal.MeasEnum.Code) | ([idList.subtype] == navsu.internal.MeasEnum.Carrier))) %&& strcmp(PARAMS.states.ionoMode,'TEC')
         [~,~,tecSlant] = corrData.ionoDelay(epoch,llhi,'az',az,'el',el);
     else
         tecSlant = zeros(size(prnConstInds,1),1);
@@ -162,19 +162,19 @@ if nMeas > 0
         prni      = idList(idx).prn;
         constIndi = idList(idx).const;
         sigi      = idList(idx).freq;
-        freqi = obs.range.freqs(obs.range.PRN == prni & obs.range.constInds == constIndi & obs.range.sig == sigi & obs.range.ind == measTypei);
+        freqi = obs.range.freqs(obs.range.PRN == prni & obs.range.constInds == constIndi & obs.range.sig == sigi & obs.range.subtype == measTypei);
         
         losInd = losInds(idx);
         weighti = 1 ./ (sin(el(losInd)).^2);
         
         switch measTypei
-            case 1
+            case navsu.internal.MeasEnum.Code
                 % Code phase measurement
                 [predMeasi,Hii,sigMeasi] = codeModel(obj,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
                     constIndi,indGloDcbs(idx),indMpCodes(idx),m(losInd),gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),stRangeOffset(losInd),...
                     relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));                
                 
-            case 2
+            case navsu.internal.MeasEnum.Carrier
                 % Carrier phase measurement
                 [predMeasi,Hii,sigMeasi] = carrierModel(obj,nState,sigi,freqi,...
                     tecSlant(losInd),x_est_propagated,m(losInd),indIonos(idx), ...
@@ -183,7 +183,7 @@ if nMeas > 0
                     stRangeOffset(losInd),relClockCorr(losInd),relRangeCorr(losInd),...
                     A(losInd,:),constIndi);
                 
-            case 3
+            case navsu.internal.MeasEnum.Doppler
                 % Doppler measurement
                 [predMeasi,Hii,sigMeasi] = obj.doppModel(nState,dVel(losInd,:),...
                     A(losInd,:),rxDrift(losInd),constIndi);
@@ -219,7 +219,6 @@ else
     H         = zeros(0,nState);
     R         = zeros(0,1);
     measList  = zeros(0,1);
-    
 end
 
 if nMeas  == 0

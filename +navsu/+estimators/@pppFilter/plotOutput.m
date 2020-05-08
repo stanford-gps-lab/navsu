@@ -138,7 +138,7 @@ freqResids  = cat(1,measIdGnss.freq);
 subtypeResids = cat(1,measIdGnss.subtype);
 
 % Individual measurement types
-measIdMat = [prnResids constResids freqResids subtypeResids];
+measIdMat = [prnResids constResids freqResids uint8(subtypeResids)];
 measIdUn = unique(measIdMat,'rows');
 
 epochMin = min(epochsGnss);
@@ -148,7 +148,7 @@ ha = navsu.thirdparty.tightSubplot(3,1,0.05,[0.1 0.1],[0.07 0.05]);
 axes(ha(1))
 
 % Code phase residuals
-indsUnPr = measIdUn(measIdUn(:,4) == 1,:);
+indsUnPr = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Code),:);
 for idx = 1:size(indsUnPr)
     indsi = find(ismember(measIdMat,indsUnPr(idx,:),'rows'));
     tploti = (epochsGnss(indsi)-epochMin)/60;
@@ -164,7 +164,7 @@ title('Measurement residuals over time')
 % Plot carrier phase residuals
 axes(ha(2))
 % Carrier phase residuals
-indsUnPh = measIdUn(measIdUn(:,4) == 2,:);
+indsUnPh = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Carrier),:);
 for idx = 1:size(indsUnPh)
     indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
     tploti = (epochsGnss(indsi)-epochMin)/60;
@@ -180,7 +180,7 @@ ylim([-0.1 0.1])
 % Plot doppler residuals
 axes(ha(3))
 % Doppler residuals
-indsUnPh = measIdUn(measIdUn(:,4) == 3,:);
+indsUnPh = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Doppler),:);
 for idx = 1:size(indsUnPh)
     indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
     tploti = (epochsGnss(indsi)-epochMin)/60;
@@ -238,11 +238,11 @@ if 1
                 linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
                 
             case 3 % code removed
-                indsi = find(measRemReas == 2 & measRemSubtype == 1);
+                indsi = find(measRemReas == 2 & measRemSubtype == navsu.internal.MeasEnum.Code);
                 linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
                 
             case 4 % carrier removed
-                indsi = find(measRemReas == 2 & measRemSubtype == 2);
+                indsi = find(measRemReas == 2 & measRemSubtype == navsu.internal.MeasEnum.Carrier);
                 linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
             case 5
                 % cycle slip
