@@ -1,4 +1,4 @@
-function posMeas = buildPosMeas(epochs,pos,sig)
+function posMeas = buildPosMeas(epochs,pos,sig,idNum)
 
 posMeas = [];
 
@@ -17,5 +17,6 @@ posMeas.epochs = epochs;
 posMeas.obs    = pos;
 posMeas.cov    = cov;
 posMeas.type   = navsu.internal.MeasEnum.Position;
+posMeas.ID     = navsu.internal.MeasIdPos(idNum*ones(3,1),[1 2 3]');
 
 end

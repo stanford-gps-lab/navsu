@@ -97,7 +97,7 @@ classdef pppFilter < matlab.mixin.Copyable
         
         [pred_measi,Hi,ri,measMati] = handleVehicleConstraintPseudomeas(obj)
         
-        [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,posMeas)
+        [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,posMeas)
         
         [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,velMeas)
         

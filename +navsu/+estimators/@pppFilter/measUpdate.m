@@ -45,7 +45,7 @@ for idx = 1:length(obs)
             [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi,measIdRemovedLow] = handleGnssMeas(obj,epoch0,obsi,corrData);
             gnssMeas = obsi;
         case navsu.internal.MeasEnum.Position
-            [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,obsi);
+            [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,obsi);
             
         case navsu.internal.MeasEnum.Velocity
             [predMeasi,Hi,Ri,measMati] = handleVelocityMeas(obj,obsi);
@@ -117,7 +117,8 @@ end
 
 %% Save things for output
 if ~isempty(gnssMeas)
-    obj.allSatsSeen = sortrows(unique([[[measId.prn]' [measId.const]']; obj.allSatsSeen],'rows'),2);
+    measGnss = measId([measId.TypeID] == navsu.internal.MeasEnum.GNSS);
+    obj.allSatsSeen = sortrows(unique([[[measGnss.prn]' [measGnss.const]']; obj.allSatsSeen],'rows'),2);
     
     % Save residuals
     obj.resids.measId = measId;

@@ -1,4 +1,4 @@
-function [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,posMeas)
+function [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,posMeas)
 
 
 nState = size(obj.state,1);
@@ -9,18 +9,16 @@ if ~isempty(posMeas)
     Hi(:,obj.INDS_STATE.POS) = -diag(ones(3,1));
     
     Ri = posMeas.cov;
-    
-    measMati = zeros(3,6);
-    measMati(:,6) = 4;
-    measMati(:,5) = posMeas.obs;
-    
+    measIdi = posMeas.ID;
+    measi = posMeas.obs;
+
 else
    % Return empty stuff
    predMeasi = [];
    Hi = zeros(0,nState);
    Ri = [];
-   measMati = zeros(0,6);
-    
+    measIdi = [];
+    measi = [];
 end
 
 end

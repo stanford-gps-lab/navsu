@@ -97,7 +97,7 @@ end
      'epochEnd',epochStart+60*3*Inf);
  
  % Build position measurement
- 
+ posMeas = navsu.ppp.buildPosMeas(gnssMeas.epochs,truePosEcef',0.1,1);
 
 %% Estimate!
 corrData.orbMode = 'BROADCAST';
@@ -106,7 +106,7 @@ corrData.clkMode = 'BROADCAST';
 corrData.orbMode = 'PRECISE';
 corrData.clkMode = 'PRECISE';
 
-outData = navsu.ppp.runPpp(filter,{gnssMeas},corrData);
+outData = navsu.ppp.runPpp(filter,{gnssMeas posMeas},corrData);
 
 %%
 close all;
