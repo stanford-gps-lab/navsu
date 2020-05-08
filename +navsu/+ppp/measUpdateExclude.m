@@ -1,10 +1,11 @@
-function [H,delta_z,residsPost,K,measMat,pred_meas,measMatRemoved,R] =  ...
-    measUpdateExclude(H,cov_propagated,R,measMat,pred_meas,PARAMS)
+function [H,delta_z,residsPost,K,predMeas,measMatRemoved,R,measIdRemoved,measId] =  ...
+    measUpdateExclude(H,cov_propagated,R,predMeas,PARAMS,meas,measId)
 
 % loop through and remove bad measurements, starting with the bad ones,
 % until they are all clean
 
-measMatRemoved = zeros(0,size(measMat,2));
+measMatRemoved = zeros(0,6);
+measIdRemoved = [];
 
 largeResids  = true;
 mediumResids = true;
@@ -17,18 +18,15 @@ while largeResids || mediumResids
     K = cov_propagated * H' /(H *cov_propagated * H' + R);
     
     % 8. Measurement innovations
-    fullMeas = measMat(:,5);
-    delta_z  = fullMeas-pred_meas;
+    fullMeas = meas;
+    delta_z  = fullMeas-predMeas;
     
     residsPost = delta_z-H*K*delta_z;
     
     % Set the thresholds- remove large errors first
-    %    if largeResids
-    excludeThreshLarge = PARAMS.measUse.excludeThreshLarge(measMat(:,6))';
-    %    else
-    excludeThreshMedium = PARAMS.measUse.excludeThresh(measMat(:,6))';
-    %    end
-    
+    excludeThreshLarge = 20*sqrt(diag(R));
+    excludeThreshMedium = 5*sqrt(diag(R));
+%     
     indsLargeResids  = find(abs(residsPost)>excludeThreshLarge);
     indsMediumResids = find(abs(residsPost)>excludeThreshMedium);
     
@@ -48,14 +46,17 @@ while largeResids || mediumResids
     if ~isempty(indsLargeResids)
         % Remove large residuals
         % save what we're removing
-        measMatRemoved = [measMatRemoved; measMat(indsLargeResids,:)];
+        
+        measIdRemoved = [measIdRemoved; measId(indsLargeResids)];
         
         % remove from H,R,measMat,pred_meas
         H(indsLargeResids,:) = [];
         R(indsLargeResids,:) = [];
         R(:,indsLargeResids) = [];
-        measMat(indsLargeResids,:) = [];
-        pred_meas(indsLargeResids,:) = [];
+        predMeas(indsLargeResids,:) = [];
+        
+        meas(indsLargeResids) = [];
+        measId(indsLargeResids) = [];
         
         
     elseif ~isempty(indsMediumResids) && largeResids == false
@@ -63,14 +64,16 @@ while largeResids || mediumResids
         % remove using the small threshold.
          
         % save what we're removing
-        measMatRemoved = [measMatRemoved; measMat(indsMediumResids,:)];
+        measIdRemoved = [measIdRemoved; measId(indsMediumResids)];
         
         % remove from H,R,measMat,pred_meas
         H(indsMediumResids,:) = [];
         R(indsMediumResids,:) = [];
         R(:,indsMediumResids) = [];
-        measMat(indsMediumResids,:) = [];
-        pred_meas(indsMediumResids,:) = [];
+        predMeas(indsMediumResids,:) = [];
+        
+        meas(indsMediumResids) = [];
+        measId(indsMediumResids) = [];
     end
     
     idx = idx+1;

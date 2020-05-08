@@ -26,11 +26,11 @@ epoch0 = epoch;
 predMeas = [];
 H = zeros(0,nState);
 R = [];
-measMat = zeros(0,6);
+measId  = [];       % MeasID
+meas    = [];       % actual measurements 
 prnConstInds = [];
 el = [];
 az = [];
-measMatRemovedLow = zeros(0,6);
 
 obj.resids      = [];
 obj.measRemoved = [];
@@ -42,8 +42,7 @@ for idx = 1:length(obs)
     
     switch obsi.type
         case navsu.internal.MeasEnum.GNSS
-            [predMeasi,Hi,Ri,el,az,prnConstInds,measMatRemovedLow,measMati] = handleGnssMeas(obj,epoch0,obsi,corrData);
-            
+            [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi,measIdRemovedLow] = handleGnssMeas(obj,epoch0,obsi,corrData);
             gnssMeas = obsi;
         case navsu.internal.MeasEnum.Position
             [predMeasi,Hi,Ri,measMati] = handlePositionMeas(obj,obsi);
@@ -53,22 +52,22 @@ for idx = 1:length(obs)
         otherwise
             continue;
     end
-    [predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri);
+    [predMeas,H,R,measId,meas] = catMeas(predMeas,predMeasi,H,Hi,R,Ri,measId,measIdi,meas,measi);
 end
 
 %% Pseudomeasurements
-if PARAMS.measUse.noVertVel
+if PARAMS.measUse.noVertVel && 0
     [predMeasi,Hi,Ri,measMati] = handleVehicleConstraintPseudomeas(obj);
     
-    [predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri);
+    [predMeas,H,R] = catMeas(predMeas,predMeasi,H,Hi,R,Ri);
 end
 
 nMeas = size(H,1);
 %% Do the measurement update
 if nMeas > 0
     % Measurement were available- do the update.
-    [H,delta_z,residsPost,K,measMat,~,measMatRemoved,R] = ...
-        navsu.ppp.measUpdateExclude(H,covPropagated,R,measMat,predMeas,PARAMS);
+    [H,delta_z,residsPost,K,~,measMatRemoved,R,measIdRemoved,measId] = ...
+        navsu.ppp.measUpdateExclude(H,covPropagated,R,predMeas,PARAMS,meas,measId);
     
     % 9. Update state estimates
     stateNew = statePropagated + K * delta_z;
@@ -84,10 +83,10 @@ else
     
     measMatRemoved = zeros(0,6);
     residsPost = [];
+    measIdRemoved= [];
 end
 
 %% Update the position and velocity values
-
 obj.R_b_e = (eye(3) - navsu.geo.crossProdMatrix(stateNew(obj.INDS_STATE.ATTITUDE))) * obj.R_b_e;
 
 vel = vel - stateNew(obj.INDS_STATE.VEL);
@@ -106,71 +105,61 @@ obj.posPrevTc = pos;
 
 obj.imuBiasStates = obj.imuBiasStates + stateNew([obj.INDS_STATE.ACC_BIAS obj.INDS_STATE.W_BIAS]);
 
-
 % Deal with resets if any of the removed measurements were carrier phases
-if ~isempty(measMatRemoved)
-    for jdx = 1:size(measMatRemoved,1)
-        if measMatRemoved(jdx,6) == 2 %|| measMatRemoved(jdx,6) == 1
+if ~isempty(measIdRemoved)
+    for jdx = 1:size(measIdRemoved,1)
+        if measIdRemoved(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemoved(jdx).subtype == 2 
             % carrier phase- reset ambiguity by just removing the state
-            obj.removeFlexState([measMatRemoved(jdx,[1 2]) 1 measMatRemoved(jdx,3)] );
+            obj.removeFlexState([measIdRemoved(jdx).prn measIdRemoved(jdx).const 1 measIdRemoved(jdx).freq] );
         end
     end
 end
 
-
 %% Save things for output
 if ~isempty(gnssMeas)
-    obj.allSatsSeen = sortrows(unique([measMat(:,1:2); obj.allSatsSeen],'rows'),2);
+    obj.allSatsSeen = sortrows(unique([[[measId.prn]' [measId.const]']; obj.allSatsSeen],'rows'),2);
     
-    [~,indsSave] = ismember(measMat(measMat(:,end) == 1 | ...
-        measMat(:,end) == 2,[1 2 3 6]),[gnssMeas.range.PRN(:) gnssMeas.range.constInds(:) ...
-        gnssMeas.range.sig(:) gnssMeas.range.ind(:)],'rows');
-    rangeResids = nan(size(gnssMeas.range.obs));
-    rangeResids(indsSave) = residsPost(measMat(:,6) == 1 | measMat(:,6) == 2);
+    % Save residuals
+    obj.resids.measId = measId;
+    obj.resids.resids = residsPost;
+    obj.resids.epochs = epoch0*ones(size(measId));
     
-    % Save the doppler residuals
-    [~,indsSave] = ismember(measMat(measMat(:,end) == 3 ,[1 2 3]),...
-        [gnssMeas.doppler.PRN(:) gnssMeas.doppler.constInds(:) ...
-        gnssMeas.doppler.sig(:) ],'rows');
-    doppResids = nan(size(gnssMeas.doppler.obs));
-    doppResids(indsSave) = residsPost(measMat(:,6) == 3);
+%     [~,indsEl] = ismember(prnConstInds,[gnssMeas.PRN' gnssMeas.constInds'],'rows');
+%     
+%     elFull = nan(size(el,1),1);
+%     elFull(indsEl) = el;
+%     azFull = nan(size(el,1),1);
+%     azFull(indsEl) = az;
+%     
+    % Only actually keeping one of the low measurements per satelite
+    if ~isempty(measIdRemovedLow)
+        prnConstLow = [[measIdRemovedLow.prn]' [measIdRemovedLow.const]'];
+        [~,indsLowUn] = unique(prnConstLow,'rows');
+        measIdRemovedLow = measIdRemovedLow(indsLowUn);
+    else
+        measIdRemovedLow = [];
+    end
     
-    [~,indsEl] = ismember(prnConstInds,[gnssMeas.PRN' gnssMeas.constInds'],'rows');
+    measRemovedIdAny = [measIdRemovedLow; measIdRemoved; measRemovedSlip];
+    measRemovedReason = [1*ones(size(measIdRemovedLow)); 2*ones(size(measIdRemoved)); 3*ones(size(measRemovedSlip))];
     
-    elFull = nan(size(el,1),1);
-    elFull(indsEl) = el;
-    azFull = nan(size(el,1),1);
-    azFull(indsEl) = az;
-    
-    % Actually only keep the prn, const, and reason for elevation removals
-    measLow = unique(measMatRemovedLow(:,[1 2]),'rows');
-    
-    % PRN | CONST | SIG  | MEAS TYPE (1=CODE,2=CARR,3=DOP) | REMOVAL REASON (1=ELEVATION,2=RESIDUALS, 3 = SLIP)
-    measRemoveSave = [measLow(:,1:2) 0*ones(size(measLow,1),2) 1*ones(size(measLow,1),1);
-        measMatRemoved(:,[1:3 6]) 2*ones(size(measMatRemoved,1),1);
-        measRemovedSlip(:,[1 2 4]) 2*ones(size(measRemovedSlip,1),1) 3*ones(size(measRemovedSlip,1),1)];
-    
-    epochRemoveSave = epoch0*ones(size(measRemoveSave,1),1);
-    
-    %% Put everything back in the filter object.
-    obj.resids.epoch = epoch0;
-    obj.resids.range = rangeResids;
-    obj.resids.doppler = doppResids;
-    obj.resids.el      = elFull;
-    obj.resids.az      = azFull;
-    obj.measRemoved.measRemove = measRemoveSave;
-    obj.measRemoved.epoch      = epochRemoveSave;
+    obj.measRemoved.id = measRemovedIdAny;
+    obj.measRemoved.reason = measRemovedReason;
+    obj.measRemoved.epoch  = epoch0*ones(size(measRemovedReason));
 end
 
 end
 
 
-function [predMeas,measMat,H,R] = catMeas(predMeas,predMeasi,measMat,measMati,H,Hi,R,Ri)
+function [predMeas,H,R,measId,meas] = catMeas(predMeas,predMeasi,H,Hi,R,Ri,measId,measIdi,meas,measi);
+
+
 % concatenate the measurement information!
 % Add everything
 predMeas = [predMeas; predMeasi];
 H         = [H; Hi];
-measMat   = [measMat; measMati];
+measId    = [measId; measIdi];
+meas      = [meas; measi];
 
 R2 = zeros(size(R,1)+size(Ri,1),size(R,1)+size(Ri,1));
 R2(1:size(R,1),1:size(R,1)) = R;

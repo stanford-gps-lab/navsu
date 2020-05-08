@@ -1,11 +1,10 @@
-function measRemovedFull = checkCycleSlips(obj,epoch,gnssMeas,PARAMS)
+function measIdRemovedFull = checkCycleSlips(obj,epoch,gnssMeas,PARAMS)
 
 
 
 % Compute current geometry free combination
-
-
 measRemovedFull = zeros(0,4);
+measIdRemovedFull = [];
 
 switch PARAMS.measUse.slipDetector
     case 'GFREE'
@@ -15,7 +14,7 @@ switch PARAMS.measUse.slipDetector
         % PRN | CONST | STATE TYPE (1 = CP) | SIGNAL NUMBER
         measInfoAvail = [gnssMeas.range.PRN(indsCpDfAvail) gnssMeas.range.constInds(indsCpDfAvail) ones(size(indsCpDfAvail)) gnssMeas.range.sig(indsCpDfAvail)];
         
-        
+        measIdAvail = gnssMeas.range.ID(indsCpDfAvail);
         [~,indGFrees] = ismember(measInfoAvail,obj.cycleSlipInfo.measInfoGFree,'rows');
         
         % loop through and update each of the geometry free combinations
@@ -50,7 +49,10 @@ switch PARAMS.measUse.slipDetector
                         measInfoAvail(idx,1:3) measSig2];
                     obj.removeFlexState(measInfoRemove)
                     
+                    measIdRemove = measIdAvail(idx);
+                    
                     measRemovedFull = [measRemovedFull; measInfoRemove];
+                    measIdRemovedFull = [measIdRemovedFull; measIdRemove];
                 end
                 
                 % Update the list
@@ -67,12 +69,12 @@ switch PARAMS.measUse.slipDetector
         
     case 'RX_OUTPUT'
         % Check if there are any slips
-        %         dt = epoch-obj.cycleSlipInfo.epochLastGFree;
         % Check what carrier phase measurements are currently available
         indsCpAvail = find(gnssMeas.range.ind == 2 & gnssMeas.range.obs > 0);
         
         % PRN | CONST | STATE TYPE (1 = CP) | SIGNAL NUMBER
         measInfoAvail = [gnssMeas.range.PRN(indsCpAvail) gnssMeas.range.constInds(indsCpAvail) ones(size(indsCpAvail)) gnssMeas.range.sig(indsCpAvail)];
+        measIdAvail = gnssMeas.range.ID(indsCpAvail);
         
         if ~isempty(obj.cycleSlipInfo.gFree)
             tLockLast = obj.cycleSlipInfo.gFree(indsCpAvail);
@@ -81,6 +83,7 @@ switch PARAMS.measUse.slipDetector
             indsSlip = find(tLockCurr < tLockLast | isnan(tLockLast));
             
             measRemovedFull = measInfoAvail(indsSlip,:);
+            measIdRemovedFull = measIdAvail(indsSlip);
         end
         
         for idx = 1:size(measRemovedFull,1)

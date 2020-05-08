@@ -93,7 +93,7 @@ classdef pppFilter < matlab.mixin.Copyable
             constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
             relClockCorr,relRangeCorr,A)
         
-        [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch,obs,corrData)
+        [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat,idList,measList] = handleGnssMeas(obj,epoch,obs,corrData)
         
         [pred_measi,Hi,ri,measMati] = handleVehicleConstraintPseudomeas(obj)
         

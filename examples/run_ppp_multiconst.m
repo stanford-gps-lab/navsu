@@ -95,6 +95,9 @@ end
 [gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,...
      corrData,'downsampleFac',downsampleFac,'epochStart',epochStart,...
      'epochEnd',epochStart+60*3*Inf);
+ 
+ % Build position measurement
+ 
 
 %% Estimate!
 corrData.orbMode = 'BROADCAST';

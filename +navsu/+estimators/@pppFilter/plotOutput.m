@@ -115,121 +115,154 @@ if ~isempty(truth)
     
 end
 
-%% plot residuals
-residsData = [outputs.resids];
+%% plot GNSS residuals
+% Pull out only the GNSS residuals
+residsData = [outputs.resids]';
+residsFull = cat(1,residsData.resids);
+measIdFull = cat(1,residsData.measId);
+epochsFull = cat(1,residsData.epochs);
 
-residsRangeInfo = outputs(1).residsInfo.rangeInfo;
-residsDopplerInfo = outputs(1).residsInfo.dopplerInfo;
+residsType = cat(1,measIdFull.TypeID);
 
-residsRange = cat(3,residsData.range);
-residsDoppler = cat(3,residsData.doppler);
 
-tPlot = ([residsData.epoch]-min([residsData.epoch]))/60;
+%%
+indsGnss = find(residsType == navsu.internal.MeasEnum.GNSS);
 
-indsPr = find(residsRangeInfo.ind(:,1) == 1);
-indsPh = find(residsRangeInfo.ind(:,1) == 2);
+residsGnss = residsFull(indsGnss);
+measIdGnss = measIdFull(indsGnss);
+epochsGnss = epochsFull(indsGnss);
 
-residsPr = residsRange(indsPr,:,:);
-residsPr = reshape(residsPr,size(residsPr,1)*size(residsPr,2),size(residsPr,3));
+prnResids = cat(1,measIdGnss.prn);
+constResids = cat(1,measIdGnss.const);
+freqResids  = cat(1,measIdGnss.freq);
+subtypeResids = cat(1,measIdGnss.subtype);
 
-residsPh = residsRange(indsPh,:,:);
-residsPh = reshape(residsPh,size(residsPh,1)*size(residsPh,2),size(residsPh,3));
+% Individual measurement types
+measIdMat = [prnResids constResids freqResids subtypeResids];
+measIdUn = unique(measIdMat,'rows');
+
+epochMin = min(epochsGnss);
 
 figure;
 ha = navsu.thirdparty.tightSubplot(3,1,0.05,[0.1 0.1],[0.07 0.05]);
 axes(ha(1))
-plot(tPlot,residsPr,'.')
-xlim([0 max(tPlot)]); grid on;
+
+% Code phase residuals
+indsUnPr = measIdUn(measIdUn(:,4) == 1,:);
+for idx = 1:size(indsUnPr)
+    indsi = find(ismember(measIdMat,indsUnPr(idx,:),'rows'));
+    tploti = (epochsGnss(indsi)-epochMin)/60;
+    residsi = residsGnss(indsi);
+    
+    plot(tploti,residsi,'.');
+    hold on;
+end
+xlim([0 (max(epochsGnss)-min(epochsGnss))/60]); grid on;
 ylabel('Code phase residuals [m]')
 title('Measurement residuals over time')
 
 % Plot carrier phase residuals
 axes(ha(2))
-% plot(tPlot,residsPh(constsPh == 1,:),'-')
-plot(tPlot,residsPh(:,:),'-')
-
-xlim([0 max(tPlot)]); grid on;
-% xlabel('Minutes into run')
+% Carrier phase residuals
+indsUnPh = measIdUn(measIdUn(:,4) == 2,:);
+for idx = 1:size(indsUnPh)
+    indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
+    tploti = (epochsGnss(indsi)-epochMin)/60;
+    residsi = residsGnss(indsi);
+    
+    plot(tploti,residsi);
+    hold on;
+end
+xlim([0 (max(epochsGnss)-min(epochsGnss))/60]); grid on;
 ylabel('Carrier phase residuals [m]')
 ylim([-0.1 0.1])
 
 % Plot doppler residuals
 axes(ha(3))
-residsDoppler = reshape(residsDoppler,size(residsDoppler,1)*size(residsDoppler,2),size(residsDoppler,3));
-
-% plot(tPlot,residsPh(constsPh == 1,:),'-')
-plot(tPlot,residsDoppler,'.')
-
-xlim([0 max(tPlot)]); grid on;
+% Doppler residuals
+indsUnPh = measIdUn(measIdUn(:,4) == 3,:);
+for idx = 1:size(indsUnPh)
+    indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
+    tploti = (epochsGnss(indsi)-epochMin)/60;
+    residsi = residsGnss(indsi);
+    
+    plot(tploti,residsi,'.');
+    hold on;
+end
+xlim([0 (max(epochsGnss)-min(epochsGnss))/60]); grid on;
 xlabel('Minutes into run')
 ylabel('Doppler residuals [m]')
 
 %% plot measurements that were removed?
-measRemovedStruc = [outputs.measRemoved];
-measRemoved = cat(1,measRemovedStruc.measRemove);
-epochsRemoved = cat(1,measRemovedStruc.epoch);
-
-prns = outputs(1).residsInfo.rangeInfo.PRN(1,:)';
-constInds = outputs(1).residsInfo.rangeInfo.constInds(1,:)';
-sInds = (1:length(prns))';
-epochs = [residsData.epoch]';
-
-[~,yInds] = ismember(measRemoved(:,1:2),[prns constInds],'rows');
-[~,xInds] =  ismember(epochsRemoved,epochs);
-
-yPlotMat = repmat(sInds,1,length(epochs));
-xPlotMat = repmat(1:length(epochs),length(sInds),1);
-
-figure; hold on;
-
-
-markers = {'g.','c.','ro','r.','b^','k'};
-markerSize = [5 2 5 8 2 2];
-legText = {'Meas Used','Low Elevation','Code Removed','Carr Removed','Cycle Slip','Number of satellites used'};
-for idx = 1:length(legText)
-    plot(-10,-10,markers{idx},'markerSize',markerSize(idx))
-end
-rangeResids = cat(3,residsData.range);
-
-for idx = 1:length(legText)
-    switch idx
-        case 1 % Meas used
-            linInd = find(squeeze(sum(~isnan(rangeResids),1)) > 0);
-            
-            temp = zeros(size(xPlotMat));
-            temp(linInd) = 1;
-            nSatsUsed = sum(temp,1);
-            'fdaf';
-            %             nSatsUsed =
-        case 2 % low elevation
-            indsi = find(measRemoved(:,5) == 1);
-            linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
-            
-        case 3 % code removed
-            indsi = find(measRemoved(:,5) == 2 & measRemoved(:,4) == 1);
-            linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
-            
-        case 4 % carrier removed
-            indsi = find(measRemoved(:,5) == 2 & measRemoved(:,4) == 2);
-            linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
-        case 5
-            % cycle slip
-            indsi = find( measRemoved(:,5) == 3);
-            linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
+if 1
+    measRemovedStruc = cat(1,outputs.measRemoved);
+    measRemId = cat(1,measRemovedStruc.id);
+    measRemReas = cat(1,measRemovedStruc.reason);
+    measRemEpoch = cat(1,measRemovedStruc.epoch);
+    measRemSubtype = cat(1,measRemId.subtype);
+    
+    measRemPrnConst = [cat(1,measRemId.prn) cat(1,measRemId.const)];
+    
+    prns = outputs(1).residsInfo.rangeInfo.PRN(1,:)';
+    constInds = outputs(1).residsInfo.rangeInfo.constInds(1,:)';
+    sInds = (1:length(prns))';
+    epochs = [outputs.epoch]';
+    
+    [~,yInds] = ismember(measRemPrnConst(:,1:2),[prns constInds],'rows');
+    [~,xInds] =  ismember(measRemEpoch,epochs);
+    
+    yPlotMat = repmat(sInds,1,length(epochs));
+    xPlotMat = repmat(1:length(epochs),length(sInds),1);
+    
+    figure; hold on;
+    
+    markers = {'g.','c.','ro','r.','b^','k'};
+    markerSize = [5 2 5 8 2 2];
+    legText = {'Meas Used','Low Elevation','Code Removed','Carr Removed','Cycle Slip','Number of satellites used'};
+    for idx = 1:length(legText)
+        plot(-10,-10,markers{idx},'markerSize',markerSize(idx))
+    end    
+    
+    % general availability of measurements
+    prnConstEpochs = unique([cat(1,measIdGnss.prn) cat(1,measIdGnss.const) epochsGnss],'rows');
+    [~,yIndsAvail] = ismember(prnConstEpochs(:,[1 2]),[prns constInds],'rows');
+    [~,xIndsAvail] = ismember(prnConstEpochs(:,3) ,epochs);
+    
+    for idx = 1:length(legText)
+        switch idx
+            case 1 % Meas used
+                linInd = sub2ind(size(yPlotMat),yIndsAvail,xIndsAvail);
+                
+            case 2 % low elevation
+                indsi = find(measRemReas == 1);
+                linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
+                
+            case 3 % code removed
+                indsi = find(measRemReas == 2 & measRemSubtype == 1);
+                linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
+                
+            case 4 % carrier removed
+                indsi = find(measRemReas == 2 & measRemSubtype == 2);
+                linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
+            case 5
+                % cycle slip
+                indsi = find( measRemReas == 3);
+                linInd = sub2ind(size(yPlotMat),yInds(indsi),xInds(indsi));
+        end
+        
+        xPloti = nan(size(xPlotMat));
+        xPloti(linInd) = xPlotMat(linInd);
+        yPloti = nan(size(yPlotMat));
+        yPloti(linInd) = yPlotMat(linInd);
+        
+        plot(xPloti',yPloti',markers{idx},'markerSize',markerSize(idx));
     end
+%     plot(xPlotMat(1,:),nSatsUsed,'k');
+    xlim([min(min(xPlotMat))-0.5 max(max(xPlotMat))+0.5])
+    ylim([min(min(yPlotMat))-0.5 max(max(yPlotMat))+0.5])
+    legend(legText);
     
-    xPloti = nan(size(xPlotMat));
-    xPloti(linInd) = xPlotMat(linInd);
-    yPloti = nan(size(yPlotMat));
-    yPloti(linInd) = yPlotMat(linInd);
-    
-    plot(xPloti',yPloti',markers{idx},'markerSize',markerSize(idx));
 end
-plot(xPlotMat(1,:),nSatsUsed,'k');
-xlim([min(min(xPlotMat))-0.5 max(max(xPlotMat))+0.5])
-ylim([min(min(yPlotMat))-0.5 max(max(yPlotMat))+0.5])
-legend(legText);
-
 end
 
 
