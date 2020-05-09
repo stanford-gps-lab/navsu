@@ -15,14 +15,18 @@ covState  = [];
 covdState = [];
 satsUsed  = [];
 %% Collect all of the measurements we want- prioritize dual frequency
-indsDfCodeAvail = find(obs.range.obs ~= 0 & obs.range.sig >= 100 & ...
-    obs.range.ind == 1);
+% indsDfCodeAvail = find(obs.range.obs ~= 0 & obs.range.sig >= 100 & ...
+%     obs.range.ind == 1);
 
+indsDfCodeAvail = find(obs.range.obs(:) ~= 0 & [obs.range.ID.freq]' >= 100 & ...
+    [obs.range.ID.subtype]' == navsu.internal.MeasEnum.Code);
+
+% Also include single frequency if we have to :)
 if size(indsDfCodeAvail,1) < 1000
-   indsSfCodeAvail = find(obs.range.obs ~= 0 &  obs.range.sig < 100 & ...
-        obs.range.ind == 1);  
+    indsSfCodeAvail = find(obs.range.obs(:) ~= 0 &  [obs.range.ID.freq]' < 100 & ...
+        [obs.range.ID.subtype]' ==  navsu.internal.MeasEnum.Code);
 else
-   indsSfCodeAvail = []; 
+    indsSfCodeAvail = [];
 end
 
 indsMeasUse = [indsSfCodeAvail; indsDfCodeAvail];
