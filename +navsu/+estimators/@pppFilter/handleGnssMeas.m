@@ -28,7 +28,6 @@ x_est_propagated = obj.state;
 % Receiver velocity
 % vel = obj.vel;
 
-llhi = navsu.geo.xyz2llh(pos');
 
 nState = size(x_est_propagated,1);
 
@@ -60,7 +59,7 @@ nMeas = length(idList);
 if nMeas > 0
     %% Propagate orbit and clock for all measurements
     prnConstInds = sortrows(unique([[idList.prn]' [idList.const]'],'rows'),2); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    
     % transmission time for all satellites
     % rough estimate of travel time- just use geometric range
     [~,ib] = ismember(prnConstInds(:,2),obj.INDS_STATE.CLOCK_BIAS_CONSTS);
@@ -100,8 +99,8 @@ if nMeas > 0
     if isempty(measPr) || 1
         bRxi = x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1);
     else
-%         bRxi = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));
-%         obj.clockBias(:) = bRxi;
+        %         bRxi = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));
+        %         obj.clockBias(:) = bRxi;
     end
     x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1)   = bRxi;
     
@@ -130,9 +129,16 @@ if nMeas > 0
         m = zeros(size(el));
         tecSlant = zeros(size(el));
     else
-        doy = navsu.time.jd2doy(navsu.time.epochs2jd(epoch));
-        [trop,m,~] = navsu.ppp.models.tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
+        % Latitude and longitude
+        llhi = navsu.geo.xyz2llh(pos');
         
+        if abs(llhi(3)) > 1e5
+            trop = zeros(size(el));
+            m = zeros(size(el));
+        else
+            doy = navsu.time.jd2doy(navsu.time.epochs2jd(epoch));
+            [trop,m,~] = navsu.ppp.models.tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
+        end
         % TEC for each LOS
         if any([idList.freq] < 100 & (([idList.subtype] == navsu.internal.MeasEnum.Code) | ([idList.subtype] == navsu.internal.MeasEnum.Carrier))) %&& strcmp(PARAMS.states.ionoMode,'TEC')
             [~,~,tecSlant] = corrData.ionoDelay(epoch,llhi,'az',az,'el',el);
@@ -152,7 +158,7 @@ if nMeas > 0
     relClockCorr = 2/c^2.*sum(svPos.*svVel,2)*c;
     if norm(pos) < 1e3
         relRangeCorr = zeros(size(svPos,1),1);
-    else 
+    else
         relRangeCorr = navsu.ppp.models.relRangeCorr(svPos',pos',PARAMS);
     end
     
@@ -199,7 +205,7 @@ if nMeas > 0
                 % Code phase measurement
                 [predMeasi,Hii,sigMeasi] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
                     constIndi,indGloDcbs(idx),indMpCodes(idx),m(losInd),gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),stRangeOffset(losInd),...
-                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));                
+                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));
                 
             case navsu.internal.MeasEnum.Carrier
                 % Carrier phase measurement
@@ -226,7 +232,7 @@ if nMeas > 0
     
     % Remove measurements from satellites that are too low
     indsElLow = find(el(losInds)*180/pi < PARAMS.elMask);
-    if ~isempty(indsElLow)        
+    if ~isempty(indsElLow)
         measIdRemovedLow = idList(indsElLow);
         
         H(indsElLow,:) = [];

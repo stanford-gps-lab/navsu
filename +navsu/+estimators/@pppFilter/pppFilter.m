@@ -76,7 +76,7 @@ classdef pppFilter < matlab.mixin.Copyable
         
         outData = saveState(obj,outData,epoch,obs);
         
-        [state,cov] = leastSquaresSol(obj,epoch,obs,corrData)
+        [omplete, measId] = leastSquaresSol(obj,epoch,obs,corrData)
         
     end
     

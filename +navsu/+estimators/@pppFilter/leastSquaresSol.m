@@ -1,20 +1,10 @@
-function [state,cov] = leastSquaresSol(obj,epoch,obs,corrData)
+function [complete,measId] = leastSquaresSol(obj,epoch,obs,corrData)
 
 state = obj.state;
 cov = obj.cov;
 nState = length(state);
 
-% nState =
-
 % Initialize
-% predMeas = [];
-% H = zeros(0,nState);
-% R = [];
-% measId  = [];       % MeasID
-% meas    = [];       % actual measurements
-% prnConstInds = [];
-% el = [];
-% az = [];
 
 obj.resids      = [];
 obj.measRemoved = [];
@@ -25,8 +15,16 @@ gnssMeasMaskCode({'pr'},:) = repelem({1},1,size(gnssMeasMaskCode,2));
 gnssMeasMaskCode({'cp'},:) = repelem({0},1,size(gnssMeasMaskCode,2));
 gnssMeasMaskCode({'dopp'},:) = repelem({1},1,size(gnssMeasMaskCode,2));
 
+% Save initial values in case this doesn't work
+pos0        = obj.pos;
+vel0        = obj.vel;
+clockBias0  = obj.clockBias;
+clockDrift0 = obj.clockDrift;
+
 %% Loop through each measurement type and add it to the list!
-for jdx = 1:10
+convMetric = Inf;
+convThresh = 1e-3;
+while convMetric > convThresh
     
     predMeas = [];
     H = zeros(0,nState);
@@ -42,7 +40,6 @@ for jdx = 1:10
         switch obsi.type
             case navsu.internal.MeasEnum.GNSS
                 % this should be code only
-                
                 obsi = navsu.ppp.measMask(obsi,gnssMeasMaskCode);
                 
                 [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi] = ...
@@ -61,46 +58,57 @@ for jdx = 1:10
     end
     
     %% State vector just includes position, velocity, clock bias, and clock rate
-    
-    % 
     indsStateEst = [obj.INDS_STATE.POS obj.INDS_STATE.VEL obj.INDS_STATE.CLOCK_BIAS obj.INDS_STATE.CLOCK_DRIFT];
     
     A = H(:,indsStateEst);
     
+    % Check if the system is observable
+    if rank(A) < size(A,2)
+       break; 
+    end
+    
     resids = meas-predMeas;
     
     W = diag(ones(size(A,1),1));
-    W=  inv(R);
     
-    % Need to check for observability of each state
-% %     if rank(A) < size(A,2)
-% %         
-% %         
-% %     end
-%     W 
-%     resids = 
+    x =(A'*W*A)\A'*W* resids;    
     
-    x =(A'*W*A)\A'*W* resids;
+    % Update the states - 
+    obj.pos = obj.pos-x(1:3);
+    obj.vel = obj.vel-x(4:6);
+    obj.clockBias = obj.clockBias+x(7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
+    obj.clockDrift = obj.clockDrift+x((end-length(obj.INDS_STATE.CLOCK_DRIFT)+1):end);
     
-    x = x;
-    % Update the states lol
-    obj.pos = obj.pos+x(1:3);
-%     obj.vel = obj.vel+x(4:6);
-%     obj.clockBias = obj.clockBias+x(7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
-%     obj.clockDrift = obj.clockDrift+x((end-length(obj.INDS_STATE.CLOCK_DRIFT)+1):end);
-    
-    %     state = state+x;
-    covState = inv(A'*W*A);
-    
-    norm(x)
-    
-    
-    
-    
+    % Convergence metric
+    convMetric = norm(x);
     
 end
 
-
+if convMetric < convThresh
+   % the estimation process was a success- keep everything 
+    
+   %% Build the covariance
+   covState = inv(A'*W*A);
+   
+   covFull = obj.cov;
+   covFull(indsStateEst,obj.INDS_STATE.POS) = covState(:,1:3);
+   covFull(indsStateEst,obj.INDS_STATE.VEL) = covState(:,4:6);
+   covFull(indsStateEst,obj.INDS_STATE.CLOCK_BIAS) = covState(:,7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
+   covFull(indsStateEst,obj.INDS_STATE.CLOCK_DRIFT) = covState(:,(end-length(obj.INDS_STATE.CLOCK_DRIFT)+1):end);
+   
+   obj.cov = covFull;
+   
+   complete = true;
+else
+    % Return values to how they were before the estimation started
+    obj.pos        = pos0;
+    obj.vel        = vel0;
+    obj.clockBias  = clockBias0;
+    obj.clockDrift = clockDrift0;
+    
+    
+    complete = false;
+end
 
 end
 
@@ -123,3 +131,8 @@ R = R2;
 
 
 end
+
+
+
+
+
