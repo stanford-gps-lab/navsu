@@ -76,6 +76,8 @@ classdef pppFilter < matlab.mixin.Copyable
         
         outData = saveState(obj,outData,epoch,obs);
         
+        [state,cov] = leastSquaresSol(obj,epoch,obs,corrData)
+        
     end
     
     methods %(Access = private)
@@ -89,11 +91,11 @@ classdef pppFilter < matlab.mixin.Copyable
             indMpCarrsi,indAmbStatesi,phWind,gRange,satBias,rxBias,trop,stRangeOffset,...
             relClockCorr,relRangeCorr,A,constIndi)
         
-        [predMeas,H,sig] = codeModel(obj,nState,sigi,freqi,tecSlant,state,...
+        [predMeas,H,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant,state,...
             constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
             relClockCorr,relRangeCorr,A)
         
-        [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat,idList,measList] = handleGnssMeas(obj,epoch,obs,corrData)
+        [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat,idList,measList] = handleGnssMeas(obj,epoch,obs,corrData,varargin)
         
         [pred_measi,Hi,ri,measIdi,measi] = handleVehicleConstraintPseudomeas(obj)
         

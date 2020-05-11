@@ -1,5 +1,16 @@
-function  [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow] = handleGnssMeas(obj,epoch,obs,corrData)
+function  [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow] ...
+    = handleGnssMeas(obj,epoch,obs,corrData,varargin)
 
+p = inputParser;
+
+p.addParameter('SimpleModel',false);
+
+% parse the results
+parse(p, varargin{:});
+res        = p.Results;
+SimpleModel= res.SimpleModel;
+
+%%
 
 measMat = [];
 
@@ -114,27 +125,43 @@ if nMeas > 0
     
     %% Various range effects
     % tropo delay for each LOS
-    doy = navsu.time.jd2doy(navsu.time.epochs2jd(epoch));
-    [trop,m,~] = navsu.ppp.models.tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
-    
-    % TEC for each LOS
-    if any([idList.freq] < 100 & (([idList.subtype] == navsu.internal.MeasEnum.Code) | ([idList.subtype] == navsu.internal.MeasEnum.Carrier))) %&& strcmp(PARAMS.states.ionoMode,'TEC')
-        [~,~,tecSlant] = corrData.ionoDelay(epoch,llhi,'az',az,'el',el);
+    if norm(pos) < 1e3
+        trop = zeros(size(el));
+        m = zeros(size(el));
+        tecSlant = zeros(size(el));
     else
-        tecSlant = zeros(size(prnConstInds,1),1);
+        doy = navsu.time.jd2doy(navsu.time.epochs2jd(epoch));
+        [trop,m,~] = navsu.ppp.models.tropDelay(el*180/pi,az*180/pi, llhi(:,3), llhi(:,1), llhi(:,2), doy, PARAMS, [],[],epoch);
+        
+        % TEC for each LOS
+        if any([idList.freq] < 100 & (([idList.subtype] == navsu.internal.MeasEnum.Code) | ([idList.subtype] == navsu.internal.MeasEnum.Carrier))) %&& strcmp(PARAMS.states.ionoMode,'TEC')
+            [~,~,tecSlant] = corrData.ionoDelay(epoch,llhi,'az',az,'el',el);
+        else
+            tecSlant = zeros(size(prnConstInds,1),1);
+        end
     end
     
     % solid tide adjustment to position
-    [~,stRangeOffset] = navsu.ppp.models.solidTide(epoch(1),pos,'svPos',svPosRot);
+    if norm(pos) < 1e3
+        stRangeOffset = zeros(size(svPosRot,1),1);
+    else
+        [~,stRangeOffset] = navsu.ppp.models.solidTide(epoch(1),pos,'svPos',svPosRot);
+    end
     
     % relativistic corrections
     relClockCorr = 2/c^2.*sum(svPos.*svVel,2)*c;
-    relRangeCorr = navsu.ppp.models.relRangeCorr(svPos',pos',PARAMS);
+    if norm(pos) < 1e3
+        relRangeCorr = zeros(size(svPos,1),1);
+    else 
+        relRangeCorr = navsu.ppp.models.relRangeCorr(svPos',pos',PARAMS);
+    end
     
     % Carrier phase windup
     [~,ib] = ismember(prnConstInds,obj.phWind.PrnConstInd,'rows');
-    phWind = navsu.ppp.models.carrierPhaseWindupGGM(epoch(1), repmat(pos',size(svPosRot,1)), svPosRot, obj.phWind.phaseOffset(ib));
-    obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
+    if all(ib)
+        phWind = navsu.ppp.models.carrierPhaseWindupGGM(epoch(1), repmat(pos',size(svPosRot,1)), svPosRot, obj.phWind.phaseOffset(ib));
+        obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
+    end
     
     % Geometry matrix
     A = (svPosRot-pos')./sqrt(sum((pos'-svPosRot).^2,2));
@@ -170,7 +197,7 @@ if nMeas > 0
         switch measTypei
             case navsu.internal.MeasEnum.Code
                 % Code phase measurement
-                [predMeasi,Hii,sigMeasi] = codeModel(obj,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
+                [predMeasi,Hii,sigMeasi] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
                     constIndi,indGloDcbs(idx),indMpCodes(idx),m(losInd),gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),stRangeOffset(losInd),...
                     relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));                
                 
