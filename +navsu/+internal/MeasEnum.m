@@ -2,6 +2,9 @@ classdef MeasEnum < uint8
     % MeasEnum     enumeration of the types of measurements available
     
     enumeration
+        % Any 
+        AnyMeas (0)
+        
         % GNSS observation 
         GNSS (1)
         

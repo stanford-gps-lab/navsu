@@ -38,6 +38,8 @@ classdef MeasIdGnss < navsu.internal.MeasID
             
         end
         
+        
+        
     end
     
     
