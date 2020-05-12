@@ -1,20 +1,7 @@
-classdef pppFilter < matlab.mixin.Copyable
+classdef pppFilter < navsu.estimators.AbstractNavFilter
     
     
     properties
-        
-        state   % the state of the filter -> should be of type pppanal.ppp.State
-        cov     % covariance of the state
-        
-        pos                % ECEF position
-        vel                % ECEF velocity
-        R_b_e              % DCM from body to ECEF
-        imuBiasStates      % imu bias states
-        clockBias          % receiver clock bias(es)
-        clockDrift         % receiever clock drift(s)
-        carrierAmbiguities % carrier phase ambiguity estimates
-        
-        INDS_STATE % state indexing
         
         lastAccMeas % most recent acceleration measurements
         lastGyroMeas % most recent gyro measurement
@@ -26,8 +13,7 @@ classdef pppFilter < matlab.mixin.Copyable
         % contains latest geometry free combinations
         cycleSlipInfo = struct('gFree',zeros(0,1),'epochLastGFree',zeros(0,1),'measInfoGFree',zeros(0,4));
         
-        % phase windup
-        phWind = struct('phaseOffset',zeros(0,1),'PrnConstInd',zeros(0,2));
+       
         
         StateMap % mapping matrix- indicates what the state is in each position of the state and covariance matrix
         
@@ -35,10 +21,7 @@ classdef pppFilter < matlab.mixin.Copyable
         % separation :)
         allSatsSeen
         
-        initialized = false % whether or not the fitler has been initialized
-        
-        PARAMS % parameters associated with the running of this filter!
-        
+       
         resids % extra info for output about measurement residuals
         
         measRemoved % extra info for measurements that were removed :)
@@ -75,9 +58,7 @@ classdef pppFilter < matlab.mixin.Copyable
         PARAMS = initParams(obj);
         
         outData = saveState(obj,outData,epoch,obs);
-        
-        [omplete, measId] = leastSquaresSol(obj,epoch,obs,corrData)
-        
+               
     end
     
     methods %(Access = private)
@@ -85,26 +66,8 @@ classdef pppFilter < matlab.mixin.Copyable
         
         measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
         
-        [predMeas,H,sig] = doppModel(obj,nState,dVel,A,rxDrift,constInd)
-        
-        [predMeas,H,sig] = carrierModel(obj,nState,sigi,freqi,tecSlant,state,m,indIonosi, ...
-            indMpCarrsi,indAmbStatesi,phWind,gRange,satBias,rxBias,trop,stRangeOffset,...
-            relClockCorr,relRangeCorr,A,constIndi)
-        
-        [predMeas,H,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant,state,...
-            constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
-            relClockCorr,relRangeCorr,A)
-        
-        [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat,idList,measList] = handleGnssMeas(obj,epoch,obs,corrData,varargin)
-        
-        [pred_measi,Hi,ri,measIdi,measi] = handleVehicleConstraintPseudomeas(obj)
-        
-        [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,posMeas)
-        
-        [predMeasi,Hi,Ri,measIdi,measi] = handleVelocityMeas(obj,velMeas)
-        
-        [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center. 
-        
+     
+%         [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center. 
     end
     
     methods(Static)

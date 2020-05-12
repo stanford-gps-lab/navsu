@@ -1,28 +1,14 @@
-classdef leastSq < matlab.mixin.Copyable
+classdef leastSq < navsu.estimators.AbstractNavFilter
     
     
-    properties
-        state   % the state of the filter -> should be of type pppanal.ppp.State
-        cov     % covariance of the state
-        
-        pos                % ECEF position
-        vel                % ECEF velocity
-        R_b_e              % DCM from body to ECEF
-        imuBiasStates      % imu bias states
-        clockBias          % receiver clock bias(es)
-        clockDrift         % receiever clock drift(s)
-        carrierAmbiguities % carrier phase ambiguity estimates
-        
-        % state indices
-        INDS_STATE
-        
+    properties        
         % all satellites used in the solution- useful for solution
         % separation :)
         allSatsSeen
                 
-        initialized = true % it's always initialized :)
+%         initialized = true % it's always initialized :)
         
-        PARAMS % parameters associated with the running of this filter!
+%         PARAMS % parameters associated with the running of this filter!
         
         resids % extra info for output about measurement residuals
         
@@ -37,6 +23,8 @@ classdef leastSq < matlab.mixin.Copyable
             % CONFIGURATION FILE OR SOMETHING
             
             obj.PARAMS = obj.initParams;
+            
+            obj.initialized = true;
         end
     end
     

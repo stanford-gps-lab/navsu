@@ -69,7 +69,12 @@ while convMetric > convThresh
     
     resids = meas-predMeas;
     
-    W = diag(ones(size(A,1),1));
+    if any(isnan(R(:)))
+        W = diag(ones(size(A,1),1));
+    else
+        W = inv(R);
+    end
+    
     
     x =(A'*W*A)\A'*W* resids;    
     
