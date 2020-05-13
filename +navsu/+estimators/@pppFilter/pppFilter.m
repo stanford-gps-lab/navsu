@@ -45,7 +45,7 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         measId = initialize(obj,corrData,obs,varargin)
         
         % the time AND measurement update :O
-        measId = update(obj,epoch,obs,corrData)
+        measId = update(obj,epoch,obs,corrData,varargin)
         
         manageStates(obj,epoch,gnssMeas,PARAMS,outStruc);
         measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);
@@ -62,10 +62,8 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
     methods %(Access = private)
         timeUpdate(obj,epoch)
         
-        measId = measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
+        measId = measUpdate(obj,epoch,obs,corrData,measRemovedSlip,varargin)
         
-     
-%         [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center. 
     end
     
     methods(Static)

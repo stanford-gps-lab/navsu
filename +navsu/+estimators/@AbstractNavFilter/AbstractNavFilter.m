@@ -33,7 +33,7 @@ classdef (Abstract) AbstractNavFilter < matlab.mixin.Copyable
         measId = initialize(obj,obs,corrData,varargin)
         
         % the time AND measurement update :O
-        [measId,measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)
+        [measId,measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData,varargin)
         
         % Save what you would like 
         outData = saveState(obj,outData,epoch,obs);
@@ -80,7 +80,7 @@ classdef (Abstract) AbstractNavFilter < matlab.mixin.Copyable
         % leastSquaresSol - produce a least squares solution based on the 
         % available observations.  This currently requires GNSS
         % observations
-        [complete, measId] = leastSquaresSol(obj,epoch,obs,corrData)
+        [complete, measId] = leastSquaresSol(obj,epoch,obs,corrData,varargin)
 
         [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center.
 

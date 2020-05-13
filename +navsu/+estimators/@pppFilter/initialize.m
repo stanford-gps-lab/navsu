@@ -1,6 +1,14 @@
-function measId = initialize(obj,obs,corrData)
+function measId = initialize(obj,obs,corrData,varargin)
 
 
+p = inputParser;
+
+p.addParameter('measExclude',[]);
+
+% parse the results
+parse(p, varargin{:});
+res        = p.Results;
+measExclude = res.measExclude;
 
 %% Sort out what is available in the measurements
 
@@ -117,7 +125,7 @@ epoch = gnssMeas.epochs;
 % Least squares solution, if completed, will populate the position,
 % velocity, clock bias, and clock drift states as well as their
 % covariances using a simple least squares code phase solution. 
-[complete,measId] = leastSquaresSol(obj,epoch,obs,corrData);
+[complete,measId] = leastSquaresSol(obj,epoch,obs,corrData,'measExclude',measExclude);
 
 
 if ~complete 

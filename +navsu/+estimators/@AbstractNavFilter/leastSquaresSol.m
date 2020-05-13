@@ -1,11 +1,20 @@
-function [complete,measId] = leastSquaresSol(obj,epoch,obs,corrData)
+function [complete,measId] = leastSquaresSol(obj,epoch,obs,corrData,varargin)
 
+p = inputParser;
+
+p.addParameter('measExclude',[]);
+
+% parse the results
+parse(p, varargin{:});
+res        = p.Results;
+measExclude = res.measExclude;
+
+%%
 state = obj.state;
 cov = obj.cov;
 nState = length(state);
 
 % Initialize
-
 obj.resids      = [];
 obj.measRemoved = [];
 gnssMeas = [];
@@ -64,7 +73,7 @@ while convMetric > convThresh
     
     % Check if the system is observable
     if rank(A) < size(A,2)
-       break; 
+        break;
     end
     
     resids = meas-predMeas;
@@ -75,10 +84,24 @@ while convMetric > convThresh
         W = inv(R);
     end
     
+    % If there are measurements to exclude, do so now.
+    if ~isempty(measExclude)
+
+        measMask = false(size(A,1),1);
+        for mdx = 1:length(measExclude)
+            measMask = measMask | matches(measExclude(mdx),measId);
+        end
+        
+        % Pull these values out from stuff :)
+        A(measMask,:) = [];
+        resids(measMask) = [];
+        W(measMask,:) = [];
+        W(:,measMask) = [];
+    end
     
-    x =(A'*W*A)\A'*W* resids;    
+    x =(A'*W*A)\A'*W* resids;
     
-    % Update the states - 
+    % Update the states -
     obj.pos = obj.pos-x(1:3);
     obj.vel = obj.vel-x(4:6);
     obj.clockBias = obj.clockBias+x(7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
@@ -90,20 +113,20 @@ while convMetric > convThresh
 end
 
 if convMetric < convThresh
-   % the estimation process was a success- keep everything 
+    % the estimation process was a success- keep everything
     
-   %% Build the covariance
-   covState = inv(A'*W*A);
-   
-   covFull = obj.cov;
-   covFull(indsStateEst,obj.INDS_STATE.POS) = covState(:,1:3);
-   covFull(indsStateEst,obj.INDS_STATE.VEL) = covState(:,4:6);
-   covFull(indsStateEst,obj.INDS_STATE.CLOCK_BIAS) = covState(:,7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
-   covFull(indsStateEst,obj.INDS_STATE.CLOCK_DRIFT) = covState(:,(end-length(obj.INDS_STATE.CLOCK_DRIFT)+1):end);
-   
-   obj.cov = covFull;
-   
-   complete = true;
+    %% Build the covariance
+    covState = inv(A'*W*A);
+    
+    covFull = obj.cov;
+    covFull(indsStateEst,obj.INDS_STATE.POS) = covState(:,1:3);
+    covFull(indsStateEst,obj.INDS_STATE.VEL) = covState(:,4:6);
+    covFull(indsStateEst,obj.INDS_STATE.CLOCK_BIAS) = covState(:,7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
+    covFull(indsStateEst,obj.INDS_STATE.CLOCK_DRIFT) = covState(:,(end-length(obj.INDS_STATE.CLOCK_DRIFT)+1):end);
+    
+    obj.cov = covFull;
+    
+    complete = true;
 else
     % Return values to how they were before the estimation started
     obj.pos        = pos0;

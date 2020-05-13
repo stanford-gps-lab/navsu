@@ -1,4 +1,14 @@
-function measId = measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
+function measId = measUpdate(obj,epoch,obs,corrData,measRemovedSlip,varargin)
+
+
+p = inputParser;
+
+p.addParameter('measExclude',[]);
+
+% parse the results
+parse(p, varargin{:});
+res        = p.Results;
+measExclude = res.measExclude;
 
 %% Pull a few things out of the filter object
 
@@ -63,6 +73,22 @@ if PARAMS.measUse.noVertVel && 0
 end
 
 nMeas = size(H,1);
+
+%% Measurement exclusion may have been forced from the outside- DO SOMETHING ABOUT IT!
+if ~isempty(measExclude)    
+        measMask = false(size(H,1),1);
+        for mdx = 1:length(measExclude)
+            measMask = measMask | matches(measExclude(mdx),measId);
+        end
+        
+        % Pull these values out from stuff :)
+        H(measMask,:) = [];
+        predMeas(measMask) = [];
+        meas(measMask) = [];
+        R(measMask,:) = [];
+        R(:,measMask) = [];
+end
+
 %% Do the measurement update
 if nMeas > 0
     % Measurement were available- do the update.

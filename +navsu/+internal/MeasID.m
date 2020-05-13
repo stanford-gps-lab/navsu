@@ -6,6 +6,9 @@ classdef  MeasID < matlab.mixin.Heterogeneous
         % Type of measurement
         TypeID navsu.internal.MeasEnum
         
+    end
+    
+    properties (SetAccess = protected, Hidden = true)
         % Double row vector including all relevant values
         idVec = zeros(1,1,6);
         
@@ -27,19 +30,15 @@ classdef  MeasID < matlab.mixin.Heterogeneous
         end
     
     end
-    
-    methods
-      
-       
-       
-       
-    end
         
-    
     methods (Sealed)
         
          % overload for equality
        function outMat = eq(a,b)
+           if isempty(a) || isempty(b)
+               outMat = [];
+               return;
+           end
            
            aId = reshape(cat(1,a.idVec),size(a,1),size(a,2),6);
            bId = reshape(cat(1,b.idVec),size(b,1),size(b,2),6);
@@ -59,9 +58,15 @@ classdef  MeasID < matlab.mixin.Heterogeneous
                 error('Can only check one at at time right now')
             end
             
-            matchVec = zeros(size(measIdList));
+            matchVec = false(size(measIdList));
             
             types = cat(1,measIdList.TypeID);
+            
+            % If the input measurement is empty, then keep going
+            if isempty(obj.TypeID)
+                return;
+            end
+                
             indsTypeMatch = find(types == obj.TypeID);
             
             % Only check measurements of the same type from now on
