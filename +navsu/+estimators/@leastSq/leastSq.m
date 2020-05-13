@@ -31,7 +31,7 @@ classdef leastSq < navsu.estimators.AbstractNavFilter
     
     % function signatures
     methods
-        complete = initialize(obj,corrData,varargin)
+        complete = initialize(obj,obs,corrData,varargin)
         
         % the time AND measurement update :O
         update(obj,epoch,obs,corrData)

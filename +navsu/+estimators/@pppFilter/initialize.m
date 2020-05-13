@@ -1,4 +1,4 @@
-function complete = initialize(obj,corrData,obs)
+function measId = initialize(obj,obs,corrData)
 
 
 
@@ -117,7 +117,7 @@ epoch = gnssMeas.epochs;
 % Least squares solution, if completed, will populate the position,
 % velocity, clock bias, and clock drift states as well as their
 % covariances using a simple least squares code phase solution. 
-[complete,measIds] = leastSquaresSol(obj,epoch,obs,corrData);
+[complete,measId] = leastSquaresSol(obj,epoch,obs,corrData);
 
 
 if ~complete 
@@ -139,7 +139,7 @@ obj.epochLastInertialUpdate = epoch;
 obj.epochLastGnssUpdate     = epoch;
 
 % Check for what satellites have been used 
-measIdGnss = measIds([measIds.TypeID ]== navsu.internal.MeasEnum.GNSS);
+measIdGnss = measId([measId.TypeID ]== navsu.internal.MeasEnum.GNSS);
 satsUsed = unique([cat(1,measIdGnss.prn) cat(1,measIdGnss.const)],'rows');
 
 obj.allSatsSeen = satsUsed;

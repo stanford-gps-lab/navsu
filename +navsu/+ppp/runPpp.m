@@ -30,7 +30,7 @@ for tdx = 1:nEpochs
         filter.update(epochi,obsi,corrData);
     else
         % need to initialize
-        filter.initialize(corrData,obsi);
+        filter.initialize(obsi,corrData);
     end
     
     % Save some things for output

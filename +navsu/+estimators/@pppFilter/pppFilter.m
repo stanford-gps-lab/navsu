@@ -12,9 +12,7 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         
         % contains latest geometry free combinations
         cycleSlipInfo = struct('gFree',zeros(0,1),'epochLastGFree',zeros(0,1),'measInfoGFree',zeros(0,4));
-        
-       
-        
+                
         StateMap % mapping matrix- indicates what the state is in each position of the state and covariance matrix
         
         % all satellites used in the solution- useful for solution
@@ -44,10 +42,10 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         
         obs = checkMeas(obj,obs);
         
-        complete = initialize(obj,corrData,obs,varargin)
+        measId = initialize(obj,corrData,obs,varargin)
         
         % the time AND measurement update :O
-        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)
+        measId = update(obj,epoch,obs,corrData)
         
         manageStates(obj,epoch,gnssMeas,PARAMS,outStruc);
         measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);
@@ -64,7 +62,7 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
     methods %(Access = private)
         timeUpdate(obj,epoch)
         
-        measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
+        measId = measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
         
      
 %         [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center. 

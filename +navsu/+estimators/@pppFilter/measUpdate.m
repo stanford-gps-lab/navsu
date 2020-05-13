@@ -1,4 +1,4 @@
-function measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
+function measId = measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
 
 %% Pull a few things out of the filter object
 

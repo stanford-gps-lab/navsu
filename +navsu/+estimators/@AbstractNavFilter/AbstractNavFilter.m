@@ -14,7 +14,9 @@ classdef (Abstract) AbstractNavFilter < matlab.mixin.Copyable
         
         INDS_STATE % state indexing
         
-        initialized = false % whether or not the fitler has been initialized
+        initialized = 0 % whether or not the filter has been initialized.
+        % 0 = not started. 1 = initialized but that's it. 2 = initialized
+        % with at least one time and measurement update
         
         PARAMS % parameters associated with the running of this filter!
         
@@ -28,10 +30,10 @@ classdef (Abstract) AbstractNavFilter < matlab.mixin.Copyable
         obs = checkMeas(obj,obs);
         
         % Initialization
-        complete = initialize(obj,corrData,obs,varargin)
+        measId = initialize(obj,obs,corrData,varargin)
         
         % the time AND measurement update :O
-        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)
+        [measId,measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)
         
         % Save what you would like 
         outData = saveState(obj,outData,epoch,obs);

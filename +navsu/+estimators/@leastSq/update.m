@@ -1,4 +1,4 @@
-function update(obj,epoch,obs,corrData)
+function meadId = update(obj,epoch,obs,corrData)
 
 PARAMS = obj.PARAMS;
 
@@ -64,8 +64,9 @@ if isempty(obj.INDS_STATE)
 end
 
 %% Compute the least squares solution
-[complete,measIds] = leastSquaresSol(obj,epoch,obs,corrData);
+[complete,measId] = leastSquaresSol(obj,epoch,obs,corrData);
 
+obj.initialized = 2;
 
 %% If any values weren't provided directly, need to just try some least squares
 % Did the filter initialize successfully
