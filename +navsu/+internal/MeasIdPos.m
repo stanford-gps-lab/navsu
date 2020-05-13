@@ -2,7 +2,7 @@ classdef MeasIdPos < navsu.internal.MeasID
     properties (SetObservable = true )       
         id = 255;
         
-        xyz = 255;
+        xyz navsu.internal.MeasEnum;
     end
     
     methods
@@ -19,6 +19,9 @@ classdef MeasIdPos < navsu.internal.MeasID
                     obj(idx,jdx).id = id(idx,jdx);
                     
                     obj(idx,jdx).xyz = xyz(idx,jdx);
+                    
+                    obj(idx,jdx).idVec = permute([double(navsu.internal.MeasEnum.Position) ...
+                        id(idx,jdx) double(xyz(idx,jdx)) 0 0 0],[1 3 2]);                
                 end
             end
         end

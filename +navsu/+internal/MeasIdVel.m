@@ -2,7 +2,7 @@ classdef MeasIdVel < navsu.internal.MeasID
     properties (SetObservable = true)       
         id = 255;
         
-        xyz = 255;
+        xyz  navsu.internal.MeasEnum;
     end
     
     
@@ -20,6 +20,9 @@ classdef MeasIdVel < navsu.internal.MeasID
                     obj(idx,jdx).id = id(idx,jdx);
                     
                     obj(idx,jdx).xyz = xyz(idx,jdx);
+                    
+                     obj(idx,jdx).idVec = permute([double(navsu.internal.MeasEnum.Velocity) ...
+                        id(idx,jdx) double(xyz(idx,jdx)) 0 0 0],[1 3 2]);   
                 end
             end
         end

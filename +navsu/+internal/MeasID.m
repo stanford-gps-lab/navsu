@@ -1,11 +1,13 @@
-classdef  MeasID < matlab.mixin.Heterogeneous
+classdef  MeasID < matlab.mixin.Heterogeneous 
     
     % Heterogenous measurement ID super class
-    properties
+    properties (SetAccess = protected)
         
         % Type of measurement
         TypeID navsu.internal.MeasEnum
         
+        % Double row vector including all relevant values
+        idVec = zeros(1,1,6);
         
     end    
     
@@ -22,12 +24,31 @@ classdef  MeasID < matlab.mixin.Heterogeneous
             else
                 obj.TypeID = [];
             end
-            
         end
     
     end
     
+    methods
+      
+       
+       
+       
+    end
+        
+    
     methods (Sealed)
+        
+         % overload for equality
+       function outMat = eq(a,b)
+           
+           aId = reshape(cat(1,a.idVec),size(a,1),size(a,2),6);
+           bId = reshape(cat(1,b.idVec),size(b,1),size(b,2),6);
+           
+           outMat = all(aId == bId,3);
+       end
+       
+       
+        
         function matchVec = matches(obj,measIdList)
             
             if ~iscolumn(measIdList)

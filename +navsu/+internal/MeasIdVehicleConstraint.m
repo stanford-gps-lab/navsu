@@ -18,6 +18,10 @@ classdef MeasIdVehicleConstraint < navsu.internal.MeasID
                     obj(idx,jdx).id = id(idx,jdx);
                     
                     obj(idx,jdx).subtype = subtype(idx,jdx);
+                    
+                    obj(idx,jdx).idVec = permute([double(navsu.internal.MeasEnum.VehicleConstraint) ...
+                        id(idx,jdx) double(subtype(idx,jdx)) 0 0 0],[1 3 2]);       
+                    
                 end
             end
         end
