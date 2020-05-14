@@ -131,12 +131,14 @@ obj.posPrevTc = pos;
 
 obj.imuBiasStates = obj.imuBiasStates + stateNew([obj.INDS_STATE.ACC_BIAS obj.INDS_STATE.W_BIAS]);
 
+measIdRemovedFull = [measExclude(:); measIdRemoved(:);];
+
 % Deal with resets if any of the removed measurements were carrier phases
-if ~isempty(measIdRemoved)
-    for jdx = 1:size(measIdRemoved,1)
-        if measIdRemoved(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemoved(jdx).subtype == navsu.internal.MeasEnum.Carrier 
+if ~isempty(measIdRemovedFull)
+    for jdx = 1:size(measIdRemovedFull,1)
+        if ~isempty(measIdRemovedFull(jdx).TypeID) && measIdRemovedFull(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemovedFull(jdx).subtype == navsu.internal.MeasEnum.Carrier 
             % carrier phase- reset ambiguity by just removing the state
-            obj.removeFlexState([measIdRemoved(jdx).prn measIdRemoved(jdx).const 1 measIdRemoved(jdx).freq] );
+            obj.removeFlexState([measIdRemovedFull(jdx).prn measIdRemovedFull(jdx).const 1 measIdRemovedFull(jdx).freq] );
         end
     end
 end
@@ -174,6 +176,9 @@ if ~isempty(gnssMeas)
     obj.measRemoved.reason = measRemovedReason;
     obj.measRemoved.epoch  = epoch0*ones(size(measRemovedReason));
 end
+
+
+
 
 end
 

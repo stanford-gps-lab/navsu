@@ -1,18 +1,18 @@
-classdef leastSq < navsu.estimators.AbstractNavFilter
+classdef leastSq < navsu.estimators.pppFilter
     
     
     properties        
         % all satellites used in the solution- useful for solution
         % separation :)
-        allSatsSeen
+%         allSatsSeen
                 
 %         initialized = true % it's always initialized :)
         
 %         PARAMS % parameters associated with the running of this filter!
         
-        resids % extra info for output about measurement residuals
+%         resids % extra info for output about measurement residuals
         
-        measRemoved % extra info for measurements that were removed :)
+%         measRemoved % extra info for measurements that were removed :)
         
     end
     
@@ -31,10 +31,10 @@ classdef leastSq < navsu.estimators.AbstractNavFilter
     
     % function signatures
     methods
-        complete = initialize(obj,obs,corrData,varargin)
+        measId = initialize(obj,obs,corrData,varargin)
         
         % the time AND measurement update :O
-        update(obj,epoch,obs,corrData)
+        measId = update(obj,epoch,obs,corrData,varargin)
         
         % This function basically just stores the default configuration of
         % the filter
