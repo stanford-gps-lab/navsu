@@ -201,8 +201,9 @@ if nMeas > 0
         phWind          = extraInputs.phWind;
         
         [~,ib] = ismember(prnConstInds,obj.phWind.PrnConstInd,'rows');
-        obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
-        
+        if ~isempty(phWind)
+            obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
+        end
         %         measMatRemovedAiv = extraInputs.measMatRemoved;
         
         losInds      = extraInputs.losInds;

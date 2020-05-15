@@ -80,7 +80,7 @@ classdef (Abstract) AbstractNavFilter < matlab.mixin.Copyable
         % leastSquaresSol - produce a least squares solution based on the 
         % available observations.  This currently requires GNSS
         % observations
-        [complete, measId] = leastSquaresSol(obj,epoch,obs,corrData,varargin)
+        [complete, measId,extraInputs] = leastSquaresSol(obj,epoch,obs,corrData,varargin)
 
         [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center.
 

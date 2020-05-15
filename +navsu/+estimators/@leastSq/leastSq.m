@@ -34,7 +34,7 @@ classdef leastSq < navsu.estimators.pppFilter
         measId = initialize(obj,obs,corrData,varargin)
         
         % the time AND measurement update :O
-        measId = update(obj,epoch,obs,corrData,varargin)
+        [measId,extraInputs] = update(obj,epoch,obs,corrData,varargin)
         
         % This function basically just stores the default configuration of
         % the filter

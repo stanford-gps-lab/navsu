@@ -1,14 +1,16 @@
-function measId = update(obj,epoch,obs,corrData,varargin)
+function [measId, extraInputs] = update(obj,epoch,obs,corrData,varargin)
 
 
 p = inputParser;
 
 p.addParameter('measExclude',[]);
+p.addParameter('extraInputs',[]);
 
 % parse the results
 parse(p, varargin{:});
 res        = p.Results;
 measExclude = res.measExclude;
+extraInputs = res.extraInputs;
 
 %%
 
@@ -76,7 +78,8 @@ if isempty(obj.INDS_STATE)
 end
 
 %% Compute the least squares solution
-[complete,measId] = leastSquaresSol(obj,epoch,obs,corrData,'measExclude',measExclude);
+[complete,measId,extraInputs] = leastSquaresSol(obj,epoch,obs,corrData,...
+    'measExclude',measExclude,'extraInputs',extraInputs);
 
 obj.initialized = 2;
 

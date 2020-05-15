@@ -1,13 +1,15 @@
-function [complete,measId] = leastSquaresSol(obj,epoch,obs,corrData,varargin)
+function [complete,measId,extraInputs] = leastSquaresSol(obj,epoch,obs,corrData,varargin)
 
 p = inputParser;
 
 p.addParameter('measExclude',[]);
+p.addParameter('extraInputs',[]);
 
 % parse the results
 parse(p, varargin{:});
 res        = p.Results;
 measExclude = res.measExclude;
+extraInputs0 = res.extraInputs;
 
 %%
 state = obj.state;
@@ -50,9 +52,9 @@ while convMetric > convThresh
             case navsu.internal.MeasEnum.GNSS
                 % this should be code only
                 obsi = navsu.ppp.measMask(obsi,gnssMeasMaskCode);
-                
-                [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi] = ...
-                    handleGnssMeas(obj,epoch,obsi,corrData,'SimpleModel',true);
+                [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi,~,extraInputs] = ...
+                    handleGnssMeas(obj,epoch,obsi,corrData,'SimpleModel',true,...
+                    'extraInputs',extraInputs0);
                 
                 gnssMeas = obsi;
             case navsu.internal.MeasEnum.Position
@@ -107,8 +109,8 @@ while convMetric > convThresh
     obj.clockBias = obj.clockBias+x(7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
     obj.clockDrift = obj.clockDrift+x((end-length(obj.INDS_STATE.CLOCK_DRIFT)+1):end);
     
-    % Convergence metric
-    convMetric = norm(x);
+    % Convergence metric is just over position and velocity states
+    convMetric = norm(x(1:6));
     
 end
 
