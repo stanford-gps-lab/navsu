@@ -85,11 +85,7 @@ while ~feof(fid)
             obs1i = ['C' linetxt(28:-1:27)];
             obs2i = ['C' linetxt(31:-1:31)];
         end
-        
-        % Start reading!
-        % Get rid of header line
-        linetxt = fgetl(fid);
-        
+               
         nAllocInit = 1e2;
         nAlloc = nAllocInit;
         %         pairData = nan(nAllocInit,4);
