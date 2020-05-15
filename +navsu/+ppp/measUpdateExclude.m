@@ -24,8 +24,8 @@ while largeResids || mediumResids
     residsPost = delta_z-H*K*delta_z;
     
     % Set the thresholds- remove large errors first
-    excludeThreshLarge = 20*sqrt(diag(R));
-    excludeThreshMedium = 5*sqrt(diag(R));
+    excludeThreshLarge = PARAMS.measUse.excludeThreshLarge*sqrt(diag(R));
+    excludeThreshMedium = PARAMS.measUse.excludeThresh*sqrt(diag(R));
 %     
     indsLargeResids  = find(abs(residsPost)>excludeThreshLarge);
     indsMediumResids = find(abs(residsPost)>excludeThreshMedium);
