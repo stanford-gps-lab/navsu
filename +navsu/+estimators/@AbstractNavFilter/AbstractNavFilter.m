@@ -46,7 +46,7 @@ classdef (Abstract) AbstractNavFilter < matlab.mixin.Copyable
         
         % Build predicted measurements, sensitivity matrix, and pull
         % measurement IDs for GNSS measurements
-        [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow] =  ...
+        [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow,extraInputs] =  ...
             handleGnssMeas(obj,epoch,obs,corrData,varargin)
         
         % doppModel- called within handleGnssMeas and produces predicted

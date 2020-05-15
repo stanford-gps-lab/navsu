@@ -1,14 +1,16 @@
-function measId = measUpdate(obj,epoch,obs,corrData,measRemovedSlip,varargin)
+function [measId,extraInputs] = measUpdate(obj,epoch,obs,corrData,measRemovedSlip,varargin)
 
 
 p = inputParser;
 
 p.addParameter('measExclude',[]);
+p.addParameter('extraInputs',[]);
 
 % parse the results
 parse(p, varargin{:});
 res        = p.Results;
 measExclude = res.measExclude;
+extraInputs = res.extraInputs;
 
 %% Pull a few things out of the filter object
 
@@ -52,7 +54,9 @@ for idx = 1:length(obs)
     
     switch obsi.type
         case navsu.internal.MeasEnum.GNSS
-            [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi,measIdRemovedLow] = handleGnssMeas(obj,epoch0,obsi,corrData);
+            [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi,...
+                measIdRemovedLow,extraInputs] = handleGnssMeas(obj,epoch0,obsi,...
+                corrData,'extraInputs',extraInputs);
             gnssMeas = obsi;
         case navsu.internal.MeasEnum.Position
             [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,obsi);
