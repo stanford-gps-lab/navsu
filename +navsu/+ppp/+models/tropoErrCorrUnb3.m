@@ -73,6 +73,9 @@ tropDataExtra.tzd        = d_dry(1)+d_wet(1);
 
 % remove bad data...
 tropo_corr(tropo_corr > 1e3) = 0;
+if ~isreal(tropo_corr)
+    tropo_corr = zeros(size(tropo_corr));
+end
 
 end
 

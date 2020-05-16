@@ -1,6 +1,6 @@
 function [predMeasi,Hii,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant,state,...
     constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
-    relClockCorr,relRangeCorr,A)
+    relClockCorr,relRangeCorr,A,indIonosi)
 
 
 predMeas = [];
@@ -17,7 +17,7 @@ elseif ~SimpleModel && sigi < 100 && strcmp(obj.PARAMS.states.ionoMode,'L1DELAYS
     
     ionoCorrModel = -tecSlant*40.3*10^15./freqi.^2;
     
-    indIono = obj.INDS_STATE.FLEX_STATES(indIonos(idx));
+    indIono = obj.INDS_STATE.FLEX_STATES(indIonosi);
     delayL1i = state(indIono);
     
     hi = -(1575.42e6).^2./freqi.^2;

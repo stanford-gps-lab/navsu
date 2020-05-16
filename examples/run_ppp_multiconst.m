@@ -99,7 +99,7 @@ end
  % Build position measurement
 posMeas = navsu.ppp.buildPosMeas(gnssMeas.epochs,truePosEcef',0.1,1);
 
-velMeas = navsu.ppp.buildVelMeas(gnssMeas.epochs,[0 0 0]',0.1,1);
+velMeas = navsu.ppp.buildVelMeas(gnssMeas.epochs,[0 0 0]',0.01,1);
 
  
 %% Estimate!

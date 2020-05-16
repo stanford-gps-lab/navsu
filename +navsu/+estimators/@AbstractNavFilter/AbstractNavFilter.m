@@ -63,7 +63,7 @@ classdef (Abstract) AbstractNavFilter < matlab.mixin.Copyable
         % value and sensitivity matrix for code phase measurements
         [predMeas,H,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant,state,...
             constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
-            relClockCorr,relRangeCorr,A)
+            relClockCorr,relRangeCorr,A,indIonosi)
         
         % handleVehicleConstraintPseudomeas- produce predicted value and
         % sensitivity matrix for vehicle slip constraints

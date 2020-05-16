@@ -19,6 +19,11 @@ classdef inertialPppFilter < navsu.estimators.pppFilter
         
     end
     
+    
+    methods(Static)
+        plotOutputInertial(outputs,varargin)
+    end
+    
 end
 
 

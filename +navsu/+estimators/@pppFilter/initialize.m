@@ -107,6 +107,8 @@ if isempty(obj.INDS_STATE)
     obj.R_b_e = eye(3);
     
     obj.imuBiasStates = [0 0 0 0 0 0]';
+    obj.imuBiasStates(1:3) = [-0.3 0.1 -0.4];
+
     
     obj.clockBias  = zeros(length(constsUnique),1);
     obj.clockDrift =  zeros(length(constsUnique),1);

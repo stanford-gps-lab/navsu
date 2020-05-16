@@ -10,6 +10,18 @@ measIdRemoved = [];
 largeResids  = true;
 mediumResids = true;
 
+% Build exclusion factor vector
+facLarge = zeros(size(measId,1),1);
+facMedium = zeros(size(measId,1),1);
+measTypeList = cat(1,measId.TypeID);
+types = unique(measTypeList);
+
+for idx = 1:length(types)
+    facLarge(types(idx) == measTypeList) = PARAMS.measUse.excludeThreshLarge.(char(types(idx)));
+    facMedium(types(idx) == measTypeList) = PARAMS.measUse.excludeThresh.(char(types(idx)));
+end
+
+
 idx = 1;
 while largeResids || mediumResids
     % Keep iterating until there are no bad measurements
@@ -24,8 +36,8 @@ while largeResids || mediumResids
     residsPost = delta_z-H*K*delta_z;
     
     % Set the thresholds- remove large errors first
-    excludeThreshLarge = PARAMS.measUse.excludeThreshLarge*sqrt(diag(R));
-    excludeThreshMedium = PARAMS.measUse.excludeThresh*sqrt(diag(R));
+    excludeThreshLarge = facLarge.*sqrt(diag(R));
+    excludeThreshMedium = facMedium.*sqrt(diag(R));
 %     
     indsLargeResids  = find(abs(residsPost)>excludeThreshLarge);
     indsMediumResids = find(abs(residsPost)>excludeThreshMedium);
@@ -57,6 +69,8 @@ while largeResids || mediumResids
         
         meas(indsLargeResids) = [];
         measId(indsLargeResids) = [];
+        facLarge(indsLargeResids) = [];
+        facMedium(indsLargeResids) = [];
         
         
     elseif ~isempty(indsMediumResids) && largeResids == false
@@ -74,6 +88,9 @@ while largeResids || mediumResids
         
         meas(indsMediumResids) = [];
         measId(indsMediumResids) = [];
+        
+        facLarge(indsMediumResids) = [];
+        facMedium(indsMediumResids) = [];
     end
     
     idx = idx+1;

@@ -197,8 +197,15 @@ ylabel('Doppler residuals [m]')
 if 1
     measRemovedStruc = cat(1,outputs.measRemoved);
     measRemId = cat(1,measRemovedStruc.id);
+    % only keeping GNSS measurements
+    indsGnss = find(cat(1,measRemId.TypeID) == navsu.internal.MeasEnum.GNSS);
+    
     measRemReas = cat(1,measRemovedStruc.reason);
     measRemEpoch = cat(1,measRemovedStruc.epoch);
+    measRemReas= measRemReas(indsGnss);
+    measRemEpoch = measRemEpoch(indsGnss);
+    measRemId = measRemId(indsGnss);
+    
     measRemSubtype = cat(1,measRemId.subtype);
     
     measRemPrnConst = [cat(1,measRemId.prn) cat(1,measRemId.const)];

@@ -246,7 +246,7 @@ if nMeas > 0
                 % Code phase measurement
                 [predMeasi,Hii,sigMeasi] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
                     constIndi,indGloDcbs(idx),indMpCodes(idx),m(losInd),gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),stRangeOffset(losInd),...
-                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:));
+                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:),indIonos(idx));
                 
             case navsu.internal.MeasEnum.Carrier
                 % Carrier phase measurement
