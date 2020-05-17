@@ -1,5 +1,20 @@
-function update(obj,epoch,obs,corrData)
+function [measId,extraInfo] = update(obj,epoch,obs,corrData,varargin)
 
+p = inputParser;
+
+p.addParameter('measExclude',[]);
+p.addParameter('extraInputs',[]);
+
+% parse the results
+parse(p, varargin{:});
+res        = p.Results;
+measExclude = res.measExclude;
+extraInputs = res.extraInputs;
+%%
+
+% Initialize empty outputs
+measId = [];
+extraInfo = [];
 
 % there are essentially two kinds of updates that can happen here- IMU
 % update and non-IMU update
@@ -24,7 +39,12 @@ measRemovedSlip = navsu.ppp.manageStatesMulti(obj,epoch,obs);
 obj.timeUpdate(epoch)
 
 % Measurement update
-obj.measUpdate(epoch,obs,corrData,measRemovedSlip);
+[measId,extraInfo] = obj.measUpdate(epoch,obs,corrData,measRemovedSlip,...
+    'measExclude',measExclude,'extraInputs',extraInputs);
+
+
+% Make sure that the filter knows that it is running.
+obj.initialized = 2;
 
 end
 

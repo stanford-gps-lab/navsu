@@ -7,7 +7,7 @@ classdef inertialPppFilter < navsu.estimators.pppFilter
     
     methods
          % the time AND measurement update :O
-        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)
+        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData,varargin)
         
         % IMU mechanization
         mechanization(obj,epoch,obs);

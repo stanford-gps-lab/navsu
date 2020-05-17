@@ -91,6 +91,7 @@ if ~isempty(measExclude)
         meas(measMask) = [];
         R(measMask,:) = [];
         R(:,measMask) = [];
+        measId(measMask) = [];
 end
 
 %% Do the measurement update
