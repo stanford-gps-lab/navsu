@@ -66,7 +66,7 @@ PARAMS.dcbUse = true;
 PARAMS.IMU_ARM = [0 0 0]';
 
 % Elevation mask angle
-PARAMS.elMask = -10; % Degrees
+PARAMS.elMask = 7.5; % Degrees
 
 % Speed of light in meters
 PARAMS.c = 299792458;

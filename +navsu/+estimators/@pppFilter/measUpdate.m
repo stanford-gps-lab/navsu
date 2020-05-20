@@ -175,7 +175,9 @@ if ~isempty(gnssMeas)
     end
     
     measRemovedIdAny = [measIdRemovedLow; measIdRemoved; measRemovedSlip];
-    measRemovedReason = [1*ones(size(measIdRemovedLow)); 2*ones(size(measIdRemoved)); 3*ones(size(measRemovedSlip))];
+    measRemovedReason = [obj.RemovedEl*ones(size(measIdRemovedLow)); ...
+        obj.RemovedResid*ones(size(measIdRemoved));...
+        obj.RemovedSlip*ones(size(measRemovedSlip))];
     
     obj.measRemoved.id = measRemovedIdAny;
     obj.measRemoved.reason = measRemovedReason;

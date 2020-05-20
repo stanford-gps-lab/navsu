@@ -58,7 +58,7 @@ end
 
 if ~SimpleModel && obj.PARAMS.states.MP_CODE
     indMpCode = obj.INDS_STATE.FLEX_STATES(indMpCodesi);
-    mpCodei   = x_est_propagated(indMpCode);
+    mpCodei   = state(indMpCode);
     Hii(1,indMpCode) = 1;
 else
     mpCodei = 0;

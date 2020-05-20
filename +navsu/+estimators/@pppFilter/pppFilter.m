@@ -37,12 +37,23 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         % all satellites used in the solution- useful for solution
         % separation :)
         allSatsSeen
-        
-       
+           
         resids % extra info for output about measurement residuals
         
         measRemoved % extra info for measurements that were removed :)
     end
+    
+    properties (Constant)
+        % Reasons for removing a measurement
+        RemovedLow = 1;
+        RemovedResid = 2;
+        RemovedSlip  = 3;
+        RemovedEl    = 4;
+        RemovedCn0   = 5;
+        
+    end
+        
+        
     
     
     methods
