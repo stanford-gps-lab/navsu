@@ -137,11 +137,11 @@ end
 
 
 % Initialize attitude - euler angles with body frame
-xi  = -obj.vel./norm(obj.vel);
-z0i = obj.pos./norm(obj.pos);
-yi  = -cross(xi,z0i);
-zi = cross(xi,yi);
-obj.R_b_e = [xi yi zi];
+% xi  = -obj.vel./norm(obj.vel);
+% z0i = obj.pos./norm(obj.pos);
+% yi  = -cross(xi,z0i);
+% zi = cross(xi,yi);
+obj.R_b_e = navsu.ppp.posVel2Rbe(obj.pos,obj.vel);
 
 obj.imuBiasStates = zeros(6,1);
 
