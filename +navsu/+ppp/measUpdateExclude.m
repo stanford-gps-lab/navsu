@@ -11,14 +11,31 @@ largeResids  = true;
 mediumResids = true;
 
 % Build exclusion factor vector
-facLarge = zeros(size(measId,1),1);
-facMedium = zeros(size(measId,1),1);
+threshLarge = zeros(size(measId,1),1);
+threshMedium = zeros(size(measId,1),1);
 measTypeList = cat(1,measId.TypeID);
 types = unique(measTypeList);
 
 for idx = 1:length(types)
-    facLarge(types(idx) == measTypeList) = PARAMS.measUse.excludeThreshLarge.(char(types(idx)));
-    facMedium(types(idx) == measTypeList) = PARAMS.measUse.excludeThresh.(char(types(idx)));
+    if types(idx) == navsu.internal.MeasEnum.GNSS
+        indsGnss = find(types(idx) == measTypeList);
+        
+        measSubtypes = cat(1,measId(indsGnss).subtype);
+        indsCode = indsGnss(measSubtypes == navsu.internal.MeasEnum.Code);
+        indsCarrier = indsGnss(measSubtypes == navsu.internal.MeasEnum.Carrier);
+        indsDoppler = indsGnss(measSubtypes == navsu.internal.MeasEnum.Doppler);
+
+        threshLarge(indsCode) = PARAMS.measUse.excludeThreshLarge.GNSS.Code;
+        threshLarge(indsCarrier) = PARAMS.measUse.excludeThreshLarge.GNSS.Carrier;
+        threshLarge(indsDoppler) = PARAMS.measUse.excludeThreshLarge.GNSS.Doppler;
+        
+        threshMedium(indsCode) = PARAMS.measUse.excludeThresh.GNSS.Code;
+        threshMedium(indsCarrier) = PARAMS.measUse.excludeThresh.GNSS.Carrier;
+        threshMedium(indsDoppler) = PARAMS.measUse.excludeThresh.GNSS.Doppler;
+    else
+        threshLarge(types(idx) == measTypeList) = PARAMS.measUse.excludeThreshLarge.(char(types(idx)));
+        threshMedium(types(idx) == measTypeList) = PARAMS.measUse.excludeThresh.(char(types(idx)));
+    end
 end
 
 
@@ -27,7 +44,7 @@ while largeResids || mediumResids
     % Keep iterating until there are no bad measurements
     
     % 7. Calculate Kalman gain using (3.21)
-    K = cov_propagated * H' /(H *cov_propagated * H' + R);
+    K = (cov_propagated * H') /(H *cov_propagated * H' + R);
     
     % 8. Measurement innovations
     fullMeas = meas;
@@ -36,8 +53,8 @@ while largeResids || mediumResids
     residsPost = delta_z-H*K*delta_z;
     
     % Set the thresholds- remove large errors first
-    excludeThreshLarge = facLarge.*sqrt(diag(R));
-    excludeThreshMedium = facMedium.*sqrt(diag(R));
+    excludeThreshLarge = threshLarge;
+    excludeThreshMedium = threshMedium;
 %     
     indsLargeResids  = find(abs(residsPost)>excludeThreshLarge);
     indsMediumResids = find(abs(residsPost)>excludeThreshMedium);
@@ -69,8 +86,8 @@ while largeResids || mediumResids
         
         meas(indsLargeResids) = [];
         measId(indsLargeResids) = [];
-        facLarge(indsLargeResids) = [];
-        facMedium(indsLargeResids) = [];
+        threshLarge(indsLargeResids) = [];
+        threshMedium(indsLargeResids) = [];
         
         
     elseif ~isempty(indsMediumResids) && largeResids == false
@@ -89,8 +106,8 @@ while largeResids || mediumResids
         meas(indsMediumResids) = [];
         measId(indsMediumResids) = [];
         
-        facLarge(indsMediumResids) = [];
-        facMedium(indsMediumResids) = [];
+        threshLarge(indsMediumResids) = [];
+        threshMedium(indsMediumResids) = [];
     end
     
     idx = idx+1;
