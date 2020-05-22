@@ -8,14 +8,23 @@ PARAMS.stationaryMode = false;
 % Sub-structure relating to what measurements are to be used
 PARAMS.measUse = struct(...
     'dfOnly',            false,...         % true = dual frequency meas only
-    'L1_THRESH',         20,...            % SNR threshold for L1
-    'L2_THRESH',         20,...            % SNR threshold for L2
+    'SIG1_THRESH',         35,...          % SNR threshold for signal 1
+    'SIG2_THRESH',         30,...          % SNR threshold for signal 2
+    'SIG3_THRESH',         30,...          % SNR threshold for signal 2
     'gFreeSlipThresh',   0.05,...          % Threshold for cycle slip- geometry free [m]
     'slipDetector',      'GFREE',...   % Cycle slip detector ('RX_OUTPUT','GFREE')
     'noVertVel',         false);          % 0 vertical velocity constraint
 
-PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)) = 5;
-PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)) = 20;
+% GNSS code measurements
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Code)) = 10;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Code)) = 20;
+% GNSS carrier phase measurements
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Carrier)) = 0.05;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Carrier)) = 0.2;
+% GNSS carrier phase measurements
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 0.05;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 0.2;
+
 
 PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Position)) = Inf;
 PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.Position)) = Inf;

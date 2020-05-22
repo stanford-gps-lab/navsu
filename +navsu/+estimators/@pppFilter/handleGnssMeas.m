@@ -32,27 +32,34 @@ x_est_propagated = obj.state;
 nState = size(x_est_propagated,1);
 
 %% Pull off measurements
+% SNR masking
+
+[snrMaskRange, snrMaskDoppler] = navsu.ppp.snrMask(obs,[PARAMS.measUse.SIG1_THRESH ... 
+    PARAMS.measUse.SIG2_THRESH PARAMS.measUse.SIG3_THRESH]);
+
 % Wipe off measurements based on the desired measurement masking
 obs = navsu.ppp.measMask(obs,PARAMS.measMask);
 
 % Just using all PR measurements
-indsMeasPr = find(obs.range.obs ~= 0  & obs.range.ind == 1 );
+indsMeasPr = find(obs.range.obs ~= 0  & obs.range.ind == 1 & snrMaskRange);
 
 idList = [];
 measList = [];
 
-idList = [idList; obs.range.ID(indsMeasPr)];
+idList   = [idList; obs.range.ID(indsMeasPr)];
 measList = [measList; obs.range.obs(indsMeasPr)];
 
 % Add carrier phase measurements
-indsMeasPh = find(obs.range.obs ~= 0  & obs.range.ind == 2 );
-idList = [idList; obs.range.ID(indsMeasPh)];
-measList = [measList; obs.range.obs(indsMeasPh)];
+indsMeasPh = find(obs.range.obs ~= 0  & obs.range.ind == 2 & snrMaskRange);
+idList     = [idList; obs.range.ID(indsMeasPh)];
+measList   = [measList; obs.range.obs(indsMeasPh)];
 
 % Add doppler measurements
-indsMeasDop = find(obs.doppler.obs ~= 0);
-idList = [idList; obs.doppler.ID(indsMeasDop)];
-measList = [measList; obs.doppler.obs(indsMeasDop)];
+indsMeasDop = find(obs.doppler.obs ~= 0 & snrMaskDoppler);
+idList      = [idList; obs.doppler.ID(indsMeasDop)];
+measList    = [measList; obs.doppler.obs(indsMeasDop)];
+
+
 
 nMeas = length(idList);
 
