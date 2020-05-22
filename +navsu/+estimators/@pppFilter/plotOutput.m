@@ -149,14 +149,35 @@ axes(ha(1))
 
 % Code phase residuals
 indsUnPr = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Code),:);
+nPr = size(indsUnPr,1);
+epochsUn = unique(epochsGnss);
+nEpochs = length(epochsUn);
+
+prResidsPlot = nan(nPr,nEpochs);
+
 for idx = 1:size(indsUnPr)
     indsi = find(ismember(measIdMat,indsUnPr(idx,:),'rows'));
-    tploti = (epochsGnss(indsi)-epochMin)/60;
-    residsi = residsGnss(indsi);
     
-    plot(tploti,residsi,'.');
-    hold on;
+    epochsi = epochsGnss(indsi);
+    prResidsi     = residsGnss(indsi);
+    
+    [~,ixb] = ismember(epochsi,epochsUn);
+    
+    prResidsPlot(idx,ixb) = prResidsi;
 end
+tPlot = (epochsUn-epochsUn(1))/60;
+s = plot(tPlot,prResidsPlot,'.');
+for idx = 1:length(s)
+    s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
+    s(idx).DataTipTemplate.DataTipRows(2).Label = 'resid';
+    row = dataTipTextRow('PRN',double(indsUnPr(idx,1)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(3) = row;
+    row = dataTipTextRow('const',double(indsUnPr(idx,2)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(4) = row;
+    row = dataTipTextRow('sig',double(indsUnPr(idx,3)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(5) = row;
+end
+
 xlim([0 (max(epochsGnss)-min(epochsGnss))/60]); grid on;
 ylabel('Code phase residuals [m]')
 title('Measurement residuals over time')
@@ -165,14 +186,35 @@ title('Measurement residuals over time')
 axes(ha(2))
 % Carrier phase residuals
 indsUnPh = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Carrier),:);
+nPr = size(indsUnPh,1);
+epochsUn = unique(epochsGnss);
+nEpochs = length(epochsUn);
+
+prResidsPlot = nan(nPr,nEpochs);
+
 for idx = 1:size(indsUnPh)
     indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
-    tploti = (epochsGnss(indsi)-epochMin)/60;
-    residsi = residsGnss(indsi);
     
-    plot(tploti,residsi);
-    hold on;
+    epochsi = epochsGnss(indsi);
+    prResidsi     = residsGnss(indsi);
+    
+    [~,ixb] = ismember(epochsi,epochsUn);
+    
+    prResidsPlot(idx,ixb) = prResidsi;
 end
+tPlot = (epochsUn-epochsUn(1))/60;
+s = plot(tPlot,prResidsPlot);
+for idx = 1:length(s)
+    s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
+    s(idx).DataTipTemplate.DataTipRows(2).Label = 'resid';
+    row = dataTipTextRow('PRN',double(indsUnPh(idx,1)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(3) = row;
+    row = dataTipTextRow('const',double(indsUnPh(idx,2)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(4) = row;
+    row = dataTipTextRow('sig',double(indsUnPh(idx,3)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(5) = row;
+end
+
 xlim([0 (max(epochsGnss)-min(epochsGnss))/60]); grid on;
 ylabel('Carrier phase residuals [m]')
 ylim([-0.1 0.1])
@@ -181,14 +223,35 @@ ylim([-0.1 0.1])
 axes(ha(3))
 % Doppler residuals
 indsUnPh = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Doppler),:);
+nPr = size(indsUnPh,1);
+epochsUn = unique(epochsGnss);
+nEpochs = length(epochsUn);
+
+prResidsPlot = nan(nPr,nEpochs);
+
 for idx = 1:size(indsUnPh)
     indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
-    tploti = (epochsGnss(indsi)-epochMin)/60;
-    residsi = residsGnss(indsi);
     
-    plot(tploti,residsi,'.');
-    hold on;
+    epochsi = epochsGnss(indsi);
+    prResidsi     = residsGnss(indsi);
+    
+    [~,ixb] = ismember(epochsi,epochsUn);
+    
+    prResidsPlot(idx,ixb) = prResidsi;
 end
+tPlot = (epochsUn-epochsUn(1))/60;
+s = plot(tPlot,prResidsPlot,'.');
+for idx = 1:length(s)
+    s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
+    s(idx).DataTipTemplate.DataTipRows(2).Label = 'resid';
+    row = dataTipTextRow('PRN',double(indsUnPh(idx,1)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(3) = row;
+    row = dataTipTextRow('const',double(indsUnPh(idx,2)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(4) = row;
+    row = dataTipTextRow('sig',double(indsUnPh(idx,3)).*ones(nEpochs,1));
+    s(idx).DataTipTemplate.DataTipRows(5) = row;
+end
+
 xlim([0 (max(epochsGnss)-min(epochsGnss))/60]); grid on;
 xlabel('Minutes into run')
 ylabel('Doppler residuals [m]')
@@ -228,7 +291,7 @@ if 1
     legText = {'Meas Used','Low Elevation','Code Removed','Carr Removed','Cycle Slip','Number of satellites used'};
     for idx = 1:length(legText)
         plot(-10,-10,markers{idx},'markerSize',markerSize(idx))
-    end    
+    end
     
     % general availability of measurements
     prnConstEpochs = unique([cat(1,measIdGnss.prn) cat(1,measIdGnss.const) epochsGnss],'rows');
@@ -264,7 +327,7 @@ if 1
         
         plot(xPloti',yPloti',markers{idx},'markerSize',markerSize(idx));
     end
-%     plot(xPlotMat(1,:),nSatsUsed,'k');
+    %     plot(xPlotMat(1,:),nSatsUsed,'k');
     xlim([min(min(xPlotMat))-0.5 max(max(xPlotMat))+0.5])
     ylim([min(min(yPlotMat))-0.5 max(max(yPlotMat))+0.5])
     legend(legText);
