@@ -13,9 +13,9 @@ pos = struct('x', NaN(tmArrayLen, 1), 'y', NaN(tmArrayLen, 1), 'z', NaN(tmArrayL
     'x_dot', NaN(tmArrayLen, 1), 'y_dot', NaN(tmArrayLen, 1), 'z_dot', NaN(tmArrayLen, 1), ...
     'clock_bias', NaN(tmArrayLen, 1), 'clock_drift', NaN(tmArrayLen, 1),'clock_rel', NaN(tmArrayLen, 1), ...
     'accuracy', NaN(tmArrayLen, 1), 'health', NaN(tmArrayLen, 1), ...
-    'IODC', NaN(tmArrayLen, 1), 'AoD', NaN(tmArrayLen, 1), ...
+    'IODC', NaN(tmArrayLen, 1), 't_m_toe', NaN(tmArrayLen, 1), ...
     'tslu', NaN(tmArrayLen, 1), 'toe_m_ttom', NaN(tmArrayLen, 1), ...
-    'Fit_interval', NaN(tmArrayLen, 1),'TGD',NaN(tmArrayLen,1),'t',NaN(tmArrayLen,1),'freqNum',NaN(tmArrayLen,1));
+    'Fit_interval', NaN(tmArrayLen, 1),'TGD',NaN(tmArrayLen,1),'t_m_toc',NaN(tmArrayLen,1),'freqNum',NaN(tmArrayLen,1));
 
 for loop = 1:tmArrayLen
     % find the most recent prior ephemeris
@@ -91,12 +91,12 @@ for loop = 1:tmArrayLen
     %% Relativisitic effect
     %     pos.clock_rel(loop) = -4.442807633e-10*e*eph.sqrtA(I)*sin(E);
     %     pos.TGD(loop) = eph.TGD(I);
-    pos.t(loop) = tfinal;
+    pos.t_m_toc(loop) = tfinal;
     %     pos.accuracy(loop) = eph.accuracy(I);
     pos.health(loop) = eph.health(I);
     pos.IODC(loop) = eph.ToE(I);
     %     pos.AoD(loop) = tmArray(loop)- eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.ToE(I);
-    pos.AoD(loop) = tmArray(loop)- eph.ToE(I);
+    pos.t_m_toe(loop) = tmArray(loop)- eph.ToE(I);
     
     pos.tslu(loop) = tmArray(loop)- eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.tk(I) +eph.AoOper(I)*86400;
     pos.tslu(loop) = eph.AoOper(I)*86400;
