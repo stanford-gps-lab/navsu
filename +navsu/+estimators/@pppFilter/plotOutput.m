@@ -333,6 +333,39 @@ if 1
     legend(legText);
     
 end
+
+
+%% Plot sky plot
+% collect azimuths and elevations
+residsData = [outputs.resids]';
+elFull = cat(1,residsData.el);
+azFull = cat(1,residsData.az);
+
+prnConstFull = cat(1,residsData.prnConstInds);
+epochsFull = cat(1,residsData.epochsElAz);
+
+satsUn = unique(prnConstFull,'rows');
+epochsUn = unique(epochsFull);
+
+el = nan(length(satsUn),length(epochsUn));
+az = nan(length(satsUn),length(epochsUn));
+
+for idx = 1:size(satsUn,1)
+   indsi =  find(prnConstFull(:,1) == satsUn(idx,1) & prnConstFull(:,2) == satsUn(idx,2));
+    
+   eli = elFull(indsi);
+   azi = azFull(indsi);
+   epochsi = epochsFull(indsi);
+   
+   [~,ixb] = ismember(epochsi,epochsUn);
+   el(idx,ixb) = eli;
+   az(idx,ixb) = azi;
+end
+
+figure
+navsu.geo.skyPlot(az'*180/pi,el'*180/pi,'label',true,'prn',satsUn(:,1),...
+    'const',satsUn(:,2),'linestyle','o')
+
 end
 
 

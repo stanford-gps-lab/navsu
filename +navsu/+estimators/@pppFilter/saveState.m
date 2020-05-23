@@ -5,7 +5,17 @@ function outData = saveState(obj,outData,epoch,obs)
 outState = [];
 
 outState.epoch = epoch;
-outState.pos   = obj.pos;
+if strcmp(obj.PARAMS.outputPos,'APC')
+    outState.pos   = obj.pos;
+elseif strcmp(obj.PARAMS.outputPos,'REF')
+    % PPP filter does not update the attitude, so do so now
+    if norm(obj.vel) > 0.5
+        obj.R_b_e = navsu.ppp.posVel2Rbe(obj.pos,obj.vel);
+    end
+    outState.pos   = obj.pos-obj.R_b_e*obj.PARAMS.IMU_ARM*0;
+    
+end
+
 outState.covPos = obj.cov(obj.INDS_STATE.POS,obj.INDS_STATE.POS);
 outState.resids = obj.resids;
 outState.residsInfo = [];

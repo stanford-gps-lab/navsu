@@ -164,7 +164,11 @@ if ~isempty(gnssMeas)
 %     elFull(indsEl) = el;
 %     azFull = nan(size(el,1),1);
 %     azFull(indsEl) = az;
-%     
+    obj.resids.el = el;
+    obj.resids.az = az;
+    obj.resids.prnConstInds = prnConstInds;
+    obj.resids.epochsElAz = epoch0*ones(size(el));
+     
     % Only actually keeping one of the low measurements per satelite
     if ~isempty(measIdRemovedLow)
         prnConstLow = [[measIdRemovedLow.prn]' [measIdRemovedLow.const]'];
