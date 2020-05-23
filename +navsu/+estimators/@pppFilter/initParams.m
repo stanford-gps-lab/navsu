@@ -5,12 +5,16 @@ PARAMS = [];
 % Flag for stationary scenarios
 PARAMS.stationaryMode = false;
 
+% Where is the output position- 'APC' antenna phase center  or 'REF'
+% reference point (IMU position)
+PARAMS.outputPos = 'APC'; % 'APC' or 'REF'
+
 % Sub-structure relating to what measurements are to be used
 PARAMS.measUse = struct(...
     'dfOnly',            false,...         % true = dual frequency meas only
     'SIG1_THRESH',         35,...          % SNR threshold for signal 1
-    'SIG2_THRESH',         30,...          % SNR threshold for signal 2
-    'SIG3_THRESH',         30,...          % SNR threshold for signal 2
+    'SIG2_THRESH',         35,...          % SNR threshold for signal 2
+    'SIG3_THRESH',         35,...          % SNR threshold for signal 2
     'gFreeSlipThresh',   0.05,...          % Threshold for cycle slip- geometry free [m]
     'slipDetector',      'GFREE',...   % Cycle slip detector ('RX_OUTPUT','GFREE')
     'noVertVel',         false);          % 0 vertical velocity constraint
@@ -22,8 +26,8 @@ PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(nav
 PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Carrier)) = 0.05;
 PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Carrier)) = 0.2;
 % GNSS carrier phase measurements
-PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 0.05;
-PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 0.2;
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 0.5;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 2;
 
 
 PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Position)) = Inf;
