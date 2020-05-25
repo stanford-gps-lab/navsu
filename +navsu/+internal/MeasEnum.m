@@ -20,6 +20,9 @@ classdef MeasEnum < uint8
         % Vehicle constraints
         VehicleConstraint (5)
         
+        % Vehicle data measurement - wheel speed, steering angle 
+        Wheels (6)
+        
         %% Measurement subtypes- 
         % GNSS Code phase
         Code (10)
@@ -57,7 +60,33 @@ classdef MeasEnum < uint8
         % Side slip contraint
         NoSlipCross (52)
         
+        %% Vehicle speed measurements
+        % Front left wheel speed 
+        SpeedFrontLeft (60)
         
+        % Front right wheel speed
+        SpeedFrontRight (61)
+        
+        % Rear left wheel speed
+        SpeedRearLeft (62)
+        
+        % Rear right wheel speed
+        SpeedRearRight (63)
+        
+        % Steering angle
+        SteeringAngle (64)
+        
+        % Vehicle speed
+        VehicleSpeed (65)
+        
+        % Stationary flag
+        Stationary (66)
+        
+        % Transmission setting
+        TranmissionSetting (67)
+        
+        % Parking brake status
+        ParkingBrakeStatus (68)
         
     end
 end

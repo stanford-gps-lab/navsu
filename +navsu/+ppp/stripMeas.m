@@ -47,6 +47,17 @@ for idx = 1:length(obsMapi)
                         obsi.(imuFields{fdx}) = obsFulli.(imuFields{fdx});
                     end
                 end
+                
+            case navsu.internal.MeasEnum.Wheels
+                imuFields = fields(obsFulli);
+                for fdx = 1:length(imuFields)
+                    if size(obsFulli.(imuFields{fdx}),1) > 1
+                        obsi.(imuFields{fdx}) = obsFulli.(imuFields{fdx})(obsMapi(idx),:);
+                    else
+                        obsi.(imuFields{fdx}) = obsFulli.(imuFields{fdx});
+                    end
+                end
+                
         end
         obsOut = [obsOut; {obsi}];
     end
