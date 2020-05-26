@@ -38,6 +38,7 @@ end
 % 3 = Satellite specific DCB
 % 4 = Code phase multipath
 % 5 = Carrier phase multipath
+% 6 = Ephemeris error
 
 stateTypes = {'cp'; ... % 1  
     'L1DELAYSTATE'; ... % 2
@@ -45,7 +46,8 @@ stateTypes = {'cp'; ... % 1
     'RX_DCB_GLO';...    % 3
     'RX_DCB_GPS';...    % 3
     'MP_CODE';...       % 4
-    'MP_CARR'};         % 5
+    'MP_CARR';...       % 5
+    'EPH'};             % 6
   
 stateUse   = [true; ...
     PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'L1DELAYSTATE'); ...
@@ -53,7 +55,8 @@ stateUse   = [true; ...
     PARAMS.states.RX_DCB_GLO;...
     PARAMS.states.RX_DCB_GPS;...
     PARAMS.states.MP_CODE; ...
-    PARAMS.states.MP_CARR];
+    PARAMS.states.MP_CARR; ...
+    PARAMS.states.EPH];
 
 for sdx = 1:length(stateTypes)
     if ~stateUse(sdx)

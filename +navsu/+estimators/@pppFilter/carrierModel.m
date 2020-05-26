@@ -1,6 +1,6 @@
 function [predMeas,H,sig] = carrierModel(obj,nState,sigi,freqi,tecSlant,state,m,indIonosi, ...
     indMpCarrsi,indAmbStatesi,phWind,gRange,satBias,rxBias,trop,stRangeOffset,...
-    relClockCorr,relRangeCorr,A,constIndi)
+    relClockCorr,relRangeCorr,A,constIndi,indEphErri)
 predMeas = [];
 H = [];
 sig= [];
@@ -41,6 +41,14 @@ else
     dtrop = 0;
 end
 
+if obj.PARAMS.states.EPH
+    indEphErr = obj.INDS_STATE.FLEX_STATES(indEphErri);
+    ephErri   = state(indEphErr);
+    H(1,indEphErr) = 1;
+else
+    ephErri = 0;
+end
+
 
 indAmbState = obj.INDS_STATE.FLEX_STATES(indAmbStatesi);
 
@@ -51,7 +59,7 @@ phWindi = phWind*navsu.constants.c/freqi;
 
 predMeas = gRange+satBias+rxBias+...
     trop+dtrop+stRangeOffset+relClockCorr+...
-    relRangeCorr+ionoCorri+ambEst+phWindi+mpCarri;
+    relRangeCorr+ionoCorri+ambEst+phWindi+mpCarri+ephErri;
 
 H(1,obj.INDS_STATE.POS)        = A;
 H(1,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;

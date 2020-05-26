@@ -90,6 +90,11 @@ end
 indsAmbs = filter.INDS_STATE.FLEX_STATES(filter.INDS_STATE.FLEX_STATES_INFO(:,3) == 1);
 Q(indsAmbs,indsAmbs) = eye(length(indsAmbs))*PARAMS.Q.AMB.^2*dtKf;
 
+if PARAMS.states.EPH
+    indsEph = filter.INDS_STATE.FLEX_STATES(filter.INDS_STATE.FLEX_STATES_INFO(:,3) == 6);
+    Q(indsEph,indsEph) = eye(length(indsEph))*PARAMS.Q.EPH.^2*dtKf;
+end
+
 % Propagate position
 pos = pos+dtKf*vel;
 

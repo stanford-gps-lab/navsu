@@ -1,6 +1,6 @@
 function [predMeasi,Hii,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant,state,...
     constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
-    relClockCorr,relRangeCorr,A,indIonosi)
+    relClockCorr,relRangeCorr,A,indIonosi,indEphErri)
 
 
 predMeas = [];
@@ -71,9 +71,17 @@ else
     dtrop = 0;
 end
 
+if ~SimpleModel && obj.PARAMS.states.EPH
+    indEphErr = obj.INDS_STATE.FLEX_STATES(indEphErri);
+    ephErri   = state(indEphErr);
+    Hii(1,indEphErr) = 1;
+else
+    ephErri = 0;
+end
+
 predMeasi = gRange+satBias+rxBias+trop+dtrop+...
     stRangeOffset+relClockCorr+relRangeCorr+ionoCorri+rxDcb+...
-    dcbGloi+dcbGpsi+mpCodei;
+    dcbGloi+dcbGpsi+ephErri;
 
 Hii(1,obj.INDS_STATE.POS)        = A;
 Hii(1,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;

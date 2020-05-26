@@ -14,6 +14,11 @@ epochStart       = res.epochStart;       % Minimum time of observations
 epochEnd         = res.epochEnd;         % Maximum time of observations
 downsampleFactor = res.downsampleFactor; % FActor by which to downsample
 
+if isempty(imuMeasRaw)
+    imuMeas = [];
+    return;
+end
+
 indsMeas = find(imuMeasRaw.epochs >= epochStart & imuMeasRaw.epochs < epochEnd);
 indsMeas = indsMeas(1:downsampleFactor:end);
 

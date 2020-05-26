@@ -186,7 +186,9 @@ if nMeas > 0
         [~,indGloDcbs] =ismember([[[idList.prn]' [idList.const]'] 3*ones(length(idList),1) [idList.freq]'],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
         [~,indMpCodes] =ismember([[[idList.prn]' [idList.const]'] 4*ones(length(idList),1) [idList.freq]'],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
         [~,indMpCarrs] =ismember([[[idList.prn]' [idList.const]'] 5*ones(length(idList),1) [idList.freq]'],obj.INDS_STATE.FLEX_STATES_INFO(:,1:4),'rows');
-        
+        [~,indEphErrs] =ismember([[[idList.prn]' [idList.const]'] 6*ones(length(idList),1) ],obj.INDS_STATE.FLEX_STATES_INFO(:,1:3),'rows');
+
+        'fdaf';
     else
         
         % Pre-computed range components have been provided
@@ -219,6 +221,7 @@ if nMeas > 0
         indGloDcbs   = extraInputs.indGloDcbs;
         indMpCodes   = extraInputs.indMpCodes;
         indMpCarrs   = extraInputs.indMpCarrs;
+        indEphErrs   = extraInputs.indEphErrs;
         
         % Remove measurements for which there is no orbit and clock info
         indMeasRemoveNoOrbit  = extraInputs.indMeasRemoveNoOrbit;
@@ -253,7 +256,8 @@ if nMeas > 0
                 % Code phase measurement
                 [predMeasi,Hii,sigMeasi] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant(losInd),x_est_propagated,...
                     constIndi,indGloDcbs(idx),indMpCodes(idx),m(losInd),gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),stRangeOffset(losInd),...
-                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:),indIonos(idx));
+                    relClockCorr(losInd),relRangeCorr(losInd),A(losInd,:),indIonos(idx),...
+                    indEphErrs(idx));
                 
             case navsu.internal.MeasEnum.Carrier
                 % Carrier phase measurement
@@ -262,7 +266,7 @@ if nMeas > 0
                     indMpCarrs(idx),indAmbStates(idx),phWind(losInd),...
                     gRange(losInd),satBias(losInd),rxBias(losInd),trop(losInd),...
                     stRangeOffset(losInd),relClockCorr(losInd),relRangeCorr(losInd),...
-                    A(losInd,:),constIndi);
+                    A(losInd,:),constIndi,indEphErrs(idx));
                 
             case navsu.internal.MeasEnum.Doppler
                 % Doppler measurement
@@ -336,13 +340,15 @@ if ~isempty(prnConstInds)
     extraInputs.indGloDcbs   = indGloDcbs;
     extraInputs.indMpCodes   = indMpCodes;
     extraInputs.indMpCarrs   = indMpCarrs;
+    extraInputs.indEphErrs   = indEphErrs;
     
 else
     extraInputs = struct('prnConstInds',[],'trop',[],'stRangeOffste',[],...
         'satBias',[],'rxBias',[],'relClockCorr',[],'relRangeCorr',[]...
         ,'svPosRot',[],'svVel',[],'phWind',[],'m',[],...
         'rxDrift',[],'tecSlant',[],'losInds',[],...
-        'indAmbStates',[],'indIonos',[],'indGloDcbs',[],'indMpCodes',[],'indMpCarrs',[]);
+        'indAmbStates',[],'indIonos',[],'indGloDcbs',[],'indMpCodes',[],...
+        'indMpCarrs',[],'indEphErrs',[]);
 end
 
 

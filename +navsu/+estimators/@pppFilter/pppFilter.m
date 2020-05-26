@@ -108,13 +108,13 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         % value and sensitivity matrix for carrier phase measurements
         [predMeas,H,sig] = carrierModel(obj,nState,sigi,freqi,tecSlant,state,m,indIonosi, ...
             indMpCarrsi,indAmbStatesi,phWind,gRange,satBias,rxBias,trop,stRangeOffset,...
-            relClockCorr,relRangeCorr,A,constIndi)
+            relClockCorr,relRangeCorr,A,constIndi,indEphErri)
         
         % codeModel- called within handleGnssMeas and produces predicted
         % value and sensitivity matrix for code phase measurements
         [predMeas,H,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant,state,...
             constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
-            relClockCorr,relRangeCorr,A,indIonosi)
+            relClockCorr,relRangeCorr,A,indIonosi,indEphErri)
         
         % handleVehicleConstraintPseudomeas- produce predicted value and
         % sensitivity matrix for vehicle slip constraints

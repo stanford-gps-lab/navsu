@@ -47,7 +47,7 @@ else
     if ismember(1,constUn)
         % gps
         indsi = find(constInds == 1);
-        pos = navsu.geo.propNavMsg(orbClockData.BEph.gps,prns(indsi),weeks(indsi),tows(indsi),'GPS');
+        pos = navsu.geo.propNavMsgGps(orbClockData.BEph.gps,prns(indsi),weeks(indsi),tows(indsi),'GPS');
         svPos(indsi,:) = [pos.x pos.y pos.z];
         svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
         
@@ -71,7 +71,7 @@ else
      if ismember(3,constUn)
         % galileo
         indsi = find(constInds == 3);
-        pos = navsu.geo.propNavMsg(orbClockData.BEph.gal,prns(indsi),weeks(indsi),tows(indsi),'GAL');
+        pos = navsu.geo.propNavMsgGps(orbClockData.BEph.gal,prns(indsi),weeks(indsi),tows(indsi),'GAL');
         svPos(indsi,:) = [pos.x pos.y pos.z];
         svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
         
@@ -84,7 +84,7 @@ else
      if ismember(4,constUn)
         % galileo
         indsi = find(constInds == 4);
-        pos = navsu.geo.propNavMsg(orbClockData.BEph.bds,prns(indsi),weeks(indsi),tows(indsi),'BDS');
+        pos = navsu.geo.propNavMsgGps(orbClockData.BEph.bds,prns(indsi),weeks(indsi),tows(indsi),'BDS');
         svPos(indsi,:) = [pos.x pos.y pos.z];
         svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
         

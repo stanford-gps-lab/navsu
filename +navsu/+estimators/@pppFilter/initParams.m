@@ -66,8 +66,9 @@ PARAMS.states = struct(...
     'ionoMode',     'L1DELAYSTATE',...% L1DELAYSTATE estimates delay at L1 per LOS
     'RX_DCB_GLO',   true,...          % Separate DCB state for each GLONASS code measurement
     'RX_DCB_GPS',   false,...         % Separate DCB state for each GLONASS code measurement
-    'MP_CODE',      false,...          % Code phase multipath
-    'MP_CARR',      false);            % Carrier phase multipath
+    'MP_CODE',      false,...         % Code phase multipath
+    'MP_CARR',      false,...         % Carrier phase multipath
+    'EPH',          false);           % Error from ephemeris and clock
 
 % Tropospheric model
 PARAMS.tropModel = 'UNB3';
@@ -125,7 +126,8 @@ PARAMS.Q = struct(...
     'RX_DCB_GLO',      0,...                 % Separate DCB state for each GLONASS code measurement
     'RX_DCB_GPS',      0,...                 % Separate DCB state for each GLONASS code measurement  \
     'MP_CODE',         0.25,....             % Code phase multipath
-    'MP_CARR',         0.0000);              % Carrier phase multipath
+    'MP_CARR',         0.0000,...            % Carrier phase multipath
+    'EPH',             0.002);               % ephemeris error 
 
 PARAMS.other = struct(...
     'TAU_MP_CODE',    100);                  % Time constant for code multipath

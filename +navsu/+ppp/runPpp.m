@@ -33,8 +33,10 @@ for tdx = 1:nEpochs
         filter.initialize(obsi,corrData);
     end
     
-    % Save some things for output
-    outData = filter.saveState(outData,epochi,obsi);
+    if filter.initialized
+        % Save some things for output
+        outData = filter.saveState(outData,epochi,obsi);
+    end
     
     % Update the waitbar
     if mod(floor(tdx/nEpochs*100),1) == 0 && floor(tdx/nEpochs*100) > pctDone
