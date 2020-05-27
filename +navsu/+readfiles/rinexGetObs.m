@@ -82,7 +82,9 @@ if (~isempty(sat_types)) %RINEX v2.xx
     
     % Mask to filter all the possible observations (max 15)
     mask = false(16,nObsToRead);
+    maskLLI = false(16,nObsToRead);
     mask(2:14,:) = true;
+    maskLLI(15,:) = true;
     % preallocate a matrix of 15 strings (of length 14 characters)
     % notice that each observation element has a max length of 13 char,
     % the first character is added as a padding to separate the strings for
@@ -111,6 +113,7 @@ if (~isempty(sat_types)) %RINEX v2.xx
             % containing all the observations
             strObs(1:13,:) = (reshape(lin(mask(:)),13,nObsToRead));
             fltObs = sscanf(strObs, '%f'); % read all the observations in the string
+
             obsId = 0; % index of the current observation
             % start parsing the observation string
             for k = 1 : min(nObsTypes, ceil(linLength/16))
@@ -131,6 +134,20 @@ if (~isempty(sat_types)) %RINEX v2.xx
                     
                 end
             end
+            % Add the Loss of Lock Indicator
+            lliNum = [1 2 5];
+            for i=1:3
+                lliField = ['LLI' num2str(lliNum(i))];
+                lliIdx = find(contains(obsTypes,lliField));
+                if lliIdx
+                    idxL = find(contains(obsTypes,['L' num2str(lliNum(i))]));
+                    lliObs = (reshape(lin(maskLLI(:)),1,nObsToRead));
+                    LLI = str2num(lliObs(idxL));
+                    if ~isempty(LLI)
+                        obs_mat(sat_types_id(s)+sat(s)-1,lliIdx) = LLI;
+                    end                    
+                end
+            end           
            
         else
             %skip all the observation lines for the unused satellite
