@@ -366,6 +366,90 @@ figure
 navsu.geo.skyPlot(az'*180/pi,el'*180/pi,'label',true,'prn',satsUn(:,1),...
     'const',satsUn(:,2),'linestyle','o')
 
+
+%%
+% plot flex states
+flex = cat(1,outputs.flexStates);
+
+flexStates = cat(1,flex.states);
+flexInfo   = cat(1,flex.info);
+flexStd    = cat(1,flex.std);
+flexEpochs = cat(1,flex.epochs);
+
+%% plot ambiguities
+indsAmb = find(flexInfo(:,3) == 1);
+
+% Collect all of the ambiguities to plot
+flexInfoAmb = flexInfo(indsAmb,:);
+flexStatesAmb = flexStates(indsAmb,:);
+flexStdAmb    = flexStd(indsAmb);
+flexEpochs    = flexEpochs(indsAmb);
+
+ambsUn = unique(flexInfoAmb,'rows');
+epochsUn = unique(flexEpochs);
+
+ambStatePlot = nan(length(ambsUn),length(epochsUn));
+ambStdPlot   = nan(length(ambsUn),length(epochsUn));
+
+for idx = 1:length(ambsUn)
+    indsi = find(ismember(flexInfoAmb,ambsUn(idx,:),'rows'));
+    
+    statesi = flexStatesAmb(indsi);
+    stdi    = flexStdAmb(indsi);
+    epochsi = flexEpochs(indsi);
+    
+    [~,ixb] = ismember(epochsi,epochsUn);
+    
+    ambStatePlot(idx,ixb) = statesi;
+    ambStdPlot(idx,ixb) = stdi;
+end
+
+colors = lines(length(ambsUn));
+
+figure
+s = plot(ambStatePlot','linewidth',2);
+hold on
+for idx = 1:length(s)
+   % add data tip information 
+    s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
+    s(idx).DataTipTemplate.DataTipRows(2).Label = 'resid';
+    row = dataTipTextRow('PRN',double(ambsUn(idx,1)).*ones(length(epochsUn),1));
+    s(idx).DataTipTemplate.DataTipRows(3) = row;
+    row = dataTipTextRow('const',double(ambsUn(idx,2)).*ones(length(epochsUn),1));
+    s(idx).DataTipTemplate.DataTipRows(4) = row;
+     row = dataTipTextRow('sig',double(ambsUn(idx,4)).*ones(length(epochsUn),1));
+    s(idx).DataTipTemplate.DataTipRows(4) = row;
+    s(idx).Color = colors(idx,:);
+end
+
+% Add standard dev lol
+% s = plot(ambStatePlot'+ambStdPlot');
+% for idx = 1:length(s)
+%    % add data tip information 
+%     s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
+%     s(idx).DataTipTemplate.DataTipRows(2).Label = 'std+resid';
+%     row = dataTipTextRow('PRN',double(ambsUn(idx,1)).*ones(length(epochsUn),1));
+%     s(idx).DataTipTemplate.DataTipRows(3) = row;
+%     row = dataTipTextRow('const',double(ambsUn(idx,2)).*ones(length(epochsUn),1));
+%     s(idx).DataTipTemplate.DataTipRows(4) = row;
+%      row = dataTipTextRow('sig',double(ambsUn(idx,4)).*ones(length(epochsUn),1));
+%     s(idx).DataTipTemplate.DataTipRows(4) = row;
+%     s(idx).Color = colors(idx,:);
+% end
+% s = plot(ambStatePlot'-ambStdPlot');
+% for idx = 1:length(s)
+%    % add data tip information 
+%     s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
+%     s(idx).DataTipTemplate.DataTipRows(2).Label = 'std+resid';
+%     row = dataTipTextRow('PRN',double(ambsUn(idx,1)).*ones(length(epochsUn),1));
+%     s(idx).DataTipTemplate.DataTipRows(3) = row;
+%     row = dataTipTextRow('const',double(ambsUn(idx,2)).*ones(length(epochsUn),1));
+%     s(idx).DataTipTemplate.DataTipRows(4) = row;
+%      row = dataTipTextRow('sig',double(ambsUn(idx,4)).*ones(length(epochsUn),1));
+%     s(idx).DataTipTemplate.DataTipRows(4) = row;
+%     s(idx).Color = colors(idx,:);
+% end
+
 end
 
 
