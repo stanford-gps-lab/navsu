@@ -14,6 +14,9 @@ PARAMS = obj.PARAMS;
 
 gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
 
+gnssMeas = navsu.ppp.measMask(gnssMeas,PARAMS.measMask);
+
+
 if isempty(gnssMeas)
     % Currently, we need a GNSS measurement in order to proceed.
     measRemovedSlip = [];
