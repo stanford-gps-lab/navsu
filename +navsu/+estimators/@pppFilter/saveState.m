@@ -21,6 +21,30 @@ outState.resids = obj.resids;
 outState.residsInfo = [];
 outState.measRemoved = obj.measRemoved;
 
+% Save tropospheric state information
+outState.tropo = obj.state(obj.INDS_STATE.TROP);
+outState.covTropo = obj.cov(obj.INDS_STATE.TROP,obj.INDS_STATE.TROP);
+
+%
+if ~isempty(obj.INDS_STATE.FLEX_STATES)
+    % pull flex states
+    
+    flexStates = obj.state(obj.INDS_STATE.FLEX_STATES);
+    flexStatesInfo = obj.INDS_STATE.FLEX_STATES_INFO;
+    
+    covDiag = diag(obj.cov);
+    
+    flexStatesCov = sqrt(covDiag(obj.INDS_STATE.FLEX_STATES));
+    flexStatesEpochs = epoch*ones(size(flexStates));
+    
+    outState.flexStates.states = flexStates;
+    outState.flexStates.info   = flexStatesInfo;
+    outState.flexStates.std    = flexStatesCov;
+    outState.flexStates.epochs = flexStatesEpochs;
+else
+    outState.flexStates = []; 
+end
+
 if isempty(outData) || isempty([outData(:).residsInfo])
     gnssMeas = [];
     for idx = 1:length(obs)
