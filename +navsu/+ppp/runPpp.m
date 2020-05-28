@@ -5,14 +5,10 @@ obs = filter.checkMeas(obs);
 
 %% Sync all measurements 
 [obsMap,epochs] = navsu.ppp.syncMeas(obs);
-
-%%
 nEpochs = length(epochs);
 
-% Initialize the waitbar
-runTimeStart = tic;
-pctDone = 0;
-h = waitbar(0,'0 Percent Complete');
+% Initialize the progress bar
+wb = navsu.internal.loadingBar(nEpochs);
 
 %% Data to save
 outData = [];
@@ -38,17 +34,12 @@ for tdx = 1:nEpochs
         outData = filter.saveState(outData,epochi,obsi);
     end
     
-    % Update the waitbar
-    if mod(floor(tdx/nEpochs*100),1) == 0 && floor(tdx/nEpochs*100) > pctDone
-        tElapsed = toc(runTimeStart);
-        tRemaining = tElapsed*(nEpochs-tdx)./tdx;
-        pctDone =  floor(tdx/nEpochs*100);
-        waitbar(pctDone/100,h,[num2str(pctDone) '% Complete, ' num2str(tRemaining/60,'%5.2f') ' Minutes Remaining']);
-    end
+    % Update the progress bar    
+    wb.update(tdx);
 end
 
-close(h);
-
+% Close the progress bar
+wb.close;
 
 end
 
