@@ -17,6 +17,10 @@ xyz = [outputs.pos]';
 xyzCov = cat(3,outputs.covPos);
 epochs = [outputs.epoch]';
 b = zeros(size(epochs));
+[week,tow] = navsu.time.epochs2gps(epochs);
+
+epochs0 = epochs;
+tinds0  = 1:length(epochs);
 
 llh0 = navsu.geo.xyz2llh(xyz(1,:));
 
@@ -86,8 +90,7 @@ else
 end
 
 
-%% plot
-
+%% plot position error
 if ~isempty(truth)
     figure;
     ha = navsu.thirdparty.tightSubplot(4,1,0.02,[0.1 0.1],[0.07 0.05]);
@@ -112,8 +115,48 @@ if ~isempty(truth)
             xlabel('Time [min]')
         end
     end
+end
+
+%%
+if ~isempty(truth)
+    % Plot the ground track and altitude
+    figure;
+    subplot(4,1,1:3);
+   
+    % Median position of the ground track
+    posMedEnu = nanmedian(estim.enuPos(:,1:2));
+    
+    enuPlotEst = (estim.enuPos(:,1:2)-posMedEnu)/1e3;
+    enuPlotTrue = (truth.enuPosInterp(:,1:2)-posMedEnu)/1e3;
+    
+    s = plot([enuPlotEst(:,1) enuPlotTrue(:,1)],[enuPlotEst(:,2) enuPlotTrue(:,2)],'.');
+    % Add time to data tips
+    for idx = 1:length(s)
+        row = dataTipTextRow('tIndex',tinds0);
+        s(idx).DataTipTemplate.DataTipRows(3) = row;
+    end
+    grid on
+    legend('Estimated position','Truth position','location','best')
+    xlabel('East position [km]')
+    ylabel('North position [km]')
+    
+    subplot(4,1,4);
+    s = plot(tinds0,[estim.enuPos(:,3) truth.enuPosInterp(:,3)]);
+    
+    % Add time to data tips
+    for idx = 1:length(s)
+        row = dataTipTextRow('tIndex',tinds0);
+        s(idx).DataTipTemplate.DataTipRows(3) = row;
+    end
+    grid on;
+    xlabel('Time index')
+    ylabel('Altitude [m]')
     
 end
+
+
+
+
 
 %% plot GNSS residuals
 % Pull out only the GNSS residuals
@@ -190,9 +233,9 @@ nPr = size(indsUnPh,1);
 epochsUn = unique(epochsGnss);
 nEpochs = length(epochsUn);
 
-prResidsPlot = nan(nPr,nEpochs);
+phResidsPlot = nan(nPr,nEpochs);
 
-for idx = 1:size(indsUnPh)
+for idx = 1:size(indsUnPh,1)
     indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
     
     epochsi = epochsGnss(indsi);
@@ -200,10 +243,10 @@ for idx = 1:size(indsUnPh)
     
     [~,ixb] = ismember(epochsi,epochsUn);
     
-    prResidsPlot(idx,ixb) = prResidsi;
+    phResidsPlot(idx,ixb) = prResidsi;
 end
 tPlot = (epochsUn-epochsUn(1))/60;
-s = plot(tPlot,prResidsPlot);
+s = plot(tPlot,phResidsPlot);
 for idx = 1:length(s)
     s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
     s(idx).DataTipTemplate.DataTipRows(2).Label = 'resid';
@@ -222,39 +265,93 @@ ylim([-0.1 0.1])
 % Plot doppler residuals
 axes(ha(3))
 % Doppler residuals
-indsUnPh = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Doppler),:);
-nPr = size(indsUnPh,1);
+indsUnDopp = measIdUn(measIdUn(:,4) == uint8(navsu.internal.MeasEnum.Doppler),:);
+nPr = size(indsUnDopp,1);
 epochsUn = unique(epochsGnss);
 nEpochs = length(epochsUn);
 
-prResidsPlot = nan(nPr,nEpochs);
+doppResidsPlot = nan(nPr,nEpochs);
 
-for idx = 1:size(indsUnPh)
-    indsi = find(ismember(measIdMat,indsUnPh(idx,:),'rows'));
+for idx = 1:size(indsUnDopp,1)
+    indsi = find(ismember(measIdMat,indsUnDopp(idx,:),'rows'));
     
     epochsi = epochsGnss(indsi);
     prResidsi     = residsGnss(indsi);
     
     [~,ixb] = ismember(epochsi,epochsUn);
     
-    prResidsPlot(idx,ixb) = prResidsi;
+    doppResidsPlot(idx,ixb) = prResidsi;
 end
 tPlot = (epochsUn-epochsUn(1))/60;
-s = plot(tPlot,prResidsPlot,'.');
+s = plot(tPlot,doppResidsPlot,'.');
 for idx = 1:length(s)
     s(idx).DataTipTemplate.DataTipRows(1).Label = 't';
     s(idx).DataTipTemplate.DataTipRows(2).Label = 'resid';
-    row = dataTipTextRow('PRN',double(indsUnPh(idx,1)).*ones(nEpochs,1));
+    row = dataTipTextRow('PRN',double(indsUnDopp(idx,1)).*ones(nEpochs,1));
     s(idx).DataTipTemplate.DataTipRows(3) = row;
-    row = dataTipTextRow('const',double(indsUnPh(idx,2)).*ones(nEpochs,1));
+    row = dataTipTextRow('const',double(indsUnDopp(idx,2)).*ones(nEpochs,1));
     s(idx).DataTipTemplate.DataTipRows(4) = row;
-    row = dataTipTextRow('sig',double(indsUnPh(idx,3)).*ones(nEpochs,1));
+    row = dataTipTextRow('sig',double(indsUnDopp(idx,3)).*ones(nEpochs,1));
     s(idx).DataTipTemplate.DataTipRows(5) = row;
 end
 
 xlim([0 (max(epochsGnss)-min(epochsGnss))/60]); grid on;
 xlabel('Minutes into run')
 ylabel('Doppler residuals [m]')
+
+
+% Also plot summaries of the residuals
+prnConstList = sortrows(unique(measIdMat(:,1:2),'rows'),2);
+
+figure;
+ha = navsu.thirdparty.tightSubplot(3,1,0.05,[0.1 0.1],[0.07 0.05]);
+axes(ha(1))
+% pseudorange means
+means = nanmean(prResidsPlot,2);
+stds  = nanstd(prResidsPlot');
+[~,xPlotPr] = ismember(indsUnPr(:,1:2),prnConstList,'rows');
+s = errorbar(xPlotPr,means,stds,'o');
+grid on;
+row = dataTipTextRow('PRN',double(indsUnPr(:,1)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+row = dataTipTextRow('const',double(indsUnPr(:,2)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+row = dataTipTextRow('sig',double(indsUnPr(:,3)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+ylabel('Code resids [m]')
+
+
+axes(ha(2))
+% carrier phase means
+means = nanmean(phResidsPlot,2);
+stds  = nanstd(phResidsPlot');
+[~,xPlotPh] = ismember(indsUnPh(:,1:2),prnConstList,'rows');
+s = errorbar(xPlotPh,means,stds,'o');
+grid on;
+row = dataTipTextRow('PRN',double(indsUnPh(:,1)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+row = dataTipTextRow('const',double(indsUnPh(:,2)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+row = dataTipTextRow('sig',double(indsUnPh(:,3)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+ylabel('Code resids [m]')
+
+
+axes(ha(3))
+% doppler means
+means = nanmean(doppResidsPlot,2);
+stds  = nanstd(doppResidsPlot');
+[~,xPlotDopp] = ismember(indsUnDopp(:,1:2),prnConstList,'rows');
+s = errorbar(xPlotDopp,means,stds,'o');
+grid on;
+row = dataTipTextRow('PRN',double(indsUnDopp(:,1)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+row = dataTipTextRow('const',double(indsUnDopp(:,2)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+row = dataTipTextRow('sig',double(indsUnDopp(:,3)));
+s.DataTipTemplate.DataTipRows(end+1) = row;
+ylabel('Code resids [m]')
+
 
 %% plot measurements that were removed?
 if 1
@@ -421,8 +518,8 @@ for idx = 1:length(s)
     s(idx).DataTipTemplate.DataTipRows(4) = row;
     s(idx).Color = colors(idx,:);
 end
-
-% Add standard dev lol
+% 
+% % Add standard dev lol
 % s = plot(ambStatePlot'+ambStdPlot');
 % for idx = 1:length(s)
 %    % add data tip information 
@@ -449,6 +546,17 @@ end
 %     s(idx).DataTipTemplate.DataTipRows(4) = row;
 %     s(idx).Color = colors(idx,:);
 % end
+
+%% Plot the dop 
+resids2 = cat(1,outputs.resids);
+
+dop = cat(2,resids2.dop);
+epochsDop = cat(2,resids2.dopEpoch);
+dop(dop == 0) = nan;
+
+figure;
+plot(epochsDop,dop(1:3,:))
+legend('E','N','U')
 
 end
 

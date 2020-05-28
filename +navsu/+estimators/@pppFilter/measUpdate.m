@@ -55,7 +55,7 @@ for idx = 1:length(obs)
     switch obsi.type
         case navsu.internal.MeasEnum.GNSS
             [predMeasi,Hi,Ri,el,az,prnConstInds,measIdi,measi,...
-                measIdRemovedLow,extraInputs] = handleGnssMeas(obj,epoch0,obsi,...
+                measIdRemovedLow,extraInputs,dop] = handleGnssMeas(obj,epoch0,obsi,...
                 corrData,'extraInputs',extraInputs);
             gnssMeas = obsi;
         case navsu.internal.MeasEnum.Position
@@ -157,17 +157,14 @@ if ~isempty(gnssMeas)
     obj.resids.measId = measId;
     obj.resids.resids = residsPost;
     obj.resids.epochs = epoch0*ones(size(measId));
-    
-%     [~,indsEl] = ismember(prnConstInds,[gnssMeas.PRN' gnssMeas.constInds'],'rows');
-%     
-%     elFull = nan(size(el,1),1);
-%     elFull(indsEl) = el;
-%     azFull = nan(size(el,1),1);
-%     azFull(indsEl) = az;
+
     obj.resids.el = el;
     obj.resids.az = az;
     obj.resids.prnConstInds = prnConstInds;
     obj.resids.epochsElAz = epoch0*ones(size(el));
+    
+    obj.resids.dop = dop;
+    obj.resids.dopEpoch = epoch0;
      
     % Only actually keeping one of the low measurements per satelite
     if ~isempty(measIdRemovedLow)

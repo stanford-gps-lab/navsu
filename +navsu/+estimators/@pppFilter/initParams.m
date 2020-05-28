@@ -33,8 +33,8 @@ PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(nav
 PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Position)) = Inf;
 PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.Position)) = Inf;
 
-PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Position)) = Inf;
-PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.Position)) = Inf;
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Velocity)) = Inf;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.Velocity)) = Inf;
 
 PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.NoSlipCross)) = Inf;
 PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.NoSlipCross)) = Inf;
@@ -116,7 +116,8 @@ PARAMS.Q = struct(...
     'ACC_BIAS',        1e-3*1,...%/100,...             % Accelerometer bias
     'ACC_SCALE',       1e-5,...              % Accelerometer scale
     'W_SCALE',         1e-5,...              % Gyro scale
-    'RXB',             10,...                % Receiver clock bias
+    'RXB',             10+0.5,...                % Receiver clock bias
+    'DRXB',            10+0.3,...                % Receiver clock bias
     'gyro_noise_PSD',  0.0015,...%*100,...   % Gyro noise
     'accel_noise_PSD', 0.005,...%*1000,...   % Accelerometer noise
     'RX_DCB',          0,...                 % Receiver DCB

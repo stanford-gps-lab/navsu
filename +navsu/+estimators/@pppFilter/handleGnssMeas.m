@@ -1,4 +1,4 @@
-function  [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow,extraInputs] ...
+function  [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow,extraInputs,dop] ...
     = handleGnssMeas(obj,epoch,obs,corrData,varargin)
 
 p = inputParser;
@@ -59,12 +59,9 @@ indsMeasDop = find(obs.doppler.obs ~= 0 & snrMaskDoppler);
 idList      = [idList; obs.doppler.ID(indsMeasDop)];
 measList    = [measList; obs.doppler.obs(indsMeasDop)];
 
-
-
 nMeas = length(idList);
 
 if nMeas > 0
-    
     if isempty(extraInputs)
         %% Propagate orbit and clock for all measurements
         prnConstInds = sortrows(unique([[idList.prn]' [idList.const]'],'rows'),2); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -313,6 +310,49 @@ if nMeas  == 0
     measIdRemovedLow = [];
     idList = [];
 end
+
+%% Compute DOP for output
+% G = H(:,[obj.INDS_STATE.POS obj.INDS_STATE.CLOCK_BIAS]);
+% 
+% dopBig = inv(G'*G);
+% % Convert to ENU
+% 
+% if norm(pos) > 1000   
+%     [~,Rxyz2enu] = navsu.geo.xyz2enu(zeros(1,3),llhi(1)*pi/180,llhi(2)*pi/180);
+%     
+%     dopBig(1:3,1:3) = Rxyz2enu*dopBig(1:3,1:3)*Rxyz2enu';
+% else
+%     dopBig = nan(size(dopBig));
+% end
+% 
+% dop = diag(dopBig);
+if norm(pos) > 1000
+    
+    [~,Rli] = navsu.geo.xyz2enu(zeros(1,3),llhi(1)*pi/180,llhi(2)*pi/180);
+    
+    Gi = H(:,obj.INDS_STATE.POS);
+    %         Gl = [(Rli*Gi')' ones(size(Gi,1),1)];
+    Gl = [(Rli*Gi')' H(:,obj.INDS_STATE.CLOCK_BIAS)];
+    
+    nConst  = length(obj.INDS_STATE.CLOCK_BIAS);
+    
+    if max(sum(Gl(:,4:end),1))/2 >= 4 || sum(sum(Gl(:,4:end)))/2 >= 3+nConst
+        dopBig = zeros(3+nConst,3+nConst);
+        if any(sum(Gl(:,4:end)) == 0)
+            indsDopi = find(sum(abs(Gl),1) ~= 0);
+            dopBig(indsDopi,indsDopi) = inv(Gl(:,indsDopi)'*Gl(:,indsDopi));
+        else
+            dopBig = inv(Gl'*Gl);
+        end
+    else
+        dopBig = zeros(3+nConst,3+nConst);
+    end
+    
+else
+    dopBig = nan(3+length(obj.INDS_STATE.CLOCK_BIAS),3+length(obj.INDS_STATE.CLOCK_BIAS));
+end
+
+dop = diag(dopBig);
 
 %%
 if ~isempty(prnConstInds)

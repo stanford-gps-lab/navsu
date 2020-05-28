@@ -62,7 +62,7 @@ if isempty(obsDes) || 1
         
         % Search for an L1 signal to use 
         sig1Rankings = sigRankings{1};
-        for idx = 1:size(sig1Rankings)
+        for idx = 1:length(sig1Rankings)
            % Just check for the signal at all
            sigi = sig1Rankings{idx};
            

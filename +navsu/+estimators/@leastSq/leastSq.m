@@ -1,21 +1,6 @@
 classdef leastSq < navsu.estimators.pppFilter
     
-    
-    properties        
-        % all satellites used in the solution- useful for solution
-        % separation :)
-%         allSatsSeen
-                
-%         initialized = true % it's always initialized :)
-        
-%         PARAMS % parameters associated with the running of this filter!
-        
-%         resids % extra info for output about measurement residuals
-        
-%         measRemoved % extra info for measurements that were removed :)
-        
-    end
-    
+       
     
     methods
         function obj = leastSq()

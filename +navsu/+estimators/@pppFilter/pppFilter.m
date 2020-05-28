@@ -97,8 +97,8 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         
         % Build predicted measurements, sensitivity matrix, and pull
         % measurement IDs for GNSS measurements
-        [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow,extraInputs] =  ...
-            handleGnssMeas(obj,epoch,obs,corrData,varargin)
+        [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow,...
+            extraInputs,dop] =  handleGnssMeas(obj,epoch,obs,corrData,varargin)
         
         % doppModel- called within handleGnssMeas and produces predicted
         % value and sensitivity matrix for doppler measurements

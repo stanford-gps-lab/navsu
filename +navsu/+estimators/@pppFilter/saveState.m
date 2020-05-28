@@ -13,13 +13,13 @@ elseif strcmp(obj.PARAMS.outputPos,'REF')
         obj.R_b_e = navsu.ppp.posVel2Rbe(obj.pos,obj.vel);
     end
     outState.pos   = obj.pos-obj.R_b_e*obj.PARAMS.IMU_ARM*0;
-    
 end
 
 outState.covPos = obj.cov(obj.INDS_STATE.POS,obj.INDS_STATE.POS);
 outState.resids = obj.resids;
 outState.residsInfo = [];
 outState.measRemoved = obj.measRemoved;
+outState.clockBias = obj.clockBias';
 
 % Save tropospheric state information
 outState.tropo = obj.state(obj.INDS_STATE.TROP);

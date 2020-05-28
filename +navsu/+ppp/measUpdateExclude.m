@@ -39,6 +39,7 @@ for idx = 1:length(types)
 end
 
 
+
 idx = 1;
 while largeResids || mediumResids
     % Keep iterating until there are no bad measurements

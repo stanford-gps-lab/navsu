@@ -11,7 +11,6 @@ res        = p.Results;
 measExclude = res.measExclude;
 extraInputs = res.extraInputs;
 %%
-
 % Manage the states in the filter :)
 measRemovedSlip = navsu.ppp.manageStatesMulti(obj,epoch,obs);
 
