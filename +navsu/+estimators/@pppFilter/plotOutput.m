@@ -93,13 +93,13 @@ end
 %% plot position error
 if ~isempty(truth)
     figure;
-    ha = navsu.thirdparty.tightSubplot(4,1,0.02,[0.1 0.1],[0.07 0.05]);
+    ha = navsu.thirdparty.tightSubplot(3,1,0.02,[0.1 0.1],[0.07 0.05]);
     
     yplot = [estim.enuPos-truth.enuPosInterp b*navsu.constants.c]';
     yplotStd = [estim.enuStd b*navsu.constants.c]';
     tplot = (epochs-epochs(1))/60; % minutes
     ylabels = {'East [m]' 'North [m]' 'Up [m]' 'Clock [m]'};
-    for idx = 1:4
+    for idx = 1:3
         axes(ha(idx))
         
         plot(tplot,yplot(idx,:))
@@ -109,7 +109,7 @@ if ~isempty(truth)
         
         ylabel(ylabels{idx})
         grid on
-        if idx < 4
+        if idx < 3
             xticklabels('')
         else
             xlabel('Time [min]')
@@ -126,8 +126,8 @@ if ~isempty(truth)
     % Median position of the ground track
     posMedEnu = nanmedian(estim.enuPos(:,1:2));
     
-    enuPlotEst = (estim.enuPos(:,1:2)-posMedEnu)/1e3;
-    enuPlotTrue = (truth.enuPosInterp(:,1:2)-posMedEnu)/1e3;
+    enuPlotEst = (estim.enuPos(:,1:2)-posMedEnu);
+    enuPlotTrue = (truth.enuPosInterp(:,1:2)-posMedEnu);
     
     s = plot([enuPlotEst(:,1) enuPlotTrue(:,1)],[enuPlotEst(:,2) enuPlotTrue(:,2)],'.');
     % Add time to data tips
@@ -137,8 +137,8 @@ if ~isempty(truth)
     end
     grid on
     legend('Estimated position','Truth position','location','best')
-    xlabel('East position [km]')
-    ylabel('North position [km]')
+    xlabel('East position [m]')
+    ylabel('North position [m]')
     
     subplot(4,1,4);
     s = plot(tinds0,[estim.enuPos(:,3) truth.enuPosInterp(:,3)]);
