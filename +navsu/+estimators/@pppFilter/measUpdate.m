@@ -73,7 +73,7 @@ end
 if PARAMS.measUse.noVertVel && 0
     [predMeasi,Hi,Ri,measIdi,measi] = handleVehicleConstraintPseudomeas(obj);
     
-    [predMeas,H,R] = catMeas(predMeas,predMeasi,H,Hi,R,Ri);
+    [predMeas,H,R,measId,meas] = catMeas(predMeas,predMeasi,H,Hi,R,Ri,measId,measIdi,meas,measi);
 end
 
 nMeas = size(H,1);
