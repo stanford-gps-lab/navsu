@@ -215,6 +215,7 @@ dcbData = corrData.dcb;
 dcbType = dcbData.type;
 dcbType = 2;
 
+
 %% Correct L1C-L1P for ISC (using GPS and Galileo MGEX precise products, this should be the only necessary change)
 %     dcbData2 = [];
 dcbCorr = zeros(size(prphType));
@@ -279,13 +280,34 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
             freqi = str2num(obsi{1}(2));
             
             if  consti == 1
+                % Pull tgd term
+            
+                % Correct to either C1W or C2W then apply TGD or gamma*TGD
+                % from there
+                
+                bias1 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1W'},epochDcb,dcbData);
+                bias2 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2W'},epochDcb,dcbData);
+                
+                tgd = (bias1-bias2);
+                gamma12 = (1575.42/1227.6)^2;
+                
                 switch obsi{1}
                     case 'C1C'
+                        % C1C goes directly to C1W
                         biasi = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1W'},epochDcb,dcbData);
+                        biasi = biasi+tgd;
+                    case {'C5Q' 'C5X'}
+                        % L5 refers to C1C- the C1C reference must then be
+                        % moved to C1W then the tgd can be applied
+                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C1C'},obsi,epochDcb,dcbData);
+                         biasi = biasi+navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1W'},epochDcb,dcbData);
+                         biasi = biasi+tgd;
+                        
                     case 'C2W'
-                        biasi = 0;
+                        biasi = +gamma12*tgd;
                     case 'C2S'
                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C2W'},{'C2S'},epochDcb,dcbData);
+                        biasi = biasi+gamma12*tgd;
                     otherwise
                         biasi = 0;
                 end
@@ -294,18 +316,56 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
             end
             
             if consti == 2
+                % All GLONASS DCBs refer to C1C, so just need TGD term for
+                % that.
+                bias1 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+                bias2 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2P'},epochDcb,dcbData);
+                
+                tgd = (bias1-bias2);
+                
                 switch obsi{1}
                     case 'C1C'
                         biasi = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+                        biasi = biasi+tgd;
                     case 'C2P'
-                        biasi = 0;
+                        biasi = gamma12*tgd;
                     case 'C2C'
                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2C'},epochDcb,dcbData);
+                        biasi = biasi + navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+                        biasi = biasi+tgd;
+                        
                     otherwise
                         biasi = 0;
                 end
                 
                 dcbCorr(idx,jdx) = biasi;
+            end
+            
+            
+            if consti == 3
+                % All galileo
+                'fdaf';
+%                 bias1 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+%                 bias2 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2P'},epochDcb,dcbData);
+%                 
+%                 tgd = (bias1-bias2);
+                
+%                 switch obsi{1}
+%                     case 'C1C'
+%                         biasi = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+%                         biasi = biasi+tgd;
+%                     case 'C2P'
+%                         biasi = gamma12*tgd;
+%                     case 'C2C'
+%                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2C'},epochDcb,dcbData);
+%                         biasi = biasi + navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+%                         biasi = biasi+tgd;
+%                         
+%                     otherwise
+%                         biasi = 0;
+%                 end
+%                 
+%                 dcbCorr(idx,jdx) = biasi;
             end
             
         end
