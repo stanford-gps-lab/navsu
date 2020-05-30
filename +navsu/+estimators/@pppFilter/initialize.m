@@ -1,127 +1,33 @@
-function complete = initialize(obj,corrData,varargin)
+function measId = initialize(obj,obs,corrData,varargin)
+
 
 p = inputParser;
 
-p.addParameter('pos',[]);
-p.addParameter('vel',[]);
-p.addParameter('R_b_e',[]);
-p.addParameter('imuBiasStates',[]);
-p.addParameter('constsUnique',1);
-p.addParameter('clockBias',[]);
-p.addParameter('clockDrift',[]);
-p.addParameter('PRN',[]);
-p.addParameter('constInds',[]);
-p.addParameter('range',[]);
-p.addParameter('epoch',[]);
-p.addParameter('gnssMeas',[]);
+p.addParameter('measExclude',[]);
 
 % parse the results
 parse(p, varargin{:});
 res        = p.Results;
-pos           = res.pos;
-vel           = res.vel;
-R_b_e         = res.R_b_e;
-imuBiasStates = res.imuBiasStates;
-constsUnique  = res.constsUnique;
-clockDrift    = res.clockDrift;
-clockBias     = res.clockBias;
-PRN           = res.PRN(:);
-constInds     = res.constInds(:);
-rangeStruc    = res.range;
-gnssMeas      = res.gnssMeas;
-epoch         = res.epoch;
+measExclude = res.measExclude;
 
-rangeStruc = gnssMeas.range;
+%% Sort out what is available in the measurements
 
-PARAMS = obj.PARAMS;
+gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+posMeas  = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.Position);
 
-%% Did the filter initialize successfully
-% complete = false;
-
-%% If any values weren't provided directly, need to just try some least squares
-% Did the filter initialize successfully
-complete = ~any(cellfun(@isempty,{pos vel R_b_e clockBias clockDrift}));
-
-covState = [];
-covdState = [];
-satsUsed = [];
-if ~complete && ~isempty(gnssMeas)
-    [state,dstate,~,~,covState,covdState,satsUsed] = navsu.ppp.lsSolGnss(gnssMeas,corrData,PARAMS);
-    
-    if ~any(state)
-        % didn't get any outputs here- just escape
-        return;
-    end
-    
-    pos0 = state(1:3);
-    vel0 = dstate(1:3);
-    epoch0 = gnssMeas.epochs;
-    clockBias0 = state(4:end);
-    clockDrift0 = dstate(4:end);
-    
-    % Initialize attitude - euler angles with body frame
-    xi  = -vel0./norm(vel0);
-    z0i = pos0./norm(pos0);
-    yi  = -cross(xi,z0i);
-    zi = cross(xi,yi);
-    R_b_e0 = [xi yi zi];
-    
-    if any(isnan(R_b_e0(:)))
-        R_b_e0 = eye(3);
-    end
-    
-    pos0 = pos0-R_b_e0*PARAMS.IMU_ARM;
-    
-    % Initialize bias estimates
-    imuBiasStates = zeros(6,1); % accelerometer(1:3) and gyro(1:3)
-    imuBiasStates(1:3) = [-0.3 0.1 -0.4];
-    
-    % replace all of the values that didn't have one previously
-    if isempty(pos)
-        pos = pos0;
-    end
-    if isempty(vel)
-        vel = vel0;
-    end
-    if isempty(R_b_e)
-        R_b_e = R_b_e0;
-    end
-    if isempty(clockBias)
-        clockBias = clockBias0;
-    end
-    if isempty(clockDrift)
-        clockDrift = clockDrift0;
-    end
-    epoch = epoch0;
-    
-    constsUnique = unique(gnssMeas.constInds);
-    
-    PRN = gnssMeas.PRN(:);
-    constInds = gnssMeas.constInds(:);
+if isempty(gnssMeas)
+    % Currently, we need a GNSS measurement in order to proceed.
+    return;
 end
 
-%% Populate various fields based on what we have
-obj.pos = pos;
+constsUnique = unique(gnssMeas.constInds);
 
-% if isempty(obj.vel)
-obj.vel = vel;
-% end
-
-
-obj.R_b_e = R_b_e;
-
-obj.imuBiasStates = imuBiasStates;
-
-obj.clockBias  = clockBias;
-obj.clockDrift = clockDrift;
-
-obj.epochLastInertialUpdate = epoch;
-obj.epochLastGnssUpdate     = epoch;
-
-obj.allSatsSeen = sortrows(satsUsed,2);
 
 %% Setup state, covariance, and state index mapping
 if isempty(obj.INDS_STATE)
+    PARAMS = obj.PARAMS;
+    rangeStruc = gnssMeas.range;
+    
     obj.INDS_STATE = [];
     obj.INDS_STATE.ATTITUDE = 1:3;
     obj.INDS_STATE.VEL = 4:6;
@@ -191,61 +97,77 @@ if isempty(obj.INDS_STATE)
     obj.INDS_STATE.FLEX_STATE_MIN = lastInd+1;
     obj.INDS_STATE.FLEX_STATES = zeros(0,1);
     obj.INDS_STATE.FLEX_STATES_INFO = zeros(0,4); % PRN | CONST | TYPE | SIG INDICATOR
+
+    % Initial guesses at position and velocity
+    obj.pos = zeros(3,1);
     
+    obj.vel = zeros(3,1);
+    
+    
+    obj.R_b_e = eye(3);
+    
+    obj.imuBiasStates = [0 0 0 0 0 0]';
+    obj.imuBiasStates(1:3) = [-0.3 0.1 -0.4];
+
+    
+    obj.clockBias  = zeros(length(constsUnique),1);
+    obj.clockDrift =  zeros(length(constsUnique),1);
+    
+    obj.state = zeros(lastInd,1);
+    
+    obj.cov = zeros(lastInd,lastInd,1);
 end
+
+
+%%
+epoch = gnssMeas.epochs;
+
+% [state,dstate,~,~,covState,covdState,satsUsed] = navsu.ppp.lsSolGnss(gnssMeas,corrData,PARAMS,'pos0',obj.pos);
+
+% Least squares solution, if completed, will populate the position,
+% velocity, clock bias, and clock drift states as well as their
+% covariances using a simple least squares code phase solution. 
+[complete,measId] = leastSquaresSol(obj,epoch,obs,corrData,'measExclude',measExclude);
+
+
+if ~complete 
+    % Unable to initialize given the measurements available
+    return;
+end
+
+
+% Initialize attitude - euler angles with body frame
+% xi  = -obj.vel./norm(obj.vel);
+% z0i = obj.pos./norm(obj.pos);
+% yi  = -cross(xi,z0i);
+% zi = cross(xi,yi);
+obj.R_b_e = navsu.ppp.posVel2Rbe(obj.pos,obj.vel);
+
+obj.imuBiasStates = zeros(6,1);
+
+obj.epochLastInertialUpdate = epoch;
+obj.epochLastGnssUpdate     = epoch;
+
+% Check for what satellites have been used 
+measIdGnss = measId([measId.TypeID ]== navsu.internal.MeasEnum.GNSS);
+satsUsed = unique([cat(1,measIdGnss.prn) cat(1,measIdGnss.const)],'rows');
+
+obj.allSatsSeen = satsUsed;
 
 %% Initialize covariance and state
-if isempty(obj.state)
-    state = zeros(lastInd,1);
-else
-    state = zeros(size(obj.state));
-    %     state = obj.state;
-end
-
-if isempty(obj.cov)
-    cov = zeros(lastInd);
-else
-    cov = obj.cov;
-    cov = diag(1000*ones(size(obj.cov,1),1));
-end
+% Populate the remaining fields in the covariance
+cov = obj.cov;
 
 % Attitude
 cov(obj.INDS_STATE.ATTITUDE,obj.INDS_STATE.ATTITUDE)       = eye(3) * PARAMS.SIGMA0.ATTITUDE^2;
-
-% Velocity
-if isempty(covdState)
-    cov(obj.INDS_STATE.VEL,obj.INDS_STATE.VEL)             = eye(3) * PARAMS.SIGMA0.VEL^2;
-else
-    cov(obj.INDS_STATE.VEL,obj.INDS_STATE.VEL)             = covdState(1:3,1:3);
-end
-
-% Position
-if isempty(covState)
-    cov(obj.INDS_STATE.POS,obj.INDS_STATE.POS)             = eye(3) * PARAMS.SIGMA0.POS^2;
-else
-    cov(obj.INDS_STATE.POS,obj.INDS_STATE.POS)             = covState(1:3,1:3);
-end
 
 % IMU biases
 cov(obj.INDS_STATE.ACC_BIAS,obj.INDS_STATE.ACC_BIAS)       = eye(3) * PARAMS.SIGMA0.ACC_BIAS^2;
 cov(obj.INDS_STATE.W_BIAS,obj.INDS_STATE.W_BIAS)           = eye(3) * PARAMS.SIGMA0.W_BIAS^2;
 
-% Clock bias
-if isempty(covState)
-    cov(obj.INDS_STATE.CLOCK_BIAS,obj.INDS_STATE.CLOCK_BIAS)   = eye(length(obj.INDS_STATE.CLOCK_BIAS))*100^2;
-else
-    cov(obj.INDS_STATE.CLOCK_BIAS,obj.INDS_STATE.CLOCK_BIAS)   = covState(4:end,4:end);
-end
-
-% Clock rate
-if isempty(covdState)
-    cov(obj.INDS_STATE.CLOCK_DRIFT,obj.INDS_STATE.CLOCK_DRIFT) = eye(length(obj.INDS_STATE.CLOCK_DRIFT))*100^2;
-else
-    cov(obj.INDS_STATE.CLOCK_DRIFT,obj.INDS_STATE.CLOCK_DRIFT) = covdState(4:end,4:end);
-end
-
 % Tropo
 cov(obj.INDS_STATE.TROP,obj.INDS_STATE.TROP)               = PARAMS.SIGMA0.TROP^2;
+
 % DCBs
 cov(obj.INDS_STATE.RX_DCB.INDS,obj.INDS_STATE.RX_DCB.INDS) = eye(length(obj.INDS_STATE.RX_DCB.INDS))*PARAMS.SIGMA0.RX_DCB^2;
 
@@ -274,18 +196,19 @@ end
 
 obj.cov = cov;
 
-obj.state = state;
-
 %% Initialize phase windup if we have PRN and constInds
-if ~isempty(PRN) && ~isempty(constInds) && isempty(obj.phWind.phaseOffset)
-    nSv = length(PRN);
-    obj.phWind.phaseOffset = zeros(size(PRN));
-    obj.phWind.PrnConstInd = [PRN constInds];
+
+prnAll = gnssMeas.PRN(:);
+constIndAll = gnssMeas.constInds(:);
+
+if ~isempty(prnAll) && isempty(obj.phWind.phaseOffset)
+    nSv = size(prnAll,1);
+    obj.phWind.phaseOffset = zeros(size(prnAll,1));
+    obj.phWind.PrnConstInd = [prnAll constIndAll];
 end
 
 %% Initialization completed successfully!
 complete = true;
-
 
 obj.initialized = true;
 end

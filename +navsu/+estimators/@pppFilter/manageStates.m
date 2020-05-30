@@ -25,6 +25,8 @@ end
 stateNotNeeded = find(~ismember(obj.INDS_STATE.FLEX_STATES_INFO(:,[1 2 4]),measInfoAvail(:,[1 2 4]),'rows') ...
     & obj.INDS_STATE.FLEX_STATES_INFO(:,3) == 1);
 
+stateNotNeeded = [];
+
 if ~isempty(stateNotNeeded)
     % Remove from the state estimate, covariance, FLEX_STATES, and
     % FLEX_STATES_INFO

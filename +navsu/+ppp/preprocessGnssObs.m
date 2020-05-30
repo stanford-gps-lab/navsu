@@ -1,5 +1,4 @@
-function [obsGnss dcbCorr] = preprocessGnssObs(obsGnssRaw,obsInds,signalInds,obsDes,...
-    ifPairs,corrData,varargin)
+function [obsGnss, dcbCorr] = preprocessGnssObs(obsGnssRaw,corrData,varargin)
 
 % this is mostly a wrapper for svPosFromProd
 p = inputParser;
@@ -7,6 +6,8 @@ p = inputParser;
 p.addParameter('epochStart',-Inf);
 p.addParameter('epochEnd',Inf);
 p.addParameter('downsampleFactor',1);
+p.addParameter('obsDesired',[]);
+% p.addParameter('duration',Inf);
 
 % parse the results
 parse(p, varargin{:});
@@ -14,6 +15,117 @@ res = p.Results;
 epochStart       = res.epochStart;       % Minimum time of observations
 epochEnd         = res.epochEnd;         % Maximum time of observations
 downsampleFactor = res.downsampleFactor; % FActor by which to downsample
+obsDes           = res.obsDesired;       % RINEX observaiton code cell array... fairly complicated, sorry
+
+%%
+obsInds    = repmat([1 2 3 4],1,3); % 1 = code, 2 = carrier, 3 = snr, 4 = doppler
+signalInds = kron(1:3,ones(1,4));
+
+
+%%
+if isempty(obsDes) || 1
+    % No specific observations were specified- check whats's available in
+    % the input observations
+
+    sigList = repmat({'9B'},5,3);
+
+    for cdx = 1:5
+        switch cdx
+            case 1
+                % GPS
+                sigRankings = {{'1C' '1W' '1Y'};...  % L1
+                    {'2W' '2Y' '2P' '2X' '2S' '2L' '5X' '5I' '5Q'}};  % L2/5
+            case 2
+                % GLONASS
+                sigRankings = {{'1C' '1P'};...
+                    {'2C' '2P'}};
+            case 3
+                % GALILEO
+                sigRankings = {{'1B' '1C' '1X' '1Z'};...
+                    {'5X' '8X' '6X' '7I' '7X' '7Q'}};
+            case 4
+                % BDS
+                sigRankings = {{'1I' '1Q' '1X' '2I' '2Q' '2X' };...
+                    {'7I' '6I' '7Q' '6Q' '7X' '6X'}};
+                
+            otherwise
+                continue
+        end
+        
+        indsConst = find(obsGnssRaw.constInds == cdx);
+        
+        if isempty(indsConst)
+            % this constellation isn't even available in the raw data- keep
+            % going
+            continue;
+        end
+        
+        % Search for an L1 signal to use 
+        sig1Rankings = sigRankings{1};
+        for idx = 1:length(sig1Rankings)
+           % Just check for the signal at all
+           sigi = sig1Rankings{idx};
+           
+           if ~isfield(obsGnssRaw.meas,['C' sigi])
+               continue;
+           end
+           % Check if this constellation is actually available for this
+           % signal
+           
+           sigAvail = any(any(obsGnssRaw.meas.(['C' sigi])(indsConst,:)));
+           
+           if sigAvail
+               sigList(cdx,1) = {sigi};
+               break;
+           end
+        end
+
+        % Search for dual frequency signals to use
+        sigNum = 2;
+        sig1Rankings = sigRankings{2};
+        for idx = 1:length(sig1Rankings)
+           % Just check for the signal at all
+           sigi = sig1Rankings{idx};
+           
+           if ~isfield(obsGnssRaw.meas,['C' sigi])
+               continue;
+           end
+           % Check if this constellation is actually available for this
+           % signal
+           
+           sigAvail = any(any(obsGnssRaw.meas.(['C' sigi])(indsConst,:)));
+           
+           if sigAvail
+               sigList(cdx,sigNum) = {sigi};
+               sigNum = sigNum+1;
+           end
+           if sigNum == 4
+               break;
+           end
+        end
+    end
+    
+    % Build the obsDes matrix... which is somewhat wonky
+    obsDes = repmat({{'C0S'}},5,12);
+    
+    for rdx = 1:size(sigList,1)
+        for idx = 1:size(sigList,2)
+            obsDes(rdx,((idx-1)*4+1):(idx*4)) = {{['C' sigList{rdx,idx}]} ...
+                {['L' sigList{rdx,idx}]} {['S' sigList{rdx,idx}]}  {['D' sigList{rdx,idx}]}};
+            
+        end
+    end
+    
+    % Just setting a default
+    %           1                               2                               3                               4                                5
+%     obsDes  = {{'C1C'} {'L1C'} {'S1C'}  {'D1C'} {'C2S'} {'L2S'} {'S2S'} {'D2S'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
+%         {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
+%         {'C1B'} {'L1B'} {'S1B'} {'D1B'} {'C7I'} {'L7I'} {'S7I'} {'D7I'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
+%         {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
+%         {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}  };
+    
+    
+end
 
 
 %%
@@ -98,13 +210,15 @@ end
 YearListDcb = YearList;
 dayListDcb = dayList;
 epochDcb = navsu.time.jd2epochs(navsu.time.doy2jd(YearListDcb,dayListDcb))+100;
-    
+
 dcbData = corrData.dcb;
-dcbType = corrData.settings.dcbSource;
+dcbType = dcbData.type;
+dcbType = 2;
+
 
 %% Correct L1C-L1P for ISC (using GPS and Galileo MGEX precise products, this should be the only necessary change)
 %     dcbData2 = [];
-    dcbCorr = zeros(size(prphType));
+dcbCorr = zeros(size(prphType));
 
 if dcbType == 4 && ~isempty(corrData.dcb)
     % CODE
@@ -149,11 +263,11 @@ if dcbType == 4 && ~isempty(corrData.dcb)
     prph12i(isnan(prph12i)) = 0;
     
 elseif dcbType == 2 && ~isempty(corrData.dcb)
-    % DLR 
+    % DLR
     % these are relative corrections that need to be further referenced to
     % the L1P-L2P combination (need the TGD term)
     dcbCorr = zeros(size(prphType));
-
+    
     for idx = 1:size(prphType,1)
         for jdx = 1:size(prphType,2)
             prni = prns(jdx);
@@ -166,14 +280,35 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
             freqi = str2num(obsi{1}(2));
             
             if  consti == 1
+                % Pull tgd term
+            
+                % Correct to either C1W or C2W then apply TGD or gamma*TGD
+                % from there
+                
+                bias1 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1W'},epochDcb,dcbData);
+                bias2 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2W'},epochDcb,dcbData);
+                
+                tgd = (bias1-bias2);
+                gamma12 = (1575.42/1227.6)^2;
+                
                 switch obsi{1}
                     case 'C1C'
+                        % C1C goes directly to C1W
                         biasi = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1W'},epochDcb,dcbData);
+                        biasi = biasi+tgd;
+                    case {'C5Q' 'C5X'}
+                        % L5 refers to C1C- the C1C reference must then be
+                        % moved to C1W then the tgd can be applied
+                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C1C'},obsi,epochDcb,dcbData);
+                         biasi = biasi+navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1W'},epochDcb,dcbData);
+                         biasi = biasi+tgd;
+                        
                     case 'C2W'
-                        biasi = 0;
+                        biasi = +gamma12*tgd;
                     case 'C2S'
                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C2W'},{'C2S'},epochDcb,dcbData);
-                    otherwise 
+                        biasi = biasi+gamma12*tgd;
+                    otherwise
                         biasi = 0;
                 end
                 
@@ -181,18 +316,56 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
             end
             
             if consti == 2
-                 switch obsi{1}
+                % All GLONASS DCBs refer to C1C, so just need TGD term for
+                % that.
+                bias1 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+                bias2 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2P'},epochDcb,dcbData);
+                
+                tgd = (bias1-bias2);
+                
+                switch obsi{1}
                     case 'C1C'
                         biasi = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+                        biasi = biasi+tgd;
                     case 'C2P'
-                        biasi = 0;
+                        biasi = gamma12*tgd;
                     case 'C2C'
                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2C'},epochDcb,dcbData);
-                    otherwise 
+                        biasi = biasi + navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+                        biasi = biasi+tgd;
+                        
+                    otherwise
                         biasi = 0;
                 end
                 
                 dcbCorr(idx,jdx) = biasi;
+            end
+            
+            
+            if consti == 3
+                % All galileo
+                'fdaf';
+%                 bias1 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+%                 bias2 = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2P'},epochDcb,dcbData);
+%                 
+%                 tgd = (bias1-bias2);
+                
+%                 switch obsi{1}
+%                     case 'C1C'
+%                         biasi = navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+%                         biasi = biasi+tgd;
+%                     case 'C2P'
+%                         biasi = gamma12*tgd;
+%                     case 'C2C'
+%                         biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C2C'},epochDcb,dcbData);
+%                         biasi = biasi + navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'C1P'},epochDcb,dcbData);
+%                         biasi = biasi+tgd;
+%                         
+%                     otherwise
+%                         biasi = 0;
+%                 end
+%                 
+%                 dcbCorr(idx,jdx) = biasi;
             end
             
         end
@@ -252,7 +425,7 @@ elseif dcbType == 5 && ~isempty(corrData.dcb)
     prph12i(isnan(prph12i)) = 0;
     
 elseif dcbType == 2 && ~isempty(corrData.dcb)
-    % STANFORD 
+    % STANFORD
     dcbCorr = zeros(size(prphType));
     
     for idx = 1:size(prphType,1)
@@ -276,7 +449,7 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
             end
         end
     end
-        
+    
     dcbCorr(isnan(dcbCorr)) = 0;
     fullCorr = dcbCorr;
     
@@ -297,25 +470,25 @@ elseif dcbType == 6 && ~isempty(corrData.dcb)
             end
             
             freqi = str2num(obsi{1}(2));
-
+            
             if  consti == 1
                 switch freqi
                     case 1
                         if strcmp(obsi{1},'C1W')
                             biasi = navsu.readfiles.findDcbElement(prni,consti,{'C1W'},{'ABS'},epochDcb,dcbData);
-                        else 
+                        else
                             biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C1C'},{'ABS'},epochDcb,dcbData)+...
                                 navsu.readfiles.findDcbElement(prni,consti,{'C1W'},{'ABS'},epochDcb,dcbData);
                         end
                     case 2
                         if strcmp(obsi{1},'C2W')
                             biasi = navsu.readfiles.findDcbElement(prni,consti,{'C2W'},{'ABS'},epochDcb,dcbData);
-                        else 
+                        else
                             biasi = -navsu.readfiles.findDcbElement(prni,consti,{'C2X'},{'ABS'},epochDcb,dcbData)+...
                                 navsu.readfiles.findDcbElement(prni,consti,{'C2W'},{'ABS'},epochDcb,dcbData);
                         end
                 end
-                                
+                
                 dcbCorr(idx,jdx) = biasi;
             end
             
@@ -352,6 +525,11 @@ else
 end
 
 %% Add dual frequency measurements
+
+% signal pairs to include as iono-free combinations
+ifPairs = [1 3;
+    1 2];
+
 for idx = 1:size(ifPairs,1)
     freq1 = freqs(:,prphSig == ifPairs(idx,1) & prphInd == 1)';
     freq2 = freqs(:,prphSig == ifPairs(idx,2) & prphInd == 1)';
@@ -413,9 +591,9 @@ if ~isempty(obsGnssRaw.tLock)
                 % single frequency
                 lockTimei = obsGnssRaw.tLock.(sigNamei)(indSat,:);
             else
-               % dual frequency- take the minimum of both 
-               lockTimei = min([obsGnssRaw.tLock.(sigNamei(1:3))(indSat,:);
-                   obsGnssRaw.tLock.(sigNamei(4:6))(indSat,:)]);
+                % dual frequency- take the minimum of both
+                lockTimei = min([obsGnssRaw.tLock.(sigNamei(1:3))(indSat,:);
+                    obsGnssRaw.tLock.(sigNamei(4:6))(indSat,:)]);
             end
             
             lockTime(jdx,:,pdx) = lockTimei;
@@ -442,12 +620,24 @@ obsGnss.range.PRN         = repmat(prns,size(obsGnss.range.obs,1),1);
 obsGnss.range.constInds   = repmat(constInds,size(obsGnss.range.obs,1),1);
 obsGnss.range.lockTime    = permute(lockTime,[1 3 2]);
 
+
+temp = repelem(navsu.internal.MeasEnum.Code,size(obsGnss.range.ind,1),size(obsGnss.range.ind,2));
+temp(obsGnss.range.ind == 1) = navsu.internal.MeasEnum.Code;
+temp(obsGnss.range.ind == 2) = navsu.internal.MeasEnum.Carrier;
+obsGnss.range.subtype     = temp;
+
+obsGnss.range.ID = navsu.internal.MeasIdGnss(obsGnss.range.PRN,obsGnss.range.constInds,obsGnss.range.sig,temp);
+
 obsGnss.doppler.obs       = permute(dop12,[1 3 2]);
-obsGnss.doppler.rnxCode   = repmat(dopType',1,size(obsGnss.doppler.obs,2));
+obsGnss.doppler.rnxCode   = dopType;
 obsGnss.doppler.sig       = repmat(dopSig',1,size(obsGnss.doppler.obs,2));
 obsGnss.doppler.freqs     = freqsDop';
 obsGnss.doppler.PRN       = repmat(prns,size(obsGnss.doppler.obs,1),1);
 obsGnss.doppler.constInds = repmat(constInds,size(obsGnss.doppler.obs,1),1);
+temp = repelem(navsu.internal.MeasEnum.Doppler,size(obsGnss.doppler.sig,1),size(obsGnss.doppler.sig,2));
+obsGnss.doppler.subtype     = temp;
+
+obsGnss.doppler.ID = navsu.internal.MeasIdGnss(obsGnss.doppler.PRN,obsGnss.doppler.constInds,obsGnss.doppler.sig,temp);
 
 obsGnss.snr.obs           = permute(snr12,[1 3 2]);
 obsGnss.snr.rnxCode       = repmat(snrType',1,size(obsGnss.snr.obs,2));
@@ -464,4 +654,4 @@ obsGnss.range.obs   = obsGnss.range.obs(:,:,indsGnssMeas);
 obsGnss.doppler.obs = obsGnss.doppler.obs(:,:,indsGnssMeas);
 obsGnss.snr.obs     = obsGnss.snr.obs(:,:,indsGnssMeas);
 
-end
+obsGnss.type = navsu.internal.MeasEnum.GNSS;

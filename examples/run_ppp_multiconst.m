@@ -1,9 +1,9 @@
-% Sctipt to run a simple PPP algorithm using the xona-pnt repo
+% Sctipt to run a simple PPP algorithm using the navsu repo
 
 %% inputs
 % RINEX v3 observation file
-filenameGnss = 'D:\PNT Data\Roof logs\swift-gnss-20200312-093212.sbp.obs';
-% filenameGnss = 'C:\Users\kazgu\Desktop\Stanford\swift-gnss-20200312-093212.sbp.obs';
+% filenameGnss = 'D:\PNT Data\Roof logs\swift-gnss- 20200312-093212.sbp.obs';
+filenameGnss = 'C:\Users\kazgu\Desktop\Stanford\swift-gnss-20200312-093212.sbp.obs';
 
 % need a configutation file to set where to put downloaded products.  The
 % default included is called default.ini
@@ -15,7 +15,7 @@ truePosEcef = [-2706115.1823 -4278731.1983 3866392.5504];
 % Three letter code indicating desired IGS analysis center
 igsAc = 'GRG';
 
-%%
+%
 % this should be multi-constellation!
 constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
@@ -24,7 +24,7 @@ filter = navsu.estimators.pppFilter;
 % filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
-filter.PARAMS.Q.POS = 0;
+filter.PARAMS.Q.PXOS = 0;
 filter.PARAMS.Q.VEL = 0;
 
 filter.PARAMS.measMask.f1 = [0 0 1]';
@@ -47,7 +47,7 @@ if ~exist('obsStruc','var')
     obsGnssRaw.tLock     = [];
 end
 
-epochStart = min(epochs)+200*60;
+epochStart = min(epochs)+200*60+60*10;
 downsampleFac = 30;
 
 %%
@@ -75,6 +75,9 @@ if ~exist('corrData','var')
     % load MGEX clock data into our correction object
     corrData.initClockData(yearProd,doyProd);
     
+    % Load broadcast data
+    corrData.initBroadcastData(yearProd,doyProd);
+    
     % load antenna phase center data for satellites
     filenameAtx = 'igs14_sats_only.atx';
     
@@ -89,30 +92,29 @@ if ~exist('corrData','var')
 end
 
 %% preprocess observations
-obsInds    = repmat([1 2 3 4],1,3); % 1 = code, 2 = carrier, 3 = snr, 4 = doppler
-signalInds = kron(1:3,ones(1,4));
-%           1                               2                               3                               4                                5
-obsDes  = {{'C1C'} {'L1C'} {'S1C'}  {'D1C'} {'C2S'} {'L2S'} {'S2S'} {'D2S'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
-    {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
-    {'C1B'} {'L1B'} {'S1B'} {'D1B'} {'C7I'} {'L7I'} {'S7I'} {'D7I'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
-    {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
-    {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}  };
+[gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,...
+     corrData,'downsampleFac',downsampleFac,'epochStart',epochStart,...
+     'epochEnd',epochStart+60*3*Inf);
+ 
+ % Build position measurement
+posMeas = navsu.ppp.buildPosMeas(gnssMeas.epochs,truePosEcef',0.1,1);
 
-% signal pairs to include as iono-free combinations
-ifPairs = [1 3;
-    1 2];
+velMeas = navsu.ppp.buildVelMeas(gnssMeas.epochs,[0 0 0]',0.01,1);
 
-[obsGnssi, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,obsInds,signalInds,...
-    obsDes,ifPairs,corrData,'downsampleFac',downsampleFac,'epochStart',epochStart);
+ 
+%% Estimate!
+corrData.orbMode = 'BROADCAST';
+corrData.clkMode = 'BROADCAST';
 
-%% do the ppp lol
-outData = navsu.ppp.runPpp(filter,obsGnssi,corrData);
+corrData.orbMode = 'PRECISE';
+corrData.clkMode = 'PRECISE';
 
+outData = navsu.ppp.runPpp(filter,{gnssMeas posMeas velMeas},corrData);
 
 %%
 close all;
 
-filter.plotOutput(outData,'truePosEcef',truePosEcef);
+filter.plotOutput(outData,'truthFile',truePosEcef);
 
 
 

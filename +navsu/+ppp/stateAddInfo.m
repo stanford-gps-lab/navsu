@@ -211,4 +211,26 @@ switch stateType
             measInfoAvail(:,4) == ekf.INDS_STATE.RX_DCB_GPS_INFO(2) ));
         
         measInfoAvail(stateFound,:) = [];
+        
+    case 'EPH'
+        % 2
+        indsRangeAvail = find( gnssMeas.range.obs > 0);
+        
+        % PRN | CONST | STATE TYPE (1 = CP) | SIGNAL NUMBER
+        measInfoAvail = [gnssMeas.range.PRN(indsRangeAvail) gnssMeas.range.constInds(indsRangeAvail) ones(size(indsRangeAvail)) gnssMeas.range.sig(indsRangeAvail)];
+        
+        prnConstInds = unique(measInfoAvail(:,[1 2]),'rows');
+        
+        % PRN | CONST | STATE TYPE (6) | SIGNAL NUMBER
+        measInfoAvail = [prnConstInds 6*ones(size(prnConstInds,1),1) nan(size(prnConstInds,1),1)];
+        
+        % Remove stuff that is no longer necessary
+        stateNotNeeded = find(~ismember(ekf.INDS_STATE.FLEX_STATES_INFO(:,[1 2 3]),...
+            [prnConstInds 6*ones(size(prnConstInds,1),1)],'rows') & ekf.INDS_STATE.FLEX_STATES_INFO(:,3) == 6);
+        
+        % Add states that are necessary
+        stateFound = ismember(measInfoAvail(:,1:3),ekf.INDS_STATE.FLEX_STATES_INFO(:,1:3),'rows');
+        
+        measInfoAvail(stateFound,:) = [];
+        
 end

@@ -59,7 +59,6 @@ latency         = res.latency;
 
 settings = obj.settings;
 
-
 if ~strcmp(obj.orbMode,'PREDICT')
     [svPos,svVel,iod,sigma] = obj.svPosFromProd(prns, epochs,settings,...
         pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);

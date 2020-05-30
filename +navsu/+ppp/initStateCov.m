@@ -10,6 +10,7 @@ function [state0,cov0] = initStateCov(stateType,infoAdd,PARAMS,gnssMeas)
 %                   'RX_DCB_GPS'   3. GPS receiver diffential code bias
 %                   'MP_CODE'      4. code multipath
 %                   'MP_CARR'      5. carrier multipath
+%                   'EPH'          6. ephemeris 
 %   infoAdd     1x4 vector. First field is PRN, second field is
 %               constellation index, third field is stateType number code
 %               (listed above), fourth field is typically the signal number
@@ -80,7 +81,9 @@ switch stateType
         state0 = 0;
         cov0   = PARAMS.SIGMA0.RX_DCB_GPS.^2;
         
-        
+    case 'EPH' 
+        state0 = 0;
+        cov0 = 2.4^2;
 end
 
 

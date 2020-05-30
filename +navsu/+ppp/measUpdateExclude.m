@@ -1,34 +1,62 @@
-function [H,delta_z,residsPost,K,measMat,pred_meas,measMatRemoved,R] =  ...
-    measUpdateExclude(H,cov_propagated,R,measMat,pred_meas,PARAMS)
+function [H,delta_z,residsPost,K,predMeas,measMatRemoved,R,measIdRemoved,measId] =  ...
+    measUpdateExclude(H,cov_propagated,R,predMeas,PARAMS,meas,measId)
 
 % loop through and remove bad measurements, starting with the bad ones,
 % until they are all clean
 
-measMatRemoved = zeros(0,size(measMat,2));
+measMatRemoved = zeros(0,6);
+measIdRemoved = [];
 
 largeResids  = true;
 mediumResids = true;
+
+% Build exclusion factor vector
+threshLarge = zeros(size(measId,1),1);
+threshMedium = zeros(size(measId,1),1);
+measTypeList = cat(1,measId.TypeID);
+types = unique(measTypeList);
+
+for idx = 1:length(types)
+    if types(idx) == navsu.internal.MeasEnum.GNSS
+        indsGnss = find(types(idx) == measTypeList);
+        
+        measSubtypes = cat(1,measId(indsGnss).subtype);
+        indsCode = indsGnss(measSubtypes == navsu.internal.MeasEnum.Code);
+        indsCarrier = indsGnss(measSubtypes == navsu.internal.MeasEnum.Carrier);
+        indsDoppler = indsGnss(measSubtypes == navsu.internal.MeasEnum.Doppler);
+
+        threshLarge(indsCode) = PARAMS.measUse.excludeThreshLarge.GNSS.Code;
+        threshLarge(indsCarrier) = PARAMS.measUse.excludeThreshLarge.GNSS.Carrier;
+        threshLarge(indsDoppler) = PARAMS.measUse.excludeThreshLarge.GNSS.Doppler;
+        
+        threshMedium(indsCode) = PARAMS.measUse.excludeThresh.GNSS.Code;
+        threshMedium(indsCarrier) = PARAMS.measUse.excludeThresh.GNSS.Carrier;
+        threshMedium(indsDoppler) = PARAMS.measUse.excludeThresh.GNSS.Doppler;
+    else
+        threshLarge(types(idx) == measTypeList) = PARAMS.measUse.excludeThreshLarge.(char(types(idx)));
+        threshMedium(types(idx) == measTypeList) = PARAMS.measUse.excludeThresh.(char(types(idx)));
+    end
+end
+
+
 
 idx = 1;
 while largeResids || mediumResids
     % Keep iterating until there are no bad measurements
     
     % 7. Calculate Kalman gain using (3.21)
-    K = cov_propagated * H' /(H *cov_propagated * H' + R);
+    K = (cov_propagated * H') /(H *cov_propagated * H' + R);
     
     % 8. Measurement innovations
-    fullMeas = measMat(:,5);
-    delta_z  = fullMeas-pred_meas;
+    fullMeas = meas;
+    delta_z  = fullMeas-predMeas;
     
     residsPost = delta_z-H*K*delta_z;
     
     % Set the thresholds- remove large errors first
-    %    if largeResids
-    excludeThreshLarge = PARAMS.measUse.excludeThreshLarge(measMat(:,6))';
-    %    else
-    excludeThreshMedium = PARAMS.measUse.excludeThresh(measMat(:,6))';
-    %    end
-    
+    excludeThreshLarge = threshLarge;
+    excludeThreshMedium = threshMedium;
+%     
     indsLargeResids  = find(abs(residsPost)>excludeThreshLarge);
     indsMediumResids = find(abs(residsPost)>excludeThreshMedium);
     
@@ -48,14 +76,19 @@ while largeResids || mediumResids
     if ~isempty(indsLargeResids)
         % Remove large residuals
         % save what we're removing
-        measMatRemoved = [measMatRemoved; measMat(indsLargeResids,:)];
+        
+        measIdRemoved = [measIdRemoved; measId(indsLargeResids)];
         
         % remove from H,R,measMat,pred_meas
         H(indsLargeResids,:) = [];
         R(indsLargeResids,:) = [];
         R(:,indsLargeResids) = [];
-        measMat(indsLargeResids,:) = [];
-        pred_meas(indsLargeResids,:) = [];
+        predMeas(indsLargeResids,:) = [];
+        
+        meas(indsLargeResids) = [];
+        measId(indsLargeResids) = [];
+        threshLarge(indsLargeResids) = [];
+        threshMedium(indsLargeResids) = [];
         
         
     elseif ~isempty(indsMediumResids) && largeResids == false
@@ -63,14 +96,19 @@ while largeResids || mediumResids
         % remove using the small threshold.
          
         % save what we're removing
-        measMatRemoved = [measMatRemoved; measMat(indsMediumResids,:)];
+        measIdRemoved = [measIdRemoved; measId(indsMediumResids)];
         
         % remove from H,R,measMat,pred_meas
         H(indsMediumResids,:) = [];
         R(indsMediumResids,:) = [];
         R(:,indsMediumResids) = [];
-        measMat(indsMediumResids,:) = [];
-        pred_meas(indsMediumResids,:) = [];
+        predMeas(indsMediumResids,:) = [];
+        
+        meas(indsMediumResids) = [];
+        measId(indsMediumResids) = [];
+        
+        threshLarge(indsMediumResids) = [];
+        threshMedium(indsMediumResids) = [];
     end
     
     idx = idx+1;

@@ -40,7 +40,7 @@ Q(filter.INDS_STATE.W_BIAS,filter.INDS_STATE.W_BIAS) = ...
 Q(filter.INDS_STATE.CLOCK_BIAS,filter.INDS_STATE.CLOCK_BIAS) = ...
     eye(length(filter.INDS_STATE.CLOCK_BIAS)).*(PARAMS.Q.RXB).^2 * dtKf;
 Q(filter.INDS_STATE.CLOCK_DRIFT,filter.INDS_STATE.CLOCK_DRIFT) = ...
-    eye(length(filter.INDS_STATE.CLOCK_BIAS)).*(PARAMS.Q.RXB).^2 * dtKf;
+    eye(length(filter.INDS_STATE.CLOCK_BIAS)).*(PARAMS.Q.DRXB).^2 * dtKf;
 
 if PARAMS.states.RX_DCB
     Q(filter.INDS_STATE.RX_DCB.INDS,filter.INDS_STATE.RX_DCB.INDS)     =  ...
@@ -89,6 +89,11 @@ end
 
 indsAmbs = filter.INDS_STATE.FLEX_STATES(filter.INDS_STATE.FLEX_STATES_INFO(:,3) == 1);
 Q(indsAmbs,indsAmbs) = eye(length(indsAmbs))*PARAMS.Q.AMB.^2*dtKf;
+
+if PARAMS.states.EPH
+    indsEph = filter.INDS_STATE.FLEX_STATES(filter.INDS_STATE.FLEX_STATES_INFO(:,3) == 6);
+    Q(indsEph,indsEph) = eye(length(indsEph))*PARAMS.Q.EPH.^2*dtKf;
+end
 
 % Propagate position
 pos = pos+dtKf*vel;

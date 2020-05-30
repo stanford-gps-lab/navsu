@@ -1,9 +1,8 @@
-classdef pppFilter < matlab.mixin.Copyable
+classdef pppFilter < navsu.estimators.AbstractNavFilter
     
     
     properties
-        
-        state   % the state of the filter -> should be of type pppanal.ppp.State
+        state   % the state of the filter 
         cov     % covariance of the state
         
         pos                % ECEF position
@@ -16,6 +15,13 @@ classdef pppFilter < matlab.mixin.Copyable
         
         INDS_STATE % state indexing
         
+        
+        PARAMS % parameters associated with the running of this filter!
+        
+         % phase windup
+        phWind = struct('phaseOffset',zeros(0,1),'PrnConstInd',zeros(0,2));
+        
+        
         lastAccMeas % most recent acceleration measurements
         lastGyroMeas % most recent gyro measurement
         epochLastInertialUpdate % time of the last inertial update
@@ -25,25 +31,29 @@ classdef pppFilter < matlab.mixin.Copyable
         
         % contains latest geometry free combinations
         cycleSlipInfo = struct('gFree',zeros(0,1),'epochLastGFree',zeros(0,1),'measInfoGFree',zeros(0,4));
-        
-        % phase windup
-        phWind = struct('phaseOffset',zeros(0,1),'PrnConstInd',zeros(0,2));
-        
+                
         StateMap % mapping matrix- indicates what the state is in each position of the state and covariance matrix
         
         % all satellites used in the solution- useful for solution
         % separation :)
         allSatsSeen
-        
-        initialized = false % whether or not the fitler has been initialized
-        
-        PARAMS % parameters associated with the running of this filter!
-        
+           
         resids % extra info for output about measurement residuals
         
         measRemoved % extra info for measurements that were removed :)
+    end
+    
+    properties (Constant)
+        % Reasons for removing a measurement
+        RemovedLow = 1;
+        RemovedResid = 2;
+        RemovedSlip  = 3;
+        RemovedEl    = 4;
+        RemovedCn0   = 5;
         
     end
+        
+        
     
     
     methods
@@ -59,10 +69,13 @@ classdef pppFilter < matlab.mixin.Copyable
     
     % function signatures
     methods
-        complete = initialize(obj,corrData,varargin)
+        
+        obs = checkMeas(obj,obs);
+        
+        measId = initialize(obj,corrData,obs,varargin)
         
         % the time AND measurement update :O
-        [measMatRemoved,measMatRemovedLow] = update(obj,epoch,obs,corrData)
+        [measId,extraInputs] = update(obj,epoch,obs,corrData,varargin)
         
         manageStates(obj,epoch,gnssMeas,PARAMS,outStruc);
         measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);
@@ -73,28 +86,62 @@ classdef pppFilter < matlab.mixin.Copyable
         PARAMS = initParams(obj);
         
         outData = saveState(obj,outData,epoch,obs);
-        
+               
     end
     
-    methods (Access = private)
-        timeUpdate(obj,epoch)
+    
+    methods
+        % These classes have already been implemented and are mostly just
+        % useful for the various GNSS estimators, including least squares
+        % and inertial PPP filters
         
-        measUpdate(obj,epoch,obs,corrData,measRemovedSlip)
+        % Build predicted measurements, sensitivity matrix, and pull
+        % measurement IDs for GNSS measurements
+        [predMeas,H,R,el,az,prnConstInds,idList,measList,measIdRemovedLow,...
+            extraInputs,dop] =  handleGnssMeas(obj,epoch,obs,corrData,varargin)
         
+        % doppModel- called within handleGnssMeas and produces predicted
+        % value and sensitivity matrix for doppler measurements
         [predMeas,H,sig] = doppModel(obj,nState,dVel,A,rxDrift,constInd)
         
+        % carrierModel- called within handleGnssMeas and produces predicted
+        % value and sensitivity matrix for carrier phase measurements
         [predMeas,H,sig] = carrierModel(obj,nState,sigi,freqi,tecSlant,state,m,indIonosi, ...
             indMpCarrsi,indAmbStatesi,phWind,gRange,satBias,rxBias,trop,stRangeOffset,...
-            relClockCorr,relRangeCorr,A,constIndi)
+            relClockCorr,relRangeCorr,A,constIndi,indEphErri)
         
-        [predMeas,H,sig] = codeModel(obj,nState,sigi,freqi,tecSlant,state,...
+        % codeModel- called within handleGnssMeas and produces predicted
+        % value and sensitivity matrix for code phase measurements
+        [predMeas,H,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSlant,state,...
             constIndi,indGloDcbsi,indMpCodesi,m,gRange,satBias,rxBias,trop,stRangeOffset,...
-            relClockCorr,relRangeCorr,A)
+            relClockCorr,relRangeCorr,A,indIonosi,indEphErri)
         
-        [pred_meas,H,R,el,az,prnConstInds,measMatRemovedLow,measMat] = handleGnssMeas(obj,epoch,obs,corrData)
-       
-        [pred_measi,Hi,ri,measMati] = handleVehicleConstraintPseudomeas(obj)
+        % handleVehicleConstraintPseudomeas- produce predicted value and
+        % sensitivity matrix for vehicle slip constraints
+        [pred_measi,Hi,ri,measIdi,measi] = handleVehicleConstraintPseudomeas(obj)
+        
+        % handlePositionMeas- produce predicted value and
+        % sensitivity matrix for direct position measurements
+        [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,posMeas)
+        
+        % handleVelocityMeas- produce predicted value and
+        % sensitivity matrix for direct velocity measurements
+        [predMeasi,Hi,Ri,measIdi,measi] = handleVelocityMeas(obj,velMeas)
+        
+        % leastSquaresSol - produce a least squares solution based on the 
+        % available observations.  This currently requires GNSS
+        % observations
+        [complete, measId,extraInputs] = leastSquaresSol(obj,epoch,obs,corrData,varargin)
 
+        [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center.
+
+    end
+    
+    methods %(Access = private)
+        timeUpdate(obj,epoch)
+        
+        [measId,extraInputs] = measUpdate(obj,epoch,obs,corrData,measRemovedSlip,varargin)
+        
     end
     
     methods(Static)

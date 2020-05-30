@@ -5,16 +5,42 @@ PARAMS = [];
 % Flag for stationary scenarios
 PARAMS.stationaryMode = false;
 
+% Where is the output position- 'APC' antenna phase center  or 'REF'
+% reference point (IMU position)
+PARAMS.outputPos = 'APC'; % 'APC' or 'REF'
+
 % Sub-structure relating to what measurements are to be used
 PARAMS.measUse = struct(...
     'dfOnly',            false,...         % true = dual frequency meas only
-    'L1_THRESH',         20,...            % SNR threshold for L1
-    'L2_THRESH',         20,...            % SNR threshold for L2
-    'excludeThreshLarge',[50 10 10*Inf Inf],...    % Code, carrier, and doppler and pseudo-meas large residuals thresholds
-    'excludeThresh',     [10 0.05 0.5 Inf],... % Code, carrier, and doppler and pseudo-meas residuals thresholds
+    'SIG1_THRESH',         35,...          % SNR threshold for signal 1
+    'SIG2_THRESH',         35,...          % SNR threshold for signal 2
+    'SIG3_THRESH',         35,...          % SNR threshold for signal 2
     'gFreeSlipThresh',   0.05,...          % Threshold for cycle slip- geometry free [m]
     'slipDetector',      'GFREE',...   % Cycle slip detector ('RX_OUTPUT','GFREE')
     'noVertVel',         false);          % 0 vertical velocity constraint
+
+% GNSS code measurements
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Code)) = 10;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Code)) = 20;
+% GNSS carrier phase measurements
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Carrier)) = 0.05;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Carrier)) = 0.2;
+% GNSS carrier phase measurements
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 0.5;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.GNSS)).(char(navsu.internal.MeasEnum.Doppler)) = 2;
+
+
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Position)) = Inf;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.Position)) = Inf;
+
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Velocity)) = Inf;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.Velocity)) = Inf;
+
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.NoSlipCross)) = Inf;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.NoSlipCross)) = Inf;
+
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.NoSlipVertical)) = Inf;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.NoSlipVertical)) = Inf;
 
 % Measurement masking- which measurments to actually use in the
 % filter
@@ -25,7 +51,7 @@ PARAMS.measMask = table([1 1 1]',[1 0 0]',[1 0 0]',[1 1 0]',[1 1 0]',...
 % measurement uncertainty
 PARAMS.sigMeas = struct(...
     'pr',                1,...             % pseudorange   [m]
-    'cp',             0.03,...             % carrier phase [m]
+    'cp',             0.003,...             % carrier phase [m]
     'dopp',           0.05,...             % doppler       [m/s]
     'iono',           1000,...             % iono sigma- no correction [m]
     'ionoRate',        100);               % iono rate sigma- no correction [m/s]
@@ -40,8 +66,9 @@ PARAMS.states = struct(...
     'ionoMode',     'L1DELAYSTATE',...% L1DELAYSTATE estimates delay at L1 per LOS
     'RX_DCB_GLO',   true,...          % Separate DCB state for each GLONASS code measurement
     'RX_DCB_GPS',   false,...         % Separate DCB state for each GLONASS code measurement
-    'MP_CODE',      false,...          % Code phase multipath
-    'MP_CARR',      false);            % Carrier phase multipath
+    'MP_CODE',      false,...         % Code phase multipath
+    'MP_CARR',      false,...         % Carrier phase multipath
+    'EPH',          false);           % Error from ephemeris and clock
 
 % Tropospheric model
 PARAMS.tropModel = 'UNB3';
@@ -89,7 +116,8 @@ PARAMS.Q = struct(...
     'ACC_BIAS',        1e-3*1,...%/100,...             % Accelerometer bias
     'ACC_SCALE',       1e-5,...              % Accelerometer scale
     'W_SCALE',         1e-5,...              % Gyro scale
-    'RXB',             10,...                % Receiver clock bias
+    'RXB',             10+0.5,...                % Receiver clock bias
+    'DRXB',            10+0.3,...                % Receiver clock bias
     'gyro_noise_PSD',  0.0015,...%*100,...   % Gyro noise
     'accel_noise_PSD', 0.005,...%*1000,...   % Accelerometer noise
     'RX_DCB',          0,...                 % Receiver DCB
@@ -99,7 +127,8 @@ PARAMS.Q = struct(...
     'RX_DCB_GLO',      0,...                 % Separate DCB state for each GLONASS code measurement
     'RX_DCB_GPS',      0,...                 % Separate DCB state for each GLONASS code measurement  \
     'MP_CODE',         0.25,....             % Code phase multipath
-    'MP_CARR',         0.0000);              % Carrier phase multipath
+    'MP_CARR',         0.0000,...            % Carrier phase multipath
+    'EPH',             0.002);               % ephemeris error 
 
 PARAMS.other = struct(...
     'TAU_MP_CODE',    100);                  % Time constant for code multipath

@@ -95,6 +95,20 @@ end
 % Pull each signal name out
 [obsColumns,nObsTypes,obsTypes ] = navsu.readfiles.rinexFindObsType(obs_type,sysId);
 
+% Add the LLI field for each carrier-phase frequency if this is RINEX 2
+if any(find(contains(obsTypes,'L1'))) &&  isempty(sysId)
+    obsTypes{end+1} = 'LLI1';
+    obsColumns{end+1} = 'LLI1';
+end
+if any(find(contains(obsTypes,'L2')))  && isempty(sysId)
+    obsTypes{end+1} = 'LLI2';
+    obsColumns{end+1} = 'LLI2';
+end
+if any(find(contains(obsTypes,'L5'))) && isempty(sysId)
+    obsTypes{end+1} = 'LLI5';
+    obsColumns{end+1} = 'LLI5';
+end
+
 % Convert to RINEX 3 Codes if necessary and desired
 if isempty(sysId) && forceRnx3Codes
     constTypes = {'G','R','E','C','J','S'};

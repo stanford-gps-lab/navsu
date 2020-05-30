@@ -33,36 +33,68 @@ if strcmp(orbClockData.orbMode,'PRECISE')
         
 else
     % put broadcast orbit stuff here
-    svPos = nan(length(prns),3);
-    svVel = nan(length(prns),3);
-    iod   = nan(length(prns),1);
+    svPos    = nan(length(prns),3);
+    svVel    = nan(length(prns),3);
+    iod      = nan(length(prns),1);
+    sigOrbit = nan(length(prns),1);
     
     % do broadcast stuff
     constUn = unique(constInds);
     
     % convert all epochs to week number and TOW
-    [weeks,tows] = epochs2gps(epochs);
+    [weeks,tows] = navsu.time.epochs2gps(epochs);
     
-    if ismember(constUn,1)
+    if ismember(1,constUn)
         % gps
         indsi = find(constInds == 1);
-        pos = SVPos(orbClockData.brdcGPS,prns(indsi),weeks(indsi),tows(indsi),'GPS');
+        pos = navsu.geo.propNavMsgGps(orbClockData.BEph.gps,prns(indsi),weeks(indsi),tows(indsi),'GPS');
         svPos(indsi,:) = [pos.x pos.y pos.z];
         svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
         
         iod(indsi) = pos.IODC;
+        
+        sigOrbit(indsi) = pos.accuracy;
+        
     end
     
-    if ismember(constUn,2)
+    if ismember(2,constUn)
         % glonass
         indsi = find(constInds == 2);
-        pos = SVPos(orbClockData.brdcGLO,prns(indsi),weeks(indsi),tows(indsi),'GLO');
+        pos = navsu.geo.propNavMsgGlo(orbClockData.BEph.glo,prns(indsi),weeks(indsi),tows(indsi));
         svPos(indsi,:) = [pos.x pos.y pos.z];
         svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
+        
+        sigOrbit(indsi) = 10;
+        
     end
     
-     warning('sigma not set here yet :/- please use URA or something')
-     sigOrbit = nan*ones(size(svPos,1),1);
+     if ismember(3,constUn)
+        % galileo
+        indsi = find(constInds == 3);
+        pos = navsu.geo.propNavMsgGps(orbClockData.BEph.gal,prns(indsi),weeks(indsi),tows(indsi),'GAL');
+        svPos(indsi,:) = [pos.x pos.y pos.z];
+        svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
+        
+        iod(indsi) = pos.IODC;
+        
+        sigOrbit(indsi) = pos.accuracy;
+        
+    end
+    
+     if ismember(4,constUn)
+        % galileo
+        indsi = find(constInds == 4);
+        pos = navsu.geo.propNavMsgGps(orbClockData.BEph.bds,prns(indsi),weeks(indsi),tows(indsi),'BDS');
+        svPos(indsi,:) = [pos.x pos.y pos.z];
+        svVel(indsi,:) = [pos.x_dot pos.y_dot pos.z_dot];
+        
+        iod(indsi) = pos.IODC;
+        
+        sigOrbit(indsi) = pos.accuracy;
+        
+    end
+%      warning('sigma not set here yet :/- please use URA or something')
+%      sigOrbit = 10*ones(size(svPos,1),1);
     
 end
 

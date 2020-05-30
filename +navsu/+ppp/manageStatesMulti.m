@@ -1,4 +1,4 @@
-function measRemovedSlip = manageStatesMulti(obj,epoch,gnssMeas)
+function measRemovedSlip = manageStatesMulti(obj,epoch,obs)
 
 if length(obj) > 1
     objList = obj;
@@ -11,6 +11,17 @@ else
 end
 
 PARAMS = obj.PARAMS;
+
+gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+
+gnssMeas = navsu.ppp.measMask(gnssMeas,PARAMS.measMask);
+
+
+if isempty(gnssMeas)
+    % Currently, we need a GNSS measurement in order to proceed.
+    measRemovedSlip = [];
+    return;
+end
 
 % Check for cycle slips so that these can be removed and reset
 measRemovedSlip = obj.checkCycleSlips(epoch,gnssMeas,PARAMS);
@@ -30,6 +41,7 @@ end
 % 3 = Satellite specific DCB
 % 4 = Code phase multipath
 % 5 = Carrier phase multipath
+% 6 = Ephemeris error
 
 stateTypes = {'cp'; ... % 1  
     'L1DELAYSTATE'; ... % 2
@@ -37,7 +49,8 @@ stateTypes = {'cp'; ... % 1
     'RX_DCB_GLO';...    % 3
     'RX_DCB_GPS';...    % 3
     'MP_CODE';...       % 4
-    'MP_CARR'};         % 5
+    'MP_CARR';...       % 5
+    'EPH'};             % 6
   
 stateUse   = [true; ...
     PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'L1DELAYSTATE'); ...
@@ -45,7 +58,8 @@ stateUse   = [true; ...
     PARAMS.states.RX_DCB_GLO;...
     PARAMS.states.RX_DCB_GPS;...
     PARAMS.states.MP_CODE; ...
-    PARAMS.states.MP_CARR];
+    PARAMS.states.MP_CARR; ...
+    PARAMS.states.EPH];
 
 for sdx = 1:length(stateTypes)
     if ~stateUse(sdx)

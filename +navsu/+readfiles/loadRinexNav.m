@@ -47,7 +47,7 @@ function eph = loadRinexNav(filename, varargin)
 %--------------------------------------------------------------------------
 
 p = inputParser;
-p.addParameter('outFormat', 'struct');
+p.addParameter('outFormat', 'struct'); % 'struct' or 'array'
 p.addParameter('constellations', navsu.readfiles.initConstellation(1,1,1,1,1,1));
 
 % parse the results
@@ -99,6 +99,11 @@ if constellations.QZSS.enabled
     [Eph_J, iono,glut,leapSecond] = navsu.readfiles.rinexGetNav(filename, constellationsi);
 end
 
+if isnan(leapSecond) && ~isempty(Eph_R)
+    % Pull the actual leap second count
+    [~,~,~,leapSecond] = navsu.time.utc2gps(Eph_R(2:7,1)',1);
+end
+
 % Collect everything for output
 if strcmp(outFormat,'array')
     eph.gps = Eph_G;
@@ -107,6 +112,7 @@ if strcmp(outFormat,'array')
     eph.bds = Eph_C;
     eph.qzss = Eph_J;
     eph.iono = iono;
+    eph.leapSecond = leapSecond;
 elseif strcmp(outFormat,'struct')
     eph.gps  = navsu.readfiles.ephArray2Struct(Eph_G',filename,leapSecond,'GPS');
     eph.glo  = navsu.readfiles.ephArray2StructGlonass(Eph_R',filename,leapSecond);

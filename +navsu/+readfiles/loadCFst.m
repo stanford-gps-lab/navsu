@@ -322,7 +322,7 @@ else
         end
         
         if ~FLAG_NO_LOAD
-            [Cepochs, Cclk, Cclk_sig] = readRinexClock([tmp CFileName],35,'C');
+            [Cepochs, Cclk, Cclk_sig] =  navsu.readfiles.readRinexClock([tmp CFileName],35,'C');
             Cepochs = Cepochs + 86400*(gps_day);
             
             Clck.Cepochs  = Cepochs;
