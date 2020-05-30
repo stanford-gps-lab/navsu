@@ -41,12 +41,16 @@ if (fid == -1)
     fprintf(2, 'Error open %s: %s\n', filename, message);
     return
 end
+if nargin < 2
+    cmToApcFlag = false;
+end
 
 if (nargin < 3)
     strictConstNumFlag = false;
 end
 
 %GRECJ
+
 if nargin < 4
     constellationOut = 1;
 end
