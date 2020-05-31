@@ -1,0 +1,17 @@
+{
+"navsu.readfiles.loadRinexNav":
+{
+		"inputs":
+	[
+		{"name":"filename", "kind":"required", "type":[["file=*.rnx,*.nav,*.*n"], ["folder"], ["char"]]}
+	]
+},
+"navsu.readfiles.loadRinexObs":
+{
+		"inputs":
+	[
+		{"name":"filename", "kind":"required", "type":[["file=*.rnx,*.obs,*.*o"], ["folder"], ["char"]]}
+	]
+}
+}
+
