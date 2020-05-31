@@ -129,11 +129,20 @@ if ~isempty(truth)
     enuPlotEst = (estim.enuPos(:,1:2)-posMedEnu);
     enuPlotTrue = (truth.enuPosInterp(:,1:2)-posMedEnu);
     
-    s = plot([enuPlotEst(:,1) enuPlotTrue(:,1)],[enuPlotEst(:,2) enuPlotTrue(:,2)],'.');
+    s = plot([enuPlotEst(:,1) enuPlotTrue(:,1)],[enuPlotEst(:,2) enuPlotTrue(:,2)],'markersize',10,'linewidth',2);
+    
+    linestyles = {'none','none'};
+    markers = {'.','o'};
+    markersizes = [10 6];
+    linewidths = [1 2];
     % Add time to data tips
     for idx = 1:length(s)
         row = dataTipTextRow('tIndex',tinds0);
         s(idx).DataTipTemplate.DataTipRows(3) = row;
+        s(idx).Marker = markers{idx};
+        s(idx).LineStyle = linestyles{idx};
+        s(idx).MarkerSize = markersizes(idx);
+        s(idx).LineWidth  = linewidths(idx);
     end
     grid on
     legend('Estimated position','Truth position','location','best')
