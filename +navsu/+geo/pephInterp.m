@@ -64,7 +64,13 @@ dttx = res.dttx;
 pPosInds = res.pPosInds;
 pPosPoly = res.pPosPoly;
 %%
-velCalc = 1;
+
+if FLAG_APC_OFFSET && isempty(atxData)
+    error('Antenna phase center (.atx) data required to do CoM to APC offset')
+end
+
+% If any more than just the position is requested, compute the velocity
+velCalc = nargout > 1;
 
 if isempty(sunPos)
     computeSunPosFlag = 1;
@@ -117,7 +123,7 @@ for idx = 1:length(prns)
         constLast = constInds(idx);
         Pposi = Pposc(Pprnsc == prn,:);
         Pepochsi = Pepochsc(Pprnsc == prn);
-
+    end
     switch orbitInterpMethod
         case 'poly'
             ind1 = max(find(Pepochsi <= epochi))-nPolyFit/2+1;
@@ -177,7 +183,7 @@ for idx = 1:length(prns)
 end
 
 
-if FLAG_APC_OFFSET  && ~isempty(atxData)
+if FLAG_APC_OFFSET  
     % Compute sun position
     typeVec = [atxData.type];
     prnVec  = [atxData.prn];
