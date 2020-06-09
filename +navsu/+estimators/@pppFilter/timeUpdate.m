@@ -13,7 +13,7 @@ PARAMS = filter.PARAMS;
 % Time since last GNSS kalman filter update
 dtKf = epoch-filter.epochLastGnssUpdate;
 
-filter.epochLastGnssUpdate = epoch;
+% filter.epochLastGnssUpdate = epoch;
 
 % Constants (sone of these could be changed to inputs at a later date)
 

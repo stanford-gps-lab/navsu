@@ -39,7 +39,7 @@ predMeas = [];
 H = zeros(0,nState);
 R = [];
 measId  = [];       % MeasID
-meas    = [];       % actual measurements 
+meas    = [];       % actual measurements
 prnConstInds = [];
 el = [];
 az = [];
@@ -70,7 +70,7 @@ for idx = 1:length(obs)
 end
 
 %% Pseudomeasurements
-if PARAMS.measUse.noVertVel && 0
+if PARAMS.measUse.noVertVel 
     [predMeasi,Hi,Ri,measIdi,measi] = handleVehicleConstraintPseudomeas(obj);
     
     [predMeas,H,R,measId,meas] = catMeas(predMeas,predMeasi,H,Hi,R,Ri,measId,measIdi,meas,measi);
@@ -79,19 +79,19 @@ end
 nMeas = size(H,1);
 
 %% Measurement exclusion may have been forced from the outside- DO SOMETHING ABOUT IT!
-if ~isempty(measExclude)    
-        measMask = false(size(H,1),1);
-        for mdx = 1:length(measExclude)
-            measMask = measMask | matches(measExclude(mdx),measId);
-        end
-        
-        % Pull these values out from stuff :)
-        H(measMask,:) = [];
-        predMeas(measMask) = [];
-        meas(measMask) = [];
-        R(measMask,:) = [];
-        R(:,measMask) = [];
-        measId(measMask) = [];
+if ~isempty(measExclude)
+    measMask = false(size(H,1),1);
+    for mdx = 1:length(measExclude)
+        measMask = measMask | matches(measExclude(mdx),measId);
+    end
+    
+    % Pull these values out from stuff :)
+    H(measMask,:) = [];
+    predMeas(measMask) = [];
+    meas(measMask) = [];
+    R(measMask,:) = [];
+    R(:,measMask) = [];
+    measId(measMask) = [];
 end
 
 %% Do the measurement update
@@ -106,6 +106,9 @@ if nMeas > 0
     % Update covariance
     cov = (eye(nState) - K * H) * covPropagated;
     
+    obj.epochLastGnssUpdate = epoch;
+    
+    
 else
     % No measurement update
     stateNew = statePropagated;
@@ -115,6 +118,7 @@ else
     measMatRemoved = zeros(0,6);
     residsPost = [];
     measIdRemoved= [];
+    
 end
 
 %% Update the position and velocity values
@@ -141,7 +145,7 @@ measIdRemovedFull = [measExclude(:); measIdRemoved(:);];
 % Deal with resets if any of the removed measurements were carrier phases
 if ~isempty(measIdRemovedFull)
     for jdx = 1:size(measIdRemovedFull,1)
-        if ~isempty(measIdRemovedFull(jdx).TypeID) && measIdRemovedFull(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemovedFull(jdx).subtype == navsu.internal.MeasEnum.Carrier 
+        if ~isempty(measIdRemovedFull(jdx).TypeID) && measIdRemovedFull(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemovedFull(jdx).subtype == navsu.internal.MeasEnum.Carrier
             % carrier phase- reset ambiguity by just removing the state
             obj.removeFlexState([measIdRemovedFull(jdx).prn measIdRemovedFull(jdx).const 1 measIdRemovedFull(jdx).freq] );
         end
@@ -149,15 +153,16 @@ if ~isempty(measIdRemovedFull)
 end
 
 %% Save things for output
-if ~isempty(gnssMeas)
+if ~isempty(gnssMeas) & nMeas > 0
     measGnss = measId([measId.TypeID] == navsu.internal.MeasEnum.GNSS);
-    obj.allSatsSeen = sortrows(unique([[[measGnss.prn]' [measGnss.const]']; obj.allSatsSeen],'rows'),2);
-    
+    if ~isempty(measGnss)
+        obj.allSatsSeen = sortrows(unique([[[measGnss.prn]' [measGnss.const]']; obj.allSatsSeen],'rows'),2);
+    end
     % Save residuals
     obj.resids.measId = measId;
     obj.resids.resids = residsPost;
     obj.resids.epochs = epoch0*ones(size(measId));
-
+    
     obj.resids.el = el;
     obj.resids.az = az;
     obj.resids.prnConstInds = prnConstInds;
@@ -165,7 +170,7 @@ if ~isempty(gnssMeas)
     
     obj.resids.dop = dop;
     obj.resids.dopEpoch = epoch0;
-     
+    
     % Only actually keeping one of the low measurements per satelite
     if ~isempty(measIdRemovedLow)
         prnConstLow = [[measIdRemovedLow.prn]' [measIdRemovedLow.const]'];
