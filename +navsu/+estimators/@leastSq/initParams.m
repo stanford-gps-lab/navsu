@@ -8,8 +8,9 @@ PARAMS.stationaryMode = false;
 % Sub-structure relating to what measurements are to be used
 PARAMS.measUse = struct(...
     'dfOnly',            false,...         % true = dual frequency meas only
-    'L1_THRESH',         20,...            % SNR threshold for L1
-    'L2_THRESH',         20,...            % SNR threshold for L2
+    'SIG1_THRESH',         20,...            % SNR threshold for L1
+    'SIG2_THRESH',         20,...            % SNR threshold for L2
+    'SIG3_THRESH',         20,...            % SNR threshold for L2
     'gFreeSlipThresh',   0.05,...          % Threshold for cycle slip- geometry free [m]
     'slipDetector',      'GFREE',...   % Cycle slip detector ('RX_OUTPUT','GFREE')
     'noVertVel',         false);          % 0 vertical velocity constraint
