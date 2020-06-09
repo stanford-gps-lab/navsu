@@ -85,7 +85,7 @@ if norm(rArmBody) > 0
     % ri = weighti.*0.03^2;
     
 end
-sig = 0.003;
+sig = 0.03;
 
 
 
