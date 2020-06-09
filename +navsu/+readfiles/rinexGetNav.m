@@ -363,9 +363,7 @@ constData = struct( ...
     'enabled', cell(1,8) ... % placeholder; allows programmatic addressing in addition to "constellations.*.enabled" calls
 );
 
-recordFormat = '%19.12f ';
-recordFormat = '%f ';
-
+recordFormat = '%f ';   % This previously '%19.12f ', but not all RINEX creators adhere to the standard
 
 % GPS Data Record (RINEX 3.03, Table A6) -- System Identifier "G"
 constData(1).formatString = [ ...
