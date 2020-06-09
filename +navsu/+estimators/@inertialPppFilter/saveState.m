@@ -13,7 +13,7 @@ if ismember(measTypes,navsu.internal.MeasEnum.IMU)
 end
 
 outState.epoch = epoch;
-outState.pos   = obj.pos;%VelApc;
+outState.pos   = obj.posVelApc;
 outState.resids = obj.resids;
 outState.residsInfo = [];
 outState.measRemoved = obj.measRemoved;
@@ -27,7 +27,7 @@ else
     outState.gyro = nan(3,1);
 end
 
-if isempty(outData) || isempty([outData(:).residsInfo])
+if isempty(outData) || isempty([outData(:).residsInfo]) && ~ ismember(measTypes,navsu.internal.MeasEnum.IMU)
     gnssMeas = [];
     for idx = 1:length(obs)
         obsi = obs{idx};
