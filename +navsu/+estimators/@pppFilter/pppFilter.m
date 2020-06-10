@@ -135,6 +135,11 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
 
         [posApc,velApc] = posVelApc(obj);  % Position and velocity of the GNSS antenna phase center.
 
+        outState = saveOutStatePpp(obj,outData,epoch,obs)
+        
+        plotOutput(bbj,outputs,varargin)
+        
+        plotOutputPpp(obj,outputs,varargin)
     end
     
     methods %(Access = private)
@@ -143,11 +148,6 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         [measId,extraInputs] = measUpdate(obj,epoch,obs,corrData,measRemovedSlip,varargin)
         
     end
-    
-    methods(Static)
-        plotOutput(outputs,varargin)
-    end
-    
     
 end
 
