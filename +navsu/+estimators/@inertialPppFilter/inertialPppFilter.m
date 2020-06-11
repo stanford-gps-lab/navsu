@@ -17,10 +17,12 @@ classdef inertialPppFilter < navsu.estimators.pppFilter
         
         outData = saveState(obj,outData,epoch,obs)
         
+        plotOutput(obj,outputs,varargin);
     end
     
     
     methods(Static)
+       
         plotOutputInertial(outputs,varargin)
     end
     

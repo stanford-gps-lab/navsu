@@ -10,11 +10,16 @@ end
 
 outState = saveOutStatePpp(obj,outData,epoch,obs);
 
-% outState.pos   = obj.posVelApc;
+outState.posApc  = obj.posVelApc;
+outState.pos = obj.pos;
 outState.R_b_e = obj.R_b_e;
 outState.vel   = obj.vel;
 
+% Save accelerometer and gyro bias states
 outState.imuBiasStates = obj.imuBiasStates;
+
+% Save odometry state
+outState.wheelScale = obj.state(obj.INDS_STATE.WHEELS);
 
 if ~isempty(obj.lastGyroMeas)
     outState.gyro = obj.lastGyroMeas;

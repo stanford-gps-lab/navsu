@@ -1,18 +1,24 @@
-function plotOutputPpp(obj,outputs,varargin)
+ function plotOutputPpp(obj,outputs,varargin)
 %
 p = inputParser;
 
 p.addParameter('truePosEcef',[]);
 p.addParameter('truthFile',[]);
+p.addParameter('outputPos','REF');  % reference position (IMU) or antenna phase center
 
 % parse the results
 parse(p, varargin{:});
 res = p.Results;
 truthFile            = res.truthFile;      %
+outputPos = res.outputPos;
 
 % Plot the position and clock bias in ENU
 %% Pull out saved values
-xyz = [outputs.pos]';
+if strcmp(outputPos,'REF')
+    xyz = [outputs.pos]';
+else
+    xyz = [outputs.posApc]';
+end
 xyzCov = cat(3,outputs.covPos);
 epochs = [outputs.epoch]';
 b = zeros(size(epochs));
