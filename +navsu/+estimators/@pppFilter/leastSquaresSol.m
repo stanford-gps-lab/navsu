@@ -109,6 +109,9 @@ while convMetric > convThresh
     obj.clockBias = obj.clockBias+x(7:(7+length(obj.INDS_STATE.CLOCK_BIAS)-1));
     obj.clockDrift = obj.clockDrift+x((end-length(obj.INDS_STATE.CLOCK_DRIFT)+1):end);
     
+    % also update attitude
+    obj.R_b_e = navsu.ppp.posVel2Rbe(obj.pos,obj.vel);
+    
     % Convergence metric is just over position and velocity states
     convMetric = norm(x(1:6));
     

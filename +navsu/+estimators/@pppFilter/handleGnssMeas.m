@@ -24,6 +24,7 @@ x_est_propagated = obj.state;
 % Antenna phase center position and velocity
 [pos,vel] = obj.posVelApc;
 
+
 % pos = obj.pos;
 
 % Receiver velocity
@@ -94,7 +95,7 @@ if nMeas > 0
         end
         
         satBias = -c*corrData.clock(prnConstInds(:,1),prnConstInds(:,2),tRx);
-        gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
+        gRangeSv = sqrt(sum((pos'-svPos).^2,2));
         
         % Need rough estimate of the receiver clock bias in case of reset
         indPr = find([idList.subtype]' == navsu.internal.MeasEnum.Code);
@@ -119,7 +120,7 @@ if nMeas > 0
         
         satBias = -c*corrData.clock(prnConstInds(:,1),prnConstInds(:,2),epoch);
         [svPos,svVel] = corrData.propagate(prnConstInds(:,1),prnConstInds(:,2),epoch);
-        gRangeSv = sqrt(sum((obj.pos'-svPos).^2,2));
+        gRangeSv = sqrt(sum((pos'-svPos).^2,2));
         
         tTx = epoch-gRangeSv./c;
         
