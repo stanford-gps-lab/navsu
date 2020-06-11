@@ -28,7 +28,12 @@ for idx = 1:length(obs0)
             obs = [obs obs0(idx)];
             
         case navsu.internal.MeasEnum.IMU
-           obs = [obs obs0(idx)];
-    end    
+            obs = [obs obs0(idx)];
+            
+        case navsu.internal.MeasEnum.Wheels 
+            if obj.PARAMS.states.wheels
+                obs = [obs obs0(idx)];
+            end
+    end
 end
 warning('on','backtrace')

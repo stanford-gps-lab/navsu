@@ -17,12 +17,18 @@ downsampleFactor = res.downsampleFactor; % FActor by which to downsample
 indsMeas = find(wheelsRaw.epochs >= epochStart & wheelsRaw.epochs < epochEnd);
 indsMeas = indsMeas(1:downsampleFactor:end);
 
+% Just looking for change in tick count- take diff for each 
+dTickFrontLeft = [NaN; diff(wheelsRaw.SpeedFrontLeft)];
+dTickFrontRight = [NaN; diff(wheelsRaw.SpeedFrontRight)];
+dTickRearLeft = [NaN; diff(wheelsRaw.SpeedRearLeft)];
+dTickRearRight = [NaN; diff(wheelsRaw.SpeedRearRight)];
+
 wheels.epochs           = wheelsRaw.epochs(indsMeas,:);
 wheels.headerTow        = wheelsRaw.headerTow(indsMeas,:);
-wheels.SpeedFrontLeft   = wheelsRaw.SpeedFrontLeft(indsMeas,:);
-wheels.SpeedFrontRight  = wheelsRaw.SpeedFrontRight(indsMeas,:);
-wheels.SpeedRearLeft    = wheelsRaw.SpeedRearLeft(indsMeas,:);
-wheels.SpeedRearRight   = wheelsRaw.SpeedRearRight(indsMeas,:);
+wheels.SpeedFrontLeft   = dTickFrontLeft(indsMeas,:);
+wheels.SpeedFrontRight  = dTickFrontRight(indsMeas,:);
+wheels.SpeedRearLeft    = dTickRearLeft(indsMeas,:);
+wheels.SpeedRearRight   = dTickRearRight(indsMeas,:);
 wheels.SteeringAngle    = wheelsRaw.SteeringAngle(indsMeas,:);
 wheels.VehicleSpeed     = wheelsRaw.VehicleSpeed(indsMeas,:);
 wheels.Stationary       = wheelsRaw.Stationary(indsMeas,:);
