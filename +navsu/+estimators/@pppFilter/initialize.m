@@ -53,6 +53,13 @@ if isempty(obj.INDS_STATE)
         obj.INDS_STATE.TROP = [];
     end
     
+    if PARAMS.states.wheels
+        obj.INDS_STATE.WHEELS = (lastInd+1):(lastInd+4); 
+        lastInd = lastInd+4;
+    else
+        obj.INDS_STATE.WHEELS = [];
+    end
+    
     if PARAMS.states.RX_DCB
         % For each constellation and signal (excluding one reference), we need
         % a receiver differential code bias state
@@ -138,11 +145,6 @@ end
 
 
 % Initialize attitude - euler angles with body frame
-
-% xi  = -obj.vel./norm(obj.vel);
-% z0i = obj.pos./norm(obj.pos);
-% yi  = -cross(xi,z0i);
-% zi = cross(xi,yi);
 obj.R_b_e = navsu.ppp.posVel2Rbe(obj.pos,obj.vel);
 
 obj.imuBiasStates = zeros(6,1);
@@ -170,6 +172,10 @@ cov(obj.INDS_STATE.W_BIAS,obj.INDS_STATE.W_BIAS)           = eye(3) * PARAMS.SIG
 % Tropo
 cov(obj.INDS_STATE.TROP,obj.INDS_STATE.TROP)               = PARAMS.SIGMA0.TROP^2;
 
+% Wheel odometry scale factor
+if obj.PARAMS.states.wheels
+    cov(obj.INDS_STATE.WHEELS,obj.INDS_STATE.WHEELS)               = eye(4) *PARAMS.SIGMA0.WHEELS^2;
+end
 % DCBs
 cov(obj.INDS_STATE.RX_DCB.INDS,obj.INDS_STATE.RX_DCB.INDS) = eye(length(obj.INDS_STATE.RX_DCB.INDS))*PARAMS.SIGMA0.RX_DCB^2;
 

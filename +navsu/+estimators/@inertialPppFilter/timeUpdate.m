@@ -91,6 +91,11 @@ if PARAMS.states.trop
         eye(length(filter.INDS_STATE.TROP)) * PARAMS.Q.TROP.^2 * dtKf;
 end
 
+if PARAMS.states.wheels
+    Q(filter.INDS_STATE.WHEELS,filter.INDS_STATE.WHEELS)     =  ...
+        eye(length(filter.INDS_STATE.WHEELS)) * PARAMS.Q.WHEELS.^2 * dtKf;
+end
+
 if PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'L1DELAYSTATE')
     indsTec = filter.INDS_STATE.FLEX_STATES(filter.INDS_STATE.FLEX_STATES_INFO(:,3) == 2);
     Q(indsTec,indsTec) = eye(length(indsTec))*PARAMS.Q.L1_IONO.^2*dtKf;

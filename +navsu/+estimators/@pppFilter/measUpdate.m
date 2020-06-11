@@ -60,9 +60,10 @@ for idx = 1:length(obs)
             gnssMeas = obsi;
         case navsu.internal.MeasEnum.Position
             [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,obsi);
-            
         case navsu.internal.MeasEnum.Velocity
             [predMeasi,Hi,Ri,measIdi,measi] = handleVelocityMeas(obj,obsi);
+        case navsu.internal.MeasEnum.Wheels
+            [predMeasi,Hi,Ri,measIdi,measi] = handleWheelsMeas(obj,obsi);
         otherwise
             continue;
     end
@@ -132,8 +133,15 @@ obj.clockDrift = stateNew(obj.INDS_STATE.CLOCK_DRIFT);
 
 % put updated values into object
 % obj.R_b_e = R_b_e;
+
 obj.vel   = vel;
 obj.pos   = pos;
+
+% [posRef,velRef] = obj.posVelApc(1);
+% % 
+% obj.vel   = velRef;
+% obj.pos   = posRef;
+
 obj.cov  = cov;
 obj.state = stateNew;
 obj.posPrevTc = pos;
@@ -150,6 +158,16 @@ if ~isempty(measIdRemovedFull)
             obj.removeFlexState([measIdRemovedFull(jdx).prn measIdRemovedFull(jdx).const 1 measIdRemovedFull(jdx).freq] );
         end
     end
+end
+
+% If using wheel odometry, some things should be saved (this should
+% eventually be removed and is really just here for testing. This is also
+% in .initialize
+if obj.PARAMS.states.wheels
+   obj.wheelInfo.R_b_e = obj.R_b_e;
+   obj.wheelInfo.vel   = obj.vel;
+   obj.wheelInfo.epoch = epoch;
+   obj.wheelInfo.w     = obj.lastGyroMeas;
 end
 
 %% Save things for output

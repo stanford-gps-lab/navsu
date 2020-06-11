@@ -41,6 +41,12 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         resids % extra info for output about measurement residuals
         
         measRemoved % extra info for measurements that were removed :)
+        
+        wheelInfo  = struct('epoch',[],'R_b_e',[],'vel',[],'w',[],...
+            'vrl_int',0,'vrr_int',0,'H11_int',[0 0 0],'H12_int',[0 0 0],...
+            'vup_int',0,'Hv1_int',[0 0 0],'Hv2_int',[0 0 0],...
+            'vcr_int',0,'Hc1_int',[0 0 0],'Hc2_int',[0 0 0]);% just some extra info needed for wheel odometry 
+        
     end
     
     properties (Constant)
@@ -127,6 +133,11 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         % handleVelocityMeas- produce predicted value and
         % sensitivity matrix for direct velocity measurements
         [predMeasi,Hi,Ri,measIdi,measi] = handleVelocityMeas(obj,velMeas)
+        
+        % handleWheelsMeas-  produce predicted value and
+        % sensitivity matrix for wheel odometry measurements 
+        [predMeas,H,R,measIdi,measi] = handleWheelsMeas(obj,wheelMeas)
+        
         
         % leastSquaresSol - produce a least squares solution based on the 
         % available observations.  This currently requires GNSS

@@ -52,6 +52,11 @@ if PARAMS.states.trop
         eye(length(filter.INDS_STATE.TROP)) * PARAMS.Q.TROP.^2 * dtKf;
 end
 
+if PARAMS.states.wheels
+    Q(filter.INDS_STATE.WHEELS,filter.INDS_STATE.WHEELS)     =  ...
+        eye(length(filter.INDS_STATE.WHEELS)) * PARAMS.Q.WHEELS.^2 * dtKf;
+end
+
 if PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'L1DELAYSTATE')
     indsTec = filter.INDS_STATE.FLEX_STATES(filter.INDS_STATE.FLEX_STATES_INFO(:,3) == 2);
     Q(indsTec,indsTec) = eye(length(indsTec))*PARAMS.Q.L1_IONO.^2*dtKf;
@@ -104,6 +109,7 @@ x_est_propagated = zeros(size(filter.state));
 x_est_propagated(filter.INDS_STATE.CLOCK_BIAS,1)   = filter.clockBias+dtKf*filter.clockDrift;
 x_est_propagated(filter.INDS_STATE.CLOCK_DRIFT,1)  = filter.clockDrift;
 x_est_propagated(filter.INDS_STATE.TROP,1)         = filter.state(filter.INDS_STATE.TROP);
+x_est_propagated(filter.INDS_STATE.WHEELS,1)       = filter.state(filter.INDS_STATE.WHEELS);
 x_est_propagated(filter.INDS_STATE.FLEX_STATES,1)  = filter.state(filter.INDS_STATE.FLEX_STATES);
 x_est_propagated(filter.INDS_STATE.RX_DCB.INDS,1)  = filter.state(filter.INDS_STATE.RX_DCB.INDS);
 

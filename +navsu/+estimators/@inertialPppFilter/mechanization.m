@@ -11,9 +11,9 @@ if ~isempty(imuMeas)
     obj.lastGyroMeas = gyroMeas;
     
 else
-   % Use our last acceleration and gyro measurements 
-     accMeas = obj.lastAccMeas;
-     gyroMeas = obj.lastGyroMeas;
+    % Use our last acceleration and gyro measurements
+    accMeas = obj.lastAccMeas;
+    gyroMeas = obj.lastGyroMeas;
 end
 
 
@@ -21,7 +21,7 @@ posOld = obj.pos;
 velOld = obj.vel;
 attOld = obj.R_b_e;
 
-% epoch = 
+% epoch =
 
 omegaIe = navsu.constants.omegaEarth; % earth rotation rate in rad/s
 
@@ -36,7 +36,7 @@ alphaIe = omegaIe*dt;
 % earth rotation matrix during the interval
 cEarth = [cos(alphaIe), sin(alphaIe), 0;...
     -sin(alphaIe), cos(alphaIe), 0;...
-    0,             0,  1]; 
+    0,             0,  1];
 
 
 % Compute attitude increment
@@ -51,7 +51,7 @@ if magAlpha>1.E-8
         (1 - cos(magAlpha)) / magAlpha^2 * alphaIbBMat * alphaIbBMat;
 else
     CNewOld = eye(3) + alphaIbBMat;
-end 
+end
 
 
 % Update attitude using (5.75)
@@ -66,9 +66,9 @@ if magAlpha>1.E-8
         * alphaIbBMat * alphaIbBMat) - 0.5 * navsu.geo.crossProdMatrix([0;0;alphaIe])...
         * attOld;
 else
-     aveCbe = attOld - 0.5 * navsu.geo.crossProdMatrix([0;0;alphaIe]) *...
-         attOld;
-end %if mag_alpha     
+    aveCbe = attOld - 0.5 * navsu.geo.crossProdMatrix([0;0;alphaIe]) *...
+        attOld;
+end %if mag_alpha
 
 
 % Transform specific force to ECEF-frame resolving axes using (5.85)
@@ -81,12 +81,60 @@ vel = velOld + dt * (fIbe + navsu.geo.gravityEcef(posOld) -...
 
 % UPDATE CARTESIAN POSITION
 % From (5.38),
-pos = posOld + (vel + velOld) * 0.5 * dt; 
+pos = posOld + (vel + velOld) * 0.5 * dt;
 
 % Update our object
 obj.pos = pos;
 obj.vel = vel;
 obj.R_b_e = att;
+
+% If using wheel odometry, integrate some things here:
+if obj.PARAMS.states.wheels
+    
+    armAdd = 0*-obj.PARAMS.ARM_REF_APC;
+    % rear left wheel velocity estimate increment
+    l_rl = armAdd+[0.0250, -0.0690, -0.1550]'+[0 -1.6256/2 -.3937]';
+    vel_rl_dt = [-1 0 0]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rl)*dt;
+    
+    % rear right wheel velocity estimate increment
+    l_rr = armAdd+[0.0250, -0.0690, -0.1550]'+[0 1.6256/2 -.3937]';
+    vel_rr_dt = [-1 0 0]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
+    
+    % attitude sensitivity increment
+    H11_dt = [-1 0 0]*att'*navsu.geo.crossProdMatrix(vel)*dt;
+    
+    % velocity sensitivity increment
+    H12_dt = [-1 0 0]*att'*dt;
+    
+    % vertical velocity estimate at rear right wheel
+    vel_up_dt = [0 0 1]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
+    
+    % vertical velocity sensitivities
+    Hv1_dt = [0 0 1]*att'*navsu.geo.crossProdMatrix(vel)*dt;
+    Hv2_dt = [0 0 1]*att'*dt;
+    
+    % vertical velocity estimate at rear right wheel
+    vel_cr_dt = [0 1 0]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
+    
+    % vertical velocity sensitivities
+    Hc1_dt = [0 1 0]*att'*navsu.geo.crossProdMatrix(vel)*dt;
+    Hc2_dt = [0 1 0]*att'*dt;
+    
+    % Add all of these
+    obj.wheelInfo.vrl_int = obj.wheelInfo.vrl_int + vel_rl_dt;
+    obj.wheelInfo.vrr_int = obj.wheelInfo.vrr_int + vel_rr_dt;
+    obj.wheelInfo.H11_int = obj.wheelInfo.H11_int + H11_dt;
+    obj.wheelInfo.H12_int = obj.wheelInfo.H12_int + H12_dt;
+    obj.wheelInfo.vup_int = obj.wheelInfo.vup_int + vel_up_dt;
+    obj.wheelInfo.Hv1_int = obj.wheelInfo.Hv1_int + Hv1_dt;
+    obj.wheelInfo.Hv2_int = obj.wheelInfo.Hv2_int + Hv2_dt;
+    
+    obj.wheelInfo.vcr_int = obj.wheelInfo.vcr_int + vel_cr_dt;
+    obj.wheelInfo.Hc1_int = obj.wheelInfo.Hc1_int + Hc1_dt;
+    obj.wheelInfo.Hc2_int = obj.wheelInfo.Hc2_int + Hc2_dt;
+    
+end
+
 
 end
 

@@ -45,6 +45,10 @@ PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.NoSlipVertical))
 PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.VehicleConstraint)) = Inf;
 PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.VehicleConstraint)) = Inf;
 
+
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.Wheels)) = Inf;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.Wheels)) = Inf;
+
 % Measurement masking- which measurments to actually use in the
 % filter
 PARAMS.measMask = table([1 1 1]',[1 0 0]',[1 0 0]',[1 1 0]',[1 1 0]',...
@@ -71,7 +75,8 @@ PARAMS.states = struct(...
     'RX_DCB_GPS',   false,...         % Separate DCB state for each GLONASS code measurement
     'MP_CODE',      false,...         % Code phase multipath
     'MP_CARR',      false,...         % Carrier phase multipath
-    'EPH',          false);           % Error from ephemeris and clock
+    'EPH',          false,...         % Error from ephemeris and clock
+    'wheels',       false);           % wheel odometry scale factors
 
 % Tropospheric model
 PARAMS.tropModel = 'UNB3';
@@ -80,7 +85,9 @@ PARAMS.tropModel = 'UNB3';
 PARAMS.dcbUse = true;
 
 % Body frame IMU lever arm - IMU to GNSS antenna
-PARAMS.IMU_ARM = [0 0 0]';
+% PARAMS.IMU_ARM = [0 0 0]';
+
+PARAMS.ARM_REF_APC = [0 0 0]';
 
 % Elevation mask angle
 PARAMS.elMask = 7.5; % Degrees
@@ -100,7 +107,8 @@ PARAMS.SIGMA0 = struct(...
     'ACC_SCALE',0.04,...          % Accelerometer scale factor
     'W_SCALE',  0.01,...          % Gyro scale
     'TROP',     0.05,...          % Tropospheric delta state
-    'AMB',      100,...             % Carrier phase ambiguity
+    'WHEELS',  1,...           % Wheel odometry scale factor
+    'AMB',      100,...           % Carrier phase ambiguity
     'RX_DCB',   5,...             % Receiver DCB
     'L1_IONO',  1,...             % Slant L1 iono delay
     'RX_DCB_GLO', 1,...           % Separate DCB state for each GLONASS code measurement
@@ -116,15 +124,16 @@ PARAMS.Q = struct(...
     'ATTTITUDE',       [20 20 20]*pi/180,... % Attitude
     'ATT_RATE',        [40 40 40]*pi/180,... % Atttitude rate
     'W_BIAS',          2e-5*1,...%/100,...   % Gyro bias
-    'ACC_BIAS',        1e-3*1,...%/100,...             % Accelerometer bias
+    'ACC_BIAS',        1e-3*1,...%/100,...   % Accelerometer bias
     'ACC_SCALE',       1e-5,...              % Accelerometer scale
     'W_SCALE',         1e-5,...              % Gyro scale
-    'RXB',             1000+0.5,...                % Receiver clock bias
-    'DRXB',            1000+0.3,...                % Receiver clock bias
+    'RXB',             1000+0.5,...          % Receiver clock bias
+    'DRXB',            1000+0.3,...          % Receiver clock bias
     'gyro_noise_PSD',  0.0015,...%*100,...   % Gyro noise
     'accel_noise_PSD', 0.005,...%*1000,...   % Accelerometer noise
     'RX_DCB',          0,...                 % Receiver DCB
     'TROP',            0.002/60,...          % Tropospheric delta state
+    'WHEELS',          0.03,...                % Wheel odometry scale factor
     'AMB',             0,...                 % Carrier phase ambiguity
     'L1_IONO',         0.03,...              % Slant L1 iono delay
     'RX_DCB_GLO',      0,...                 % Separate DCB state for each GLONASS code measurement
