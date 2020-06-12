@@ -2,8 +2,9 @@ function outData = saveState(obj,outData,epoch,obs)
 % Create a structure with all the information that you want to save :)
 
 % don't include if this is an inertial measurement lol
-measTypes = cellfun(@(x) getfield(x,'type'),obs);
-
+for jdx = 1:length(obs)
+    measTypes(jdx) = obs{jdx}.type;
+end
 if ismember(measTypes,navsu.internal.MeasEnum.IMU)
     return;
 end
