@@ -20,15 +20,14 @@ for idx = 1:length(obsMapi)
                     obsi.range.lockTime = obsi.range.lockTime(:,:,obsMapi(idx));
                 end
                 
-                
-                
             case navsu.internal.MeasEnum.Position
                 obsi = [];
                 obsi.epochs = obsFulli.epochs(obsMapi(idx));
-                obsi.obs    = obsFulli.obs(:,obsMapi(idx));
-                obsi.cov    = obsFulli.cov(:,:,obsMapi(idx));
+                obsi.obs    = obsFulli.obs(obsMapi(idx),:);
+                obsi.cov    = permute(obsFulli.cov(obsMapi(idx),:,:),[2 3 1]);
                 obsi.type   = obsFulli.type;
                 obsi.ID     = obsFulli.ID;
+                obsi.REFPOS = obsFulli.REFPOS;
                 
             case navsu.internal.MeasEnum.Velocity
                 obsi = [];
