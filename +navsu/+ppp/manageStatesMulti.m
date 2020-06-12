@@ -14,14 +14,14 @@ PARAMS = obj.PARAMS;
 
 gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
 
-gnssMeas = navsu.ppp.measMask(gnssMeas,PARAMS.measMask);
-
-
 if isempty(gnssMeas)
     % Currently, we need a GNSS measurement in order to proceed.
     measRemovedSlip = [];
     return;
 end
+
+gnssMeas = navsu.ppp.measMask(gnssMeas,PARAMS.measMask);
+
 
 % Check for cycle slips so that these can be removed and reset
 measRemovedSlip = obj.checkCycleSlips(epoch,gnssMeas,PARAMS);
