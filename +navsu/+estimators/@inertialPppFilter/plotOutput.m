@@ -17,45 +17,47 @@ residsType = cat(1,measIdFull.TypeID);
 
 indsWheels = find(residsType == navsu.internal.MeasEnum.Wheels);
 
-residsWheels = residsFull(indsWheels);
-measIdWheels = measIdFull(indsWheels);
-epochsWheels = epochsFull(indsWheels);
-
-subtypeWheels = cat(1,measIdWheels.subtype);
-subtypeUn = unique(subtypeWheels);
-
-figure; clf; hold on
-for idx = 1:length(subtypeUn)
-    indsi = find(subtypeWheels == subtypeUn(idx));
-    s= plot((epochsWheels(indsi)-min(epochsOut))/60,residsWheels(indsi));
+if ~isempty(indsWheels)
+    residsWheels = residsFull(indsWheels);
+    measIdWheels = measIdFull(indsWheels);
+    epochsWheels = epochsFull(indsWheels);
     
-    % find time indices
-    [~,ixb] = ismember(epochsWheels(indsi),epochsOut);
-    row = dataTipTextRow('time index',tinds0(ixb));
-    s.DataTipTemplate.DataTipRows(3) = row;
+    subtypeWheels = cat(1,measIdWheels.subtype);
+    subtypeUn = unique(subtypeWheels);
     
-    % add subtype text
-    row = dataTipTextRow('subtype',repelem({char(subtypeUn(idx))},length(indsi),1));
-    s.DataTipTemplate.DataTipRows(4) = row;
+    figure; clf; hold on
+    for idx = 1:length(subtypeUn)
+        indsi = find(subtypeWheels == subtypeUn(idx));
+        s= plot((epochsWheels(indsi)-min(epochsOut))/60,residsWheels(indsi));
+        
+        % find time indices
+        [~,ixb] = ismember(epochsWheels(indsi),epochsOut);
+        row = dataTipTextRow('time index',tinds0(ixb));
+        s.DataTipTemplate.DataTipRows(3) = row;
+        
+        % add subtype text
+        row = dataTipTextRow('subtype',repelem({char(subtypeUn(idx))},length(indsi),1));
+        s.DataTipTemplate.DataTipRows(4) = row;
+        
+    end
+    title('Wheel tick residuals')
+    xlabel('Time [min]')
+    grid on;
     
+    
+    %% Plot wheel scale factors
+    wheelScales = cat(2,outputs.wheelScale);
+    figure; clf; hold on;
+    s = plot((epochsOut-min(epochsOut))/60,wheelScales(3,:));
+    s.DataTipTemplate.DataTipRows(3) = dataTipTextRow('time index',tinds0);;
+    
+    s = plot((epochsOut-min(epochsOut))/60,wheelScales(4,:));
+    s.DataTipTemplate.DataTipRows(3) = dataTipTextRow('time index',tinds0);;
+    
+    xlabel('Time [min]')
+    title('Wheel tick scale factor')
+    grid on;
 end
-title('Wheel tick residuals')
-xlabel('Time [min]')
-grid on;
-
-%% Plot wheel scale factors
-wheelScales = cat(2,outputs.wheelScale);
-figure; clf; hold on;
-s = plot((epochsOut-min(epochsOut))/60,wheelScales(3,:));
-s.DataTipTemplate.DataTipRows(3) = dataTipTextRow('time index',tinds0);;
-
-s = plot((epochsOut-min(epochsOut))/60,wheelScales(4,:));
-s.DataTipTemplate.DataTipRows(3) = dataTipTextRow('time index',tinds0);;
-
-xlabel('Time [min]')
-title('Wheel tick scale factor')
-grid on;
-
 %% plot local 'tude
 posEst = cat(2,outputs.pos);
 Rbe = cat(3,outputs.R_b_e);
