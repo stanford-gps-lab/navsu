@@ -91,8 +91,8 @@ Hii(1,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;
 % just constructing things
 
 % z axis (
-rArmBody = obj.PARAMS.IMU_ARM;
-if ~SimpleModel && norm(rArmBody) > 0  
+rArmBody = obj.PARAMS.ARM_REF_APC;
+if ~SimpleModel && norm(rArmBody) > 0  && 1
     
     rArmBodyNorm = rArmBody./norm(rArmBody);
     
@@ -106,12 +106,6 @@ if ~SimpleModel && norm(rArmBody) > 0
     
 end
 sig = 3;
-
-
-
-
-
-
 
 
 

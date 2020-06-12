@@ -65,12 +65,11 @@ H(1,obj.INDS_STATE.POS)        = A;
 H(1,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;
 H(1,indAmbState)              = 1;
 
-% Also include lever arm sensitivity lol
+% Also include lever arm sensitivity 
 % just constructing things
 
-% z axis (
-rArmBody = obj.PARAMS.IMU_ARM;
-if norm(rArmBody) > 0
+rArmBody = obj.PARAMS.ARM_REF_APC;
+if norm(rArmBody) > 0 && 1
     
     rArmBodyNorm = rArmBody./norm(rArmBody);
     
@@ -86,15 +85,6 @@ if norm(rArmBody) > 0
     
 end
 sig = 0.03;
-
-
-
-
-
-
-
-
-
 
 
 
