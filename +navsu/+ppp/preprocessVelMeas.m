@@ -1,4 +1,4 @@
-function posMeas = preprocessPosMeas(posRaw,varargin)
+function velMeas = preprocessVelMeas(velRaw,varargin)
 
 % this is mostly a wrapper for svPosFromProd
 p = inputParser;
@@ -14,19 +14,19 @@ epochStart       = res.epochStart;       % Minimum time of observations
 epochEnd         = res.epochEnd;         % Maximum time of observations
 downsampleFactor = res.downsampleFactor; % FActor by which to downsample
 
-if isempty(posRaw)
-    posMeas = [];
+if isempty(velRaw)
+    velMeas = [];
     return;
 end
 
-indsMeas = find(posRaw.epochs >= epochStart & posRaw.epochs < epochEnd);
+indsMeas = find(velRaw.epochs >= epochStart & velRaw.epochs < epochEnd);
 indsMeas = indsMeas(1:downsampleFactor:end);
 
-posMeas.epochs = posRaw.epochs(indsMeas,:);
-posMeas.obs    = posRaw.obs(indsMeas,:);
-posMeas.cov    = posRaw.cov(indsMeas,:,:);
-posMeas.type   = posRaw.type;
-posMeas.ID     = posRaw.ID;
-posMeas.REFPOS = posRaw.REFPOS;
+velMeas.epochs = velRaw.epochs(indsMeas,:);
+velMeas.obs    = velRaw.obs(indsMeas,:);
+velMeas.cov    = velRaw.cov(indsMeas,:,:);
+velMeas.type   = velRaw.type;
+velMeas.ID     = velRaw.ID;
+velMeas.REFPOS = velRaw.REFPOS;
 
 end

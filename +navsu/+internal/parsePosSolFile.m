@@ -85,8 +85,10 @@ switch ext
         epochs = navsu.time.gps2epochs(novTruth(:,1),novTruth(:,2));
         llhNov    = novTruth(:,3:5);
         posXyz = navsu.geo.llh2xyz(llhNov,1);
+        velEnu = novTruth(:,6:8);
+        
         if size(novTruth,2) > 11
-            velEnu = novTruth(:,10:12);
+%             velEnu = novTruth(:,10:12);
             
             cov   = zeros(3,3,length(epochs));
             cov(1,1,:) = novTruth(:,17);
