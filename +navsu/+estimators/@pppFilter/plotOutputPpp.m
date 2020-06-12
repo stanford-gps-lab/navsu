@@ -107,7 +107,7 @@ if ~isempty(truth)
     for idx = 1:3
         axes(ha(idx))
         
-        plot(tplot,abs(yplot(idx,:)))
+        plot(tplot,abs(yplot(idx,:)),'.-')
         hold on;
         plot(tplot,2*yplotStd(idx,:),'k')
 %         plot(tplot,3*-yplotStd(idx,:),'k')
