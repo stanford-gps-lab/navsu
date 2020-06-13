@@ -25,10 +25,16 @@ if ~isempty(indsWheels)
     subtypeWheels = cat(1,measIdWheels.subtype);
     subtypeUn = unique(subtypeWheels);
     
-    figure; clf; hold on
+    h = figure; 
+    % this is a double width plot
+    h.Position(3) = h.Position(3)*2;
+
+    % Plot time history of residuals
+    subplot(1,4,1:2);
+    hold on
     for idx = 1:length(subtypeUn)
         indsi = find(subtypeWheels == subtypeUn(idx));
-        s= plot((epochsWheels(indsi)-min(epochsOut))/60,residsWheels(indsi));
+        s= plot((epochsWheels(indsi)-min(epochsOut))/60,residsWheels(indsi),'.');
         
         % find time indices
         [~,ixb] = ismember(epochsWheels(indsi),epochsOut);
@@ -40,10 +46,43 @@ if ~isempty(indsWheels)
         s.DataTipTemplate.DataTipRows(4) = row;
         
     end
-    title('Wheel tick residuals')
+    title('Wheel tick residual time history')
     xlabel('Time [min]')
+    ylabel('Measurement residual [m]')
     grid on;
+    ylims = ylim;
     
+    bins = linspace(ylims(1), ylims(2),101);
+    
+    subplot(1,4,3:4); hold on;
+    % plot histograms of residuals
+     for idx = 1:length(subtypeUn)
+        indsi = find(subtypeWheels == subtypeUn(idx));
+        
+        residsi = residsWheels(indsi);
+        s = histogram(residsi,bins,'Orientation','horizontal',...
+            'DisplayStyle','stairs','LineWidth',2);
+
+        meani = mean(residsi);
+        stdi  = std(residsi);
+        
+        % add subtype text
+        row = dataTipTextRow('subtype',repelem({char(subtypeUn(idx))},length(indsi),1));
+        s.DataTipTemplate.DataTipRows(2) = row;
+        
+        % add mean text
+        row = dataTipTextRow('mean',repelem(meani,length(indsi),1));
+        s.DataTipTemplate.DataTipRows(3) = row;
+        
+        % add mean text
+        row = dataTipTextRow('std',repelem(stdi,length(indsi),1));
+        s.DataTipTemplate.DataTipRows(4) = row;
+
+    end
+    title('Wheel tick residuals histogram')
+    ylabel('Measurement residual [m]')    
+    xlabel('Count')
+    grid on;
     
     %% Plot wheel scale factors
     wheelScales = cat(2,outputs.wheelScale);
