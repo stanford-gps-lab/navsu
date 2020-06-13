@@ -91,34 +91,38 @@ obj.R_b_e = att;
 % If using wheel odometry, integrate some things here:
 if obj.PARAMS.states.wheels
     
-    armAdd = 0*-obj.PARAMS.ARM_REF_APC;
-    % rear left wheel velocity estimate increment
-    l_rl = armAdd+[0.0250, -0.0690, -0.1550]'+[0 -1.6256/2 -.3937]';
-    vel_rl_dt = [-1 0 0]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rl)*dt;
+    % pitching teh car frame?
+    R2 = navsu.geo.euler2dcm123([0,0.8*pi/180 0]);
     
+    % rear left wheel velocity estimate increment    
+    l_rl = obj.PARAMS.ARM_REF_REAR_AXLE + ...
+        [0 -1/2*obj.PARAMS.WHEEL_TRACK -1/2*obj.PARAMS.WHEEL_DIAM]';    
+    vel_rl_dt = [-1 0 0]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rl)*dt;
+
     % rear right wheel velocity estimate increment
-    l_rr = armAdd+[0.0250, -0.0690, -0.1550]'+[0 1.6256/2 -.3937]';
-    vel_rr_dt = [-1 0 0]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
+     l_rr = obj.PARAMS.ARM_REF_REAR_AXLE + ...
+        [0 1/2*obj.PARAMS.WHEEL_TRACK -1/2*obj.PARAMS.WHEEL_DIAM]';
+    vel_rr_dt = [-1 0 0]*R2*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
     
     % attitude sensitivity increment
-    H11_dt = [-1 0 0]*att'*navsu.geo.crossProdMatrix(vel)*dt;
+    H11_dt = [-1 0 0]*R2*att'*navsu.geo.crossProdMatrix(vel)*dt;
     
     % velocity sensitivity increment
-    H12_dt = [-1 0 0]*att'*dt;
+    H12_dt = [-1 0 0]*R2*att'*dt;
     
     % vertical velocity estimate at rear right wheel
-    vel_up_dt = [0 0 1]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
+    vel_up_dt = [0 0 1]*R2*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
     
     % vertical velocity sensitivities
-    Hv1_dt = [0 0 1]*att'*navsu.geo.crossProdMatrix(vel)*dt;
-    Hv2_dt = [0 0 1]*att'*dt;
+    Hv1_dt = [0 0 1]*R2*att'*navsu.geo.crossProdMatrix(vel)*dt;
+    Hv2_dt = [0 0 1]*R2*att'*dt;
     
-    % vertical velocity estimate at rear right wheel
-    vel_cr_dt = [0 1 0]*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
+    % cross track velocity estimate at rear right wheel
+    vel_cr_dt = [0 1 0]*R2*(att'*vel-navsu.geo.crossProdMatrix(gyroMeas)*l_rr)*dt;
     
-    % vertical velocity sensitivities
-    Hc1_dt = [0 1 0]*att'*navsu.geo.crossProdMatrix(vel)*dt;
-    Hc2_dt = [0 1 0]*att'*dt;
+    % cross track velocity sensitivities
+    Hc1_dt = [0 1 0]*R2*att'*navsu.geo.crossProdMatrix(vel)*dt;
+    Hc2_dt = [0 1 0]*R2*att'*dt;
     
     % Add all of these
     obj.wheelInfo.vrl_int = obj.wheelInfo.vrl_int + vel_rl_dt;
