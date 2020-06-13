@@ -8,7 +8,7 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         pos                % ECEF position
         vel                % ECEF velocity
         R_b_e              % DCM from body to ECEF
-        imuBiasStates      % imu bias states
+        imuBiasStates = zeros(6,1) % imu bias states
         clockBias          % receiver clock bias(es)
         clockDrift         % receiever clock drift(s)
         carrierAmbiguities % carrier phase ambiguity estimates
