@@ -40,17 +40,17 @@ else
     rxDcb = 0;
 end
 
-if ~SimpleModel && obj.PARAMS.states.RX_DCB_GPS && constIndi == 1 && indGloDcbs(idx)~= 0
+if ~SimpleModel && obj.PARAMS.states.RX_DCB_GPS && constIndi == 1 && indGloDcbsi~= 0
     indDcbGlo = obj.INDS_STATE.FLEX_STATES(indGloDcbsi);
-    dcbGpsi = x_est_propagated(indDcbGlo);
+    dcbGpsi = state(indDcbGlo);
     Hii(1,indDcbGlo) = 1;
 else
     dcbGpsi = 0;
 end
 
-if ~SimpleModel && obj.PARAMS.states.RX_DCB_GLO && constIndi == 2 && indGloDcbs(idx)~= 0
+if ~SimpleModel && obj.PARAMS.states.RX_DCB_GLO && constIndi == 2 && indGloDcbsi~= 0
     indDcbGlo = obj.INDS_STATE.FLEX_STATES(indGloDcbsi);
-    dcbGloi = x_est_propagated(indDcbGlo);
+    dcbGloi = state(indDcbGlo);
     Hii(1,indDcbGlo) = 1;
 else
     dcbGloi = 0;

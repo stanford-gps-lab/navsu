@@ -47,6 +47,7 @@ if VEHICLEDATASA && ~isempty(find(contains(textdata,'%VEHICLEDATASA'), 1))
     outData.VEHICLEDATASA.Stationary         = cat(1,parseOut{:,9});
     outData.VEHICLEDATASA.TransmissionSetting = cat(1,parseOut{:,10});
     outData.VEHICLEDATASA.ParkingBrakeStatus = cat(1,parseOut{:,11});
+    outData.VEHICLEDATASA.headerTowNoRound = cell2mat(parseOut(:,2));
     
     outData.VEHICLEDATASA.epochs  = navsu.time.gps2epochs(...
         outData.VEHICLEDATASA.headerWeek,outData.VEHICLEDATASA.headerTow);

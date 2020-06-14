@@ -77,7 +77,7 @@ H(1,obj.INDS_STATE.ATTITUDE)  = -obj.wheelInfo.H11_int;
 H(1,obj.INDS_STATE.VEL)       = -obj.wheelInfo.H12_int;
 H(1,obj.INDS_STATE.WHEELS(3)) = vel_rl_pred;
 
-R(1,1) = 0.5^2;
+R(1,1) = 0.005^2;
 
 %% Handle the rear right wheel measurement
 vel_rr_pred   = obj.wheelInfo.vrr_int;
@@ -90,7 +90,7 @@ H(2,obj.INDS_STATE.ATTITUDE)  = -obj.wheelInfo.H11_int;
 H(2,obj.INDS_STATE.VEL)       = -obj.wheelInfo.H12_int;
 H(2,obj.INDS_STATE.WHEELS(4)) = vel_rr_pred;
 
-R(2,2) = 0.5^2;
+R(2,2) = 0.005^2;
 
 %% Vertical velocity constraint
 % Predicted "measurement" is the integrated vertical velocity over the time
@@ -104,7 +104,7 @@ measId(3,1) = navsu.internal.MeasIdWheels(1,navsu.internal.MeasEnum.NoSlipVertic
 H(3,obj.INDS_STATE.ATTITUDE) = -obj.wheelInfo.Hv1_int;
 H(3,obj.INDS_STATE.VEL)      = -obj.wheelInfo.Hv2_int;
 
-R(3,3) = 0.5^2;
+R(3,3) = 0.1^2;
 
 %% cross track velocity constraint
 % Predicted "measurement" is the integrated vertical velocity over the time
@@ -118,7 +118,7 @@ measId(4,1) = navsu.internal.MeasIdWheels(1,navsu.internal.MeasEnum.NoSlipCross)
 H(4,obj.INDS_STATE.ATTITUDE) = -obj.wheelInfo.Hc1_int;
 H(4,obj.INDS_STATE.VEL)      = -obj.wheelInfo.Hc2_int;
 
-R(4,4) = 0.5^2;
+R(4,4) = 0.1^2;
 
 
 
