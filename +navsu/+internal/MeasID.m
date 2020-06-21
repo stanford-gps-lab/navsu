@@ -50,7 +50,7 @@ classdef  MeasID < matlab.mixin.Heterogeneous
         
         function matchVec = matches(obj,measIdList)
             
-            if ~iscolumn(measIdList)
+            if isrow(measIdList) 
                 error('Input must be column vector')
             end
             
@@ -60,12 +60,14 @@ classdef  MeasID < matlab.mixin.Heterogeneous
             
             matchVec = false(size(measIdList));
             
-            types = cat(1,measIdList.TypeID);
-            
-            % If the input measurement is empty, then keep going
-            if isempty(obj.TypeID)
+             % If the input measurement is empty, then keep going
+            if isempty(obj.TypeID) || isempty(measIdList)
                 return;
             end
+            
+            types = cat(1,measIdList.TypeID);
+            
+           
                 
             indsTypeMatch = find(types == obj.TypeID);
             

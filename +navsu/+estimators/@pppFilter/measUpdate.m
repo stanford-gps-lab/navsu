@@ -98,8 +98,8 @@ end
 %% Do the measurement update
 if nMeas > 0
     % Measurement were available- do the update.
-    [H,delta_z,residsPost,K,~,measMatRemoved,R,measIdRemoved,measId] = ...
-        navsu.ppp.measUpdateExclude(H,covPropagated,R,predMeas,PARAMS,meas,measId);
+    [H,delta_z,residsPost,K,~,measMatRemoved,R,measIdRemoved,measId,innov] = ...
+        navsu.ppp.measUpdateExclude(H,covPropagated,R,predMeas,PARAMS,meas,measId,epoch);
     
     % 9. Update state estimates
     stateNew = statePropagated + K * delta_z;
@@ -163,7 +163,7 @@ end
 % If using wheel odometry, some things should be saved (this should
 % eventually be removed and is really just here for testing. This is also
 % in .initialize
-if obj.PARAMS.states.wheels
+if obj.PARAMS.states.wheels | obj.PARAMS.measUse.noVertVel
    obj.wheelInfo.R_b_e = obj.R_b_e;
    obj.wheelInfo.vel   = obj.vel;
    obj.wheelInfo.epoch = epoch;
@@ -188,6 +188,11 @@ if ~isempty(gnssMeas) & nMeas > 0
     
     obj.resids.dop = dop;
     obj.resids.dopEpoch = epoch0;
+    
+    % Save innovations
+    obj.resids.measIdInnov = innov.measId;
+    obj.resids.epochsInnov = innov.epochs;
+    obj.resids.innovInnov  = innov.innov;
     
     % Only actually keeping one of the low measurements per satelite
     if ~isempty(measIdRemovedLow)

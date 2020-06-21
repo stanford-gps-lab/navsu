@@ -331,8 +331,8 @@ end
 % end
 % 
 % dop = diag(dopBig);
-if norm(pos) > 1000 && nMeas > 0
-    
+if norm(pos) > 1000 && nMeas > 0 
+    llhi = navsu.geo.xyz2llh(pos');
     [~,Rli] = navsu.geo.xyz2enu(zeros(1,3),llhi(1)*pi/180,llhi(2)*pi/180);
     
     Gi = H(:,obj.INDS_STATE.POS);

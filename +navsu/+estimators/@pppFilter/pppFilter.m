@@ -40,12 +40,14 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
            
         resids % extra info for output about measurement residuals
         
+        innov % extra infor for output about measurement innovations
+        
         measRemoved % extra info for measurements that were removed :)
         
         wheelInfo  = struct('epoch',[],'R_b_e',[],'vel',[],'w',[],...
             'vrl_int',0,'vrr_int',0,'H11_int',[0 0 0],'H12_int',[0 0 0],...
             'vup_int',0,'Hv1_int',[0 0 0],'Hv2_int',[0 0 0],...
-            'vcr_int',0,'Hc1_int',[0 0 0],'Hc2_int',[0 0 0]);% just some extra info needed for wheel odometry 
+            'vcr_int',0,'Hc1_int',[0 0 0],'Hc2_int',[0 0 0],'dt_int',0);% just some extra info needed for wheel odometry 
         
     end
     

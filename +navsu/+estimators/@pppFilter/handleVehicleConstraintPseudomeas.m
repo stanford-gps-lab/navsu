@@ -1,43 +1,76 @@
-function [predMeas,H,R,measIdi,measi] = handleVehicleConstraintPseudomeas(obj)
-
+function [predMeas,H,R,measId,meas] = handleVehicleConstraintPseudomeas(obj)
 nState = size(obj.state,1);
 
 velRx = obj.vel;
 R_b_e = obj.R_b_e;
 
 %% Initialize outputs
+predMeas = zeros(0,1);
+
+
+%% Previous values for integration :)
+if isempty(obj.wheelInfo.R_b_e)
+    % the necessary values have not been saved yet- maybe try again next
+    % time
+    
+    H = zeros(0,nState);
+    R = zeros(0,1);
+    meas = zeros(0,1);
+    measId = [];
+    
+    obj.wheelInfo.vup_int = 0;
+    obj.wheelInfo.Hv1_int = zeros(1,3);
+    obj.wheelInfo.Hv2_int = zeros(1,3);
+    obj.wheelInfo.vcr_int = 0;
+    obj.wheelInfo.Hc1_int = zeros(1,3);
+    obj.wheelInfo.Hc2_int = zeros(1,3);
+    obj.wheelInfo.dt_int   = 0;
+    
+    return;
+end
+
+%%
 predMeas = zeros(2,1);
 H = zeros(2,nState);
 R = zeros(2,2);
-measi = zeros(2,1);
+meas = zeros(2,1);
 
-% Lever arm from IMU to rear left wheel
-lArm = [0.0250, -0.0690, -0.1550]'+[0 1.6256/2 -.2286]';
+%% Vertical velocity constraint
+% Predicted "measurement" is the integrated vertical velocity over the time
+% increment
+vel_up_pred = obj.wheelInfo.vup_int;
+meas(1) = -vel_up_pred;
+predMeas(1,1) = 0;
+measId(1,1) = navsu.internal.MeasIdWheels(1,navsu.internal.MeasEnum.NoSlipVertical);
 
-w = obj.lastGyroMeas;
+% Hi = zeros(1,nState);
+H(1,obj.INDS_STATE.ATTITUDE) = -obj.wheelInfo.Hv1_int;
+H(1,obj.INDS_STATE.VEL)      = -obj.wheelInfo.Hv2_int;
 
-velWheel = R_b_e'*velRx-navsu.geo.crossProdMatrix(w)*lArm;
+R(1,1) = 0.05^2;
 
-%% No vertical velocity constraint (vehicle only moves forward)
-pseudoMeasi = 0;
-predMeas(1) = [0 0 1]*velWheel;
+%% cross track velocity constraint
+% Predicted "measurement" is the integrated vertical velocity over the time
+% increment
+vel_cr_pred = obj.wheelInfo.vcr_int;
+meas(2) = -vel_cr_pred;
+predMeas(2,1) = 0;
+measId(2,1) = navsu.internal.MeasIdWheels(1,navsu.internal.MeasEnum.NoSlipCross);
 
-R(1,1) = .5^2;
+% Hi = zeros(1,nState);
+H(2,obj.INDS_STATE.ATTITUDE) = -obj.wheelInfo.Hc1_int;
+H(2,obj.INDS_STATE.VEL)      = -obj.wheelInfo.Hc2_int;
 
-H(1,obj.INDS_STATE.VEL) = -[0 0 1]*R_b_e';
+R(2,2) = 0.05^2;
 
-measi(1) = pseudoMeasi;
 
-%% No slipping to the right or left constraint
-pseudoMeasi = 0;
-predMeas(2) = [0 1 0]*velWheel;
-
-R(2,2) = .5^2;
-
-H(2,obj.INDS_STATE.VEL) = -[0 1 0]*R_b_e';
-
-measi(2) = pseudoMeasi;
-
-measIdi = navsu.internal.MeasIdVehicleConstraint([1 1]',[navsu.internal.MeasEnum.NoSlipVertical; navsu.internal.MeasEnum.NoSlipCross]);
+%% Zero out the integrals
+obj.wheelInfo.vup_int = 0;
+obj.wheelInfo.Hv1_int = zeros(1,3);
+obj.wheelInfo.Hv2_int = zeros(1,3);
+obj.wheelInfo.vcr_int = 0;
+obj.wheelInfo.Hc1_int = zeros(1,3);
+obj.wheelInfo.Hc2_int = zeros(1,3);
+obj.wheelInfo.dt_int   = 0;
 
 end

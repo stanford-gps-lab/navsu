@@ -107,7 +107,7 @@ PARAMS.SIGMA0 = struct(...
     'ACC_SCALE',0.04,...          % Accelerometer scale factor
     'W_SCALE',  0.01,...          % Gyro scale
     'TROP',     0.05,...          % Tropospheric delta state
-    'WHEELS',  1,...           % Wheel odometry scale factor
+    'WHEELS',   1,...           % Wheel odometry scale factor
     'AMB',      100,...           % Carrier phase ambiguity
     'RX_DCB',   5,...             % Receiver DCB
     'L1_IONO',  1,...             % Slant L1 iono delay
@@ -123,8 +123,8 @@ PARAMS.Q = struct(...
     'ACC',             3.2,...               % Acceleration
     'ATTTITUDE',       [20 20 20]*pi/180,... % Attitude
     'ATT_RATE',        [40 40 40]*pi/180,... % Atttitude rate
-    'W_BIAS',          2e-5*1,...%/100,...   % Gyro bias
-    'ACC_BIAS',        1e-3*1,...%/100,...   % Accelerometer bias
+    'W_BIAS',          2e-5*1/100,...%/100,...   % Gyro bias
+    'ACC_BIAS',        1e-3*1/100,...%/100,...   % Accelerometer bias
     'ACC_SCALE',       1e-5,...              % Accelerometer scale
     'W_SCALE',         1e-5,...              % Gyro scale
     'RXB',             1000+0.5,...          % Receiver clock bias
@@ -133,7 +133,7 @@ PARAMS.Q = struct(...
     'accel_noise_PSD', 0.005,...%*1000,...   % Accelerometer noise
     'RX_DCB',          0,...                 % Receiver DCB
     'TROP',            0.002/60,...          % Tropospheric delta state
-    'WHEELS',          0.03,...                % Wheel odometry scale factor
+    'WHEELS',          0.001,...                % Wheel odometry scale factor
     'AMB',             0,...                 % Carrier phase ambiguity
     'L1_IONO',         0.03,...              % Slant L1 iono delay
     'RX_DCB_GLO',      0,...                 % Separate DCB state for each GLONASS code measurement

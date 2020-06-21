@@ -34,6 +34,7 @@ wheels.VehicleSpeed     = wheelsRaw.VehicleSpeed(indsMeas,:);
 wheels.Stationary       = wheelsRaw.Stationary(indsMeas,:);
 wheels.TransmissionSetting  = wheelsRaw.TransmissionSetting(indsMeas,:);
 wheels.ParkingBrakeStatus   = wheelsRaw.ParkingBrakeStatus(indsMeas,:);
+wheels.headerTowNoRound  = wheelsRaw.headerTowNoRound(indsMeas,:);
 
 wheels.type = navsu.internal.MeasEnum.Wheels;
 

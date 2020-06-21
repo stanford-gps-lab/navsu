@@ -1,5 +1,5 @@
-function [H,delta_z,residsPost,K,predMeas,measMatRemoved,R,measIdRemoved,measId] =  ...
-    measUpdateExclude(H,cov_propagated,R,predMeas,PARAMS,meas,measId)
+function [H,delta_z,residsPost,K,predMeas,measMatRemoved,R,measIdRemoved,measId,innovStruc] =  ...
+    measUpdateExclude(H,cov_propagated,R,predMeas,PARAMS,meas,measId,epoch)
 
 % loop through and remove bad measurements, starting with the bad ones,
 % until they are all clean
@@ -7,10 +7,43 @@ function [H,delta_z,residsPost,K,predMeas,measMatRemoved,R,measIdRemoved,measId]
 measMatRemoved = zeros(0,6);
 measIdRemoved = [];
 
+%% Innovation checks
+
+% Save some informaiton about the innovations lol
+innovStruc.innov = meas-predMeas;
+innovStruc.measId = measId;
+innovStruc.epochs = repmat(epoch,size(measId));
+% Build residual exclusion factor vector
+threshInnov = zeros(size(measId,1),1);
+measTypeList = cat(1,measId.TypeID);
+types = unique(measTypeList);
+
+for idx = 1:length(types)
+    if types(idx) == navsu.internal.MeasEnum.Wheels
+        threshInnov(types(idx) == measTypeList) = 0.05+Inf;
+    else
+        threshInnov(types(idx) == measTypeList) = Inf;
+    end
+end
+
+indsLargeInnov = find(abs(meas-predMeas) > threshInnov);
+
+% remove from H,R,measMat,pred_meas
+H(indsLargeInnov,:) = [];
+R(indsLargeInnov,:) = [];
+R(:,indsLargeInnov) = [];
+predMeas(indsLargeInnov,:) = [];
+
+meas(indsLargeInnov) = [];
+measId(indsLargeInnov) = [];
+
+%%
+
+
 largeResids  = true;
 mediumResids = true;
 
-% Build exclusion factor vector
+% Build residual exclusion factor vector
 threshLarge = zeros(size(measId,1),1);
 threshMedium = zeros(size(measId,1),1);
 measTypeList = cat(1,measId.TypeID);
@@ -37,7 +70,6 @@ for idx = 1:length(types)
         threshMedium(types(idx) == measTypeList) = PARAMS.measUse.excludeThresh.(char(types(idx)));
     end
 end
-
 
 
 idx = 1;
