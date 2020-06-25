@@ -211,6 +211,8 @@ else
         [~,obsMati] = navsu.readfiles.rinexGetObs(fid, num_sat, sat, sat_types, obsColumns, ...
             nObsTypes, constellations,obsColumnsMat,obsTypes);
         
+        fprintf('Check for LLI flags here and expand obsStruc if needed.\n');
+        
         obsOut(:,k,:) = obsMati;
         
         k = k + 1;

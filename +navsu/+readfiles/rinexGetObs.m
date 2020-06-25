@@ -210,7 +210,7 @@ else %RINEX v3.xx
         end
         
         % Mask to filter all the possible observations
-        obsChars = 14; % avoids the need to hard-code string lengths below
+        obsChars = 15; % avoids the need to hard-code string lengths below
         mask = false(16,nObsToRead);
         mask(2:obsChars,:) = true;
         % preallocate a matrix of n strings (of length obsChars characters, nominally 14)
@@ -222,8 +222,6 @@ else %RINEX v3.xx
         % convert the lines read from the RINEX file to a single matrix
         % containing all the observations
         strObs(1:(obsChars-1),:) = (reshape(lin(mask(:)), (obsChars-1), nObsToRead));
-        fprintf('Parsing index = %d, string: "%s"\n', index, strObs);
-        fprintf('Previously found LLI flags = "%s"\n', linLLIFlags);
         fltObs = sscanf(strObs, '%f'); % read all the observations in the string
         obsId = 0; % index of the current observation
                 
