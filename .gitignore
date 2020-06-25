@@ -25,3 +25,5 @@ data/
 *.m~
 >>>>>>> Stashed changes
 navsu-unit-testing/.DS_Store
+*.bak
+*.m~
