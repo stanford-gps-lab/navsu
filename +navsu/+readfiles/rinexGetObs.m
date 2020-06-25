@@ -90,7 +90,7 @@ if (~isempty(sat_types)) %RINEX v2.xx
     % the first character is added as a padding to separate the strings for
     % the command sscanf that now can be launched once for each satellite
     strObs = char(ones(14,nObsToRead)*32);
-    
+        
     for s = 1 : nSat
         
         %DEBUG
@@ -105,7 +105,7 @@ if (~isempty(sat_types)) %RINEX v2.xx
             for l = 1 : (nLinesToRead)
                 linTmp = fgetl(file_RINEX);
                 linLengthTmp = length(linTmp);
-                lin((80*(l-1))+(1:linLengthTmp)) = linTmp;  %each line has a maximum lenght of 80 characters
+                lin((80*(l-1))+(1:linLengthTmp)) = linTmp;  %each line has a maximum length of 80 characters
             end
             linLength = 80*(nLinesToRead-1)+linLengthTmp;
             
@@ -158,25 +158,37 @@ if (~isempty(sat_types)) %RINEX v2.xx
     end
     
 else %RINEX v3.xx
-    
+            
     for s = 1 : nSat
         
         %read the line for satellite 's'
         linTmp = fgetl(file_RINEX);
-        
+                
         %read the constellation ID
         sysId = linTmp(1);
         
         %read the satellite PRN/slot number
         satId = sscanf(linTmp(2:3),'%f');
         %         satId = str2double(linTmp(2:3));
-        
+
         %number of observations to be read on this line
         nObsToRead = nObsTypes.(sysId);
         
         %data read and assignment
         %         lin = char(32*uint8(ones(16*nObsToRead,1))'); % preallocate the line to read
         lin = repmat('                ',1,nObsToRead);
+        
+        % Find any non-zero, non-blank flags. Per RINEX 3.x Table A3, these
+        % should ONLY appear in the column(s) following phase observations
+        % (that is, those with observation codes of the form Lxx), and are
+        % 3-bit flags - so allowable non-zero flags are '1', '2', ..., '7';
+        % blanks are treated as zeros
+        linLLIFlags = linTmp(2+16*(1:nObsToRead));
+        if contains(linLLIFlags, {'1','2','3','4','5','6','7'}),
+            linLLIFlags,
+        else
+            linLLIFlags = [];
+        end
         
         %keep only the part of 'lin' containing the observations
         linTmp = linTmp(4:end);
@@ -188,7 +200,6 @@ else %RINEX v3.xx
         
         %compute the index in the total array and check if the current
         %constellation is required (if not, skip the line)
-        
         consti = strfind('GRECJSI',sysId);
         
         if ismember([satId consti],[constellations.PRN' constellations.constInds'],'rows')
@@ -199,23 +210,27 @@ else %RINEX v3.xx
         end
         
         % Mask to filter all the possible observations
+        obsChars = 14; % avoids the need to hard-code string lengths below
         mask = false(16,nObsToRead);
-        mask(2:14,:) = true;
-        % preallocate a matrix of n strings (of length 14 characters)
+        mask(2:obsChars,:) = true;
+        % preallocate a matrix of n strings (of length obsChars characters, nominally 14)
         % notice that each observation element has a max length of 13 char,
         % the first character is added as a padding to separate the strings for
         % the command sscanf that now can be launched once for each satellite
-        strObs = char(ones(14,nObsToRead)*32);
+        strObs = char(ones(obsChars,nObsToRead)*32);
         
         % convert the lines read from the RINEX file to a single matrix
         % containing all the observations
-        strObs(1:13,:) = (reshape(lin(mask(:)),13,nObsToRead));
+        strObs(1:(obsChars-1),:) = (reshape(lin(mask(:)), (obsChars-1), nObsToRead));
+        fprintf('Parsing index = %d, string: "%s"\n', index, strObs);
+        fprintf('Previously found LLI flags = "%s"\n', linLLIFlags);
         fltObs = sscanf(strObs, '%f'); % read all the observations in the string
         obsId = 0; % index of the current observation
+                
         % start parsing the observation string
         for k = 1 :  min(nObsToRead, floor(linLength/16))
             % check if the element is empty
-            if (~strcmp(strObs(:,k)','              ')) % if the current val is not missing (full of spaces)
+            if (~strcmp(strObs(:,k)', char(ones(1,obsChars)*32))) % if the current val is not missing (full of spaces)
                 obsId = obsId+1;
                 %obs = sscanf(lin(mask(:,k)), '%f');
                 obs = fltObs(obsId);
@@ -224,6 +239,10 @@ else %RINEX v3.xx
                 obsTypei = obsTypes{coli};
                                 
                 obs_mat(index,coli) = obs;
+                if ~isempty(linLLIFlags),
+                    fprintf('obs = %s\n', obs);
+                    fprintf('LLI flags detected = "%s"\n\n', linLLIFlags);
+                end
                 
             end
         end
