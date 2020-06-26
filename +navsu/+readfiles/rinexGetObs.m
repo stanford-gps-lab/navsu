@@ -178,17 +178,17 @@ else %RINEX v3.xx
         %         lin = char(32*uint8(ones(16*nObsToRead,1))'); % preallocate the line to read
         lin = repmat('                ',1,nObsToRead);
         
-        % Find any non-zero, non-blank flags. Per RINEX 3.x Table A3, these
-        % should ONLY appear in the column(s) following phase observations
-        % (that is, those with observation codes of the form Lxx), and are
-        % 3-bit flags - so allowable non-zero flags are '1', '2', ..., '7';
-        % blanks are treated as zeros
-        linLLIFlags = linTmp(2+16*(1:nObsToRead));
-        if contains(linLLIFlags, {'1','2','3','4','5','6','7'}),
-            linLLIFlags,
-        else
-            linLLIFlags = [];
-        end
+%         % Identify any non-zero, non-blank flags. Per RINEX 3.x Table A3,
+%         % these should ONLY appear in the column(s) following phase
+%         % observations (that is, those with observation codes of the form
+%         % Lxx), and are 3-bit flags - so allowable non-zero flags are '1',
+%         % '2', ..., '7'; blanks are treated as zeros.
+%         linLLIFlags = linTmp(2+16*(1:nObsToRead));
+%         if contains(linLLIFlags, {'1','2','3','4','5','6','7'}),
+%             linLLIFlags,
+%         else
+%             linLLIFlags = [];
+%         end
         
         %keep only the part of 'lin' containing the observations
         linTmp = linTmp(4:end);
@@ -237,10 +237,6 @@ else %RINEX v3.xx
                 obsTypei = obsTypes{coli};
                                 
                 obs_mat(index,coli) = obs;
-                if ~isempty(linLLIFlags),
-                    fprintf('obs = %s\n', obs);
-                    fprintf('LLI flags detected = "%s"\n\n', linLLIFlags);
-                end
                 
             end
         end
