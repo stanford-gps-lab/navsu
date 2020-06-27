@@ -19,11 +19,6 @@ betaAngle_part2GPS2018.mat
 untitled.fig
 data/
 *.asv
-<<<<<<< Updated upstream
-=======
-*.bak
-*.m~
->>>>>>> Stashed changes
-navsu-unit-testing/.DS_Store
+.DS_Store
 *.bak
 *.m~
