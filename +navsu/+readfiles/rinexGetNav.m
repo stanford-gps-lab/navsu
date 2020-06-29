@@ -391,7 +391,7 @@ for idx = 1:nConstSections
             af1 = data{10};
             af2 = data{11};
             
-            IODE   = data{12};
+            IODnav = data{12}; % Analogous to IODE of other GNSSes
             crs    = data{13};
             deltan = data{14};
             M0     = data{15};
@@ -440,7 +440,7 @@ for idx = 1:nConstSections
             Eph(8,ephInds)  = af0;
             Eph(9,ephInds)  = af1;
             Eph(10,ephInds) = af2;
-            Eph(11,ephInds) = IODE;
+            Eph(11,ephInds) = IODnav; % Analogous to IODE of other GNSSes
             Eph(12,ephInds) = crs;
             Eph(13,ephInds) = deltan;
             Eph(14,ephInds) = M0;

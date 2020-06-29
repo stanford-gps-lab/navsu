@@ -62,9 +62,16 @@ end
 eph.clock_drift      = array(:, 9);
 eph.clock_drift_rate = array(:, 10);
 if strcmp(constellation,'GAL')
-    eph.IODE = array(:, 19);
+    % IODE is not defined for GAL -- the most closely analogous quantity is
+    % called IODNav -- so take this value from ToE (see below) instead.
+    %
+    % QUESTION: per the (somewhat hard-to-follow) discusslion presented in
+    % <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>,
+    % might it be more appropriate to take this value from eph.TTOM (that
+    % is, array(:, 35)) instead?
+    eph.IODE         = array(:, 19); % this is just eph.Toe
 else
-    eph.IODE             = array(:, 11);
+    eph.IODE         = array(:, 11);
 end
 eph.Crs              = array(:, 12);
 eph.Delta_n          = array(:, 13);
@@ -86,7 +93,6 @@ eph.codes_on_L2      = array(:, 28);
 eph.GPS_week_num     = array(:, 29);
 eph.L2_P_data_flag   = array(:, 30);
 
-
 % Developer note- URA and SISA translation not yet available- ask Kaz :)
 if strcmp(constellation, 'GPS')
 %     eph.accuracy         = TranslateURA(array(:, 31));
@@ -102,7 +108,7 @@ eph.accuracy = array(:,31);
 eph.health           = array(:, 32);
 eph.TGD              = array(:, 33);
 if strcmp(constellation,'GPS')
-    eph.IODC             = array(:, 34);
+    eph.IODC         = array(:, 34);
 else % no iodc saved? idk
     eph.IODC = eph.IODE;
 end
