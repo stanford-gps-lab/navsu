@@ -243,7 +243,7 @@ for idxLLI = 1:length(idxObsTypesCarrier),
     flags = round(10*rem(dummy*1000,1),1);
     obsTypes{end+1} = ['LLI' obsFields{idxObsTypesCarrier(idxLLI)}]; %#ok<AGROW>
     obsStruc.(obsTypes{end}) = flags;
-    obsStruc.(obsFields{idxLLI}) = round(dummy, 3); % strip off flag digit from observations themselves to restore original values
+    obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)}) = round(dummy, 3); % strip off flag digit from observations themselves to restore original values
 end
 
 [time, date, obsStruc, interval] = ...
