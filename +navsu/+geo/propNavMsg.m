@@ -33,9 +33,29 @@ function pos = propNavMsg(beph, prn, const, epochs, varargin)
 %    .t_m_toc      - time of propagation minus time of clock
 %    .freqNum      - GLONASS frequency index
 
-% prn, const, and epochs must all be the same size
+% prn and const arguments must be the same size
+if ~isequal(size(prn), size(const))
+   error('Must provide one constellation index for each requested PRN/SVN')
+end
+
+% User provided a single epoch --> apply it to all {PRN, const} pairs
+if length(epochs(:)) == 1 && length(prn(:)) > 1
+   epochs = epochs * ones(size(prn));
+% User provided a single {PRN, const} pair --> calculate at all epochs
+elseif length(prn(:)) == 1 && length(epochs(:)) > 1
+   prn = prn * ones(size(epochs));
+   const = const * ones(size(epochs));
+end
+
+% Now we should have (#PRNs)=(#constInds)=(#epochs), either because user
+% provided an epochs vector of the right size, or a single epoch from which
+% we built such a vector just above. Throw error ONLY if neither is true.
 if ~isequal(size(prn),size(const),size(epochs))
-   error('Inputs must be the same size')
+   error(sprintf([ ...
+       'Must specify either a single epoch (to apply to all PRN/const pairs),\n' ...
+       '--- OR ---\na single PRN/const pair (to be calculated at all epochs),\n' ...
+       '--- OR ---\na vector of epochs the same size as the number of PRN/const pairs.\n' ...
+       ]));
 end
 
 nProp = length(prn);
@@ -71,8 +91,8 @@ for cdx = constFull
            if isempty(beph.gps),
                warning('propNavMsg: GPS ephemeris not supplied!'); continue;
            end
-               posi = navsu.geo.propNavMsgGps(beph.gps,prn(indsi),weeks(indsi),...
-                   tows(indsi),'GPS');
+           posi = navsu.geo.propNavMsgGps(beph.gps,prn(indsi),weeks(indsi),...
+               tows(indsi),'GPS');
 
        case 2
            % GLONASS
