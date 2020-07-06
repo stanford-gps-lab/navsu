@@ -127,7 +127,3 @@ if size(array,2) == 38
 end
 
 
-
-
-
-

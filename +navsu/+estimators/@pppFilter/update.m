@@ -22,7 +22,11 @@ obj.timeUpdate(epoch)
     'measExclude',measExclude,'extraInputs',extraInputs);
 
 % Make sure that the filter knows that it is running.
-obj.initialized = 2;
+if (epoch - obj.epochLastGnssUpdate) < 10 % if it's been too long, assume we're not initialized anymore
+    obj.initialized = 2;
+else
+    obj.initialized = 0;
+end
 
 end
 

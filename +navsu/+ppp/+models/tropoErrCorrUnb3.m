@@ -70,6 +70,8 @@ Mw = Mw;
 tropDataExtra.trototSave = d_dry;
 tropDataExtra.gmfwSave   = Mw;
 tropDataExtra.tzd        = d_dry(1)+d_wet(1);
+tropDataExtra.ddry       = d_dry(1);
+tropDataExtra.dwet       = d_wet(1);
 
 % remove bad data...
 tropo_corr(tropo_corr > 1e3) = 0;

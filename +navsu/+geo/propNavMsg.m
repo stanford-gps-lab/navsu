@@ -91,6 +91,7 @@ for cdx = constFull
            if isempty(beph.gps),
                warning('propNavMsg: GPS ephemeris not supplied!'); continue;
            end
+
            posi = navsu.geo.propNavMsgGps(beph.gps,prn(indsi),weeks(indsi),...
                tows(indsi),'GPS');
 

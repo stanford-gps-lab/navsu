@@ -4,7 +4,7 @@ function mechanization(obj,epoch,obs)
 imuMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.IMU);
 
 if ~isempty(imuMeas)
-    accMeas  = imuMeas.acc'*9.83 - obj.imuBiasStates(1:3);
+    accMeas  = imuMeas.acc' - obj.imuBiasStates(1:3);
     gyroMeas = imuMeas.gyro' - obj.imuBiasStates(4:6);
     
     obj.lastAccMeas = accMeas;
