@@ -87,34 +87,41 @@ for cdx = constFull
    
    switch constFull(cdx)
        case 1 
-<<<<<<< HEAD
-           % GPS 
-=======
            % GPS
            if isempty(beph.gps),
                warning('propNavMsg: GPS ephemeris not supplied!'); continue;
            end
->>>>>>> 419ef7f... Modify propNavMsg to more sensibly accept:
+
            posi = navsu.geo.propNavMsgGps(beph.gps,prn(indsi),weeks(indsi),...
                tows(indsi),'GPS');
 
        case 2
            % GLONASS
+           if isempty(beph.glo),
+               warning('propNavMsg: GLO ephemeris not supplied!'); continue;
+           end
            posi = navsu.geo.propNavMsgGlo(beph.glo,prn(indsi),weeks(indsi),...
-               tows(indsi));
+                   tows(indsi));
            
        case 3
            % Galileo
+           if isempty(beph.gal),
+               warning('propNavMsg: GAL ephemeris not supplied!'); continue;
+           end
            posi = navsu.geo.propNavMsgGps(beph.gal,prn(indsi),weeks(indsi),...
                tows(indsi),'GAL');
            
        case 4
            % BeiDou
-            posi = navsu.geo.propNavMsgGps(beph.bds,prn(indsi),weeks(indsi),...
+           if isempty(beph.bds),
+               warning('propNavMsg: BDS ephemeris not supplied!'); continue;
+           end
+           posi = navsu.geo.propNavMsgGps(beph.bds,prn(indsi),weeks(indsi),...
                tows(indsi),'BDS');
            
        otherwise
-           warning('This constellation is not supported- sorry')
+           warning('This constellation is not supported- sorry');
+           
    end
    
    % Put this data into the output structure

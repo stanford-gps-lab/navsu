@@ -10,8 +10,9 @@ function [status,result] = unzipFile(filename,outLocation)
 %                 than the same folder as the input file
 %
 % OUTPUT:
-%   status      - status output by 7zip
-%
+%   status      - status output by 7zip or other uncompression utility
+%   result      - output of uncompression command, as sent to stdout
+% 
 % See also: 
 
 % No output location specified- unzip to same directory
@@ -30,14 +31,45 @@ if ispc
     [status,result] = system(['"' loc7zip '" -y x ' '"' filename '"' ' -o' '"' outLocation '"']);
     
 else
-    error('Sorry, nothing is currently implemented to unzip files for non-windows machines')
     
-    % TODO:
-    % Something should be implemented here to uncompress files for
-    % mac/linux machines.  7zip happily unzips many different compression
-    % types (.gz, .zip, .Z) , so whatever is done here should do the same.  
-    
+    if endswith(filename, '.zip', 'IgnoreCase', true), % {gunzip, uncompress}: these fail (tested on macOS 10.14)
         
+        try
+            result = unzip(filename, outLocation); status = 0;            
+        catch
+            result = []; status = 1;
+        end
+        
+    elseif endswith(filename, '.gz', 'IgnoreCase', true),  % {unzip, uncompress}: these fail (tested on macOS 10.14)
+        
+        % MATLAB built-in gunzip introduced before R2006a)
+        try
+            result = gunzip(filename, outLocation); status = 0;
+        catch
+            result = []; status = 1;
+        end
+        %   Alternatively, try host machine's native gunzip executable:
+        %   [status,result] = system(['gunzip ' filename]);
+        
+                
+    elseif endswith(filename, '.Z'),
+        
+        % host machine's native executable
+        [status,result] = system(['gunzip ' filename]);
+        
+        % (MAY ALSO WORK:) host machine's native uncompress executable, if available
+        % [status,result] = system(['uncompress ' filename]);
+        
+        % (DOES NOT WORK:) as of R2020a, MATLAB's built-in gunzip version is older
+        % than that bundled with recent versions of macOS (tested on 10.14)
+        % unzippedFilename = gunzip(filename, outLocation);
+        
+    else
+        
+        error('Sorry, nothing is currently implemented to unzip files for non-windows machines. See <https://www.7-zip.org/download.html> for possible alternatives.');
+        
+    end
+    
 end
 
 

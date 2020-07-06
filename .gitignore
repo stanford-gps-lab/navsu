@@ -19,3 +19,6 @@ betaAngle_part2GPS2018.mat
 untitled.fig
 data/
 *.asv
+.DS_Store
+*.bak
+*.m~

@@ -679,7 +679,7 @@ for constIdx = 1:length(constData)
             af1 = data{10};
             af2 = data{11};
             
-            IODE   = data{12};
+            IODnav = data{12}; % Analogous to IODE of other GNSSes
             crs    = data{13};
             deltan = data{14};
             M0     = data{15};
@@ -724,6 +724,7 @@ for constIdx = 1:length(constData)
             
             fit_int = data{37};
             
+
             Eph(1,:)  = svprn;
             Eph(2,:)  = year-2000;
             Eph(3,:)  = month;

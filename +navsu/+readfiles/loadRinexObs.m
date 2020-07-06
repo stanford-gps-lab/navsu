@@ -321,5 +321,27 @@ else
     [time, date, obsStruc, interval] = ...
         navsu.readfiles.rinexSyncObs(time, week, date, obsStruc, interval);
 end
+
+for odx = 1:length(obsTypes)
+    obsStruc.(obsTypes{odx}) = squeeze(obsOut(:,:,odx));
+end
+
+% Peel off LLI flags from .0001's digit (relies on modified rinexGetObs observation masking hack!)
+obsFields = fieldnames(obsStruc);
+idxObsTypesCarrier = ... % LLI applies to carrier observations only (obs codes 'Lxx')
+    find(strcmp(cellfun(@(x) x(1), obsFields, 'UniformOutput', false),'L'));
+for idxLLI = 1:length(idxObsTypesCarrier),
+    dummy = obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)});
+    idxBlankFlag = (dummy>0 & dummy<10); % handle blank lines (which parse as zeros) with non-zero LLI flags
+    dummy(idxBlankFlag) = dummy(idxBlankFlag)/10000; % shift flag into .0001's digit position
+    flags = round(10*rem(dummy*1000,1),1);
+    obsTypes{end+1} = ['LLI' obsFields{idxObsTypesCarrier(idxLLI)}]; %#ok<AGROW>
+    obsStruc.(obsTypes{end}) = flags;
+    obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)}) = round(dummy, 3); % strip off flag digit from observations themselves to restore original values
+end
+
+[time, date, obsStruc, interval] = ...
+    navsu.readfiles.rinexSyncObs(time, week, date, obsStruc, interval);
+
 end
 
