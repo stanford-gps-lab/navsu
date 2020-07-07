@@ -62,7 +62,7 @@ if iscell(filename)
     for idx = 1:length(filename)
         [obsStruci, constellationsi, timei, datei, posi, intervali, antoffi, antmodi,...
             rxmodi] = navsu.readfiles.loadRinexObs(filename{idx}, varargin{:});
-        
+
         if idx == 1
             % Initialize outputs
             obsStruc = obsStruci;
@@ -76,7 +76,7 @@ if iscell(filename)
             rxmod = rxmodi;
         else
             % Concatenate to list of outputs
-            
+
             % Build a new constellations that represents any constellations
             % that have been included at all
             constellationFull = navsu.readfiles.initConstellation(...
@@ -86,36 +86,36 @@ if iscell(filename)
                 (constellations.BeiDou.enabled | constellationsi.BeiDou.enabled),...
                 (constellations.QZSS.enabled | constellationsi.QZSS.enabled),...
                 (constellations.SBAS.enabled | constellationsi.SBAS.enabled));
-            
+
             % Time indices for
             nSvFull = length(constellationFull.PRN);
             nEpochsFull = length(time)+length(timei);
-            
+
             % Base observation matrix
             obsEmpty0 = zeros(nSvFull,nEpochsFull);
-            
+
             % Map time indices from individual matrices to the combined one
             tinds1 = 1:length(time);
             tinds2 = (length(time)+1):nEpochsFull;
-            
+
             [~,sinds1] = ismember([constellations.PRN' constellations.constInds'],...
                 [constellationFull.PRN' constellationFull.constInds'],'rows');
             [~,sinds2] = ismember([constellationsi.PRN' constellationsi.constInds'],...
                 [constellationFull.PRN' constellationFull.constInds'],'rows');
-            
+
             % Loop through each observation type and add it
             obsTypes = unique([fields(obsStruc); fields(obsStruci)]);
-            
+
             obsStrucTemp = [];
             for odx = 1:length(obsTypes)
                 obsStrucTemp.(obsTypes{odx}) = obsEmpty0;
-                
+
                 if isfield(obsStruc,obsTypes{odx})
                     % Add the old data
                     obsStrucTemp.(obsTypes{odx})(sinds1,tinds1) = ...
                         obsStruc.(obsTypes{odx});
                 end
-                
+
                 if isfield(obsStruci,obsTypes{odx})
                     % Add the new data
                      % Add the old data
@@ -125,7 +125,7 @@ if iscell(filename)
             end
             % The temporary structure is now the current one
             obsStruc = obsStrucTemp;
-            
+
             % Collect the rest of the data
             constellations = constellationFull;
             time = [time; timei];
@@ -137,22 +137,22 @@ if iscell(filename)
             rxmod = [rxmod rxmodi];
         end
     end
-    
+
 else
-   
+
     % Parse a single file
     p = inputParser;
     p.addParameter('headerOnly', false);
     p.addParameter('forceRnx3Codes', false);
     p.addParameter('constellations',[]);
-    
+
     % parse the results
     parse(p, varargin{:});
     res = p.Results;
     headerOnly = res.headerOnly;
     forceRnx3Codes = res.forceRnx3Codes;
     constellations = res.constellations;
-    
+
     %variable initialization
     nEpochsAdd = 3000;
     nEpochs = 3000;
@@ -165,22 +165,22 @@ else
     antoff = zeros(3,1);
     antmod = cell(1,1);
     rxmod = cell(1,1);
-    
+
     %open RINEX observation file
     fid = fopen(filename,'r');
-    
+
     %parse RINEX header
     [obs_type, pos(:,1), basic_info, interval(1,1), sysId, antoff(:,1), ...
         antmod{1,1}, ~,rxmod{1,1},rinexVer] = navsu.readfiles.rinexParseHeader(fid);
-    
+
     %check the availability of basic data to parse the RINEX file
     if (basic_info == 0)
         error(['RINEX file ' filename ': basic data is missing in the file header'])
     end
-    
+
     % Pull each signal name out
     [obsColumns,nObsTypes,obsTypes ] = navsu.readfiles.rinexFindObsType(obs_type,sysId);
-    
+
     % Add the LLI field for each carrier-phase frequency if this is RINEX 2
     if any(find(contains(obsTypes,'L1'))) &&  isempty(sysId)
         obsTypes{end+1} = 'LLI1';
@@ -194,24 +194,24 @@ else
         obsTypes{end+1} = 'LLI5';
         obsColumns{end+1} = 'LLI5';
     end
-    
+
     % Convert to RINEX 3 Codes if necessary and desired
     if isempty(sysId) && forceRnx3Codes
         constTypes = {'G','R','E','C','J','S'};
-        
+
         obsTypes3 = {};
         for cdx = 1:length(constTypes)
             obsColumnsi = navsu.readfiles.convertRinex3ObsCodes(obsColumns,constTypes{cdx});
             obsColumns3.(constTypes{cdx}) = obsColumnsi;
-            
+
             obsTypes3 = unique([obsTypes3; obsColumnsi(~cellfun(@isempty,obsColumnsi))]);
         end
-        
+
         obsColumns = obsColumns3;
         obsTypes = obsTypes3;
         sysId = 'CONVERTED_3';
     end
-    
+
     if isempty(sysId) % RINEX v2.xx
         obsColumnsMat = repmat(1:length(obsTypes),6,1);
     else % RINEX v3.xx
@@ -222,7 +222,7 @@ else
                 if isfield(obsColumns,constTypes{cdx})
                     %                 coli = obsColumns.(constTypes{cdx}).(obsTypes{odx});
                     coli = find(~cellfun(@isempty,strfind(obsColumns.(constTypes{cdx}) , obsTypes{odx})));
-                    
+
                     if ~isempty(coli)
                         obsColumnsMat(cdx,odx) = coli(1);
                     end
@@ -230,7 +230,7 @@ else
             end
         end
     end
-    
+
     % If specific constellation usage hasn't been specified, set it based on
     % what's available.
     if isempty(constellations)   && ~isempty(sysId) && ~any(strcmp(sysId,'CONVERTED_3'))
@@ -239,21 +239,21 @@ else
             ismember({'G'},sysId),  ismember({'R'},sysId) , ...
             ismember({'E'},sysId),  ismember({'C'},sysId), ...
             ismember({'J'},sysId),  ismember({'S'},sysId));
-        
+
     elseif isempty(constellations) && (isempty(sysId) || any(strcmp(sysId,'CONVERTED_3')))
         warning('Defaulting to GPS and GLONASS only for RINEX 2.  Consider using a ''constellation'' input')
         % RINEX 2 - just default to using GPS GLONASS only
         constellations = navsu.readfiles.initConstellation(1,1,0,0,0,0);
     end
-    
+
     nSatTot = constellations.nEnabledSat;
-    
+
     % initialize storage variables
     for odx = 1:length(obsTypes)
         obsStruc.(obsTypes{odx}) = NaN(nSatTot,nEpochs);
     end
     obsOut = nan(nSatTot,nEpochs,length(obsTypes));
-    
+
     if headerOnly
         % if we only want the header, ignore the rest of the file
         fclose(fid);
@@ -263,88 +263,75 @@ else
         while (~feof(fid))
             %read data for the current epoch (ROVER)
             [time(k,1), date(k,:), num_sat, sat, sat_types, tow(k,1)] = navsu.readfiles.rinexGetEpoch(fid);
-            
+
             if (k > nEpochs)
                 obsOutTemp = nan(size(obsOut,1),nEpochs+nEpochsAdd,size(obsOut,3),size(obsOut,4));
                 obsOutTemp(:,1:size(obsOut,2),:,:) = obsOut;
                 obsOut = obsOutTemp;
                 obsOutTemp = [];
-                
+
                 dateTemp = nan(nEpochs+nEpochsAdd,size(date,2),size(date,3));
                 dateTemp(1:size(date,1),:,:) = date;
                 date = dateTemp;
                 dateTemp = [];
-                
+
                 towTemp = nan(nEpochs+nEpochsAdd,size(tow,2),size(tow,3));
                 towTemp(1:size(tow,1),:) = tow;
                 tow = towTemp;
                 towTemp = [];
-                
+
                 timeTemp = nan(nEpochs+nEpochsAdd,size(time,2),size(time,3));
                 timeTemp(1:size(time,1),:) = time;
                 time = timeTemp;
                 timeTemp = [];
-                
+
                 weekTemp = zeros(nEpochs+nEpochsAdd,size(week,2),size(week,3));
                 weekTemp(1:size(week,1),:) = week;
                 week = weekTemp;
                 weekTemp = [];
-                
+
                 nEpochs = nEpochs  + nEpochsAdd;
             end
-            
+
             %read ROVER observations
             [~,obsMati] = navsu.readfiles.rinexGetObs(fid, num_sat, sat, sat_types, obsColumns, ...
                 nObsTypes, constellations,obsColumnsMat,obsTypes);
-            
+
             obsOut(:,k,:) = obsMati;
-            
+
             k = k + 1;
         end
-        
+
         %GPS week number
         week(:,1) = navsu.time.epochs2gps(navsu.time.cal2epochs(date(:,:)));
-        
+
         %observation rate
         if (interval(:,1) == 0)
             interval(:,1) = round((median(time(2:k-1,1) - time(1:k-2,1)))*1000)/1000;
         end
-        
+
         %close RINEX file
         fclose(fid);
     end
-    
+
     for odx = 1:length(obsTypes)
         obsStruc.(obsTypes{odx}) = squeeze(obsOut(:,:,odx));
     end
-    
+
+	% Peel off LLI flags from .0001's digit (relies on modified rinexGetObs observation masking hack!)
+	obsFields = fieldnames(obsStruc);
+	idxObsTypesCarrier = ... % LLI applies to carrier observations only (obs codes 'Lxx')
+    	find(strcmp(cellfun(@(x) x(1), obsFields, 'UniformOutput', false),'L'));
+	for idxLLI = 1:length(idxObsTypesCarrier),
+    	dummy = obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)});
+	    idxBlankFlag = (dummy>0 & dummy<10); % handle blank lines (which parse as zeros) with non-zero LLI flags
+	    dummy(idxBlankFlag) = dummy(idxBlankFlag)/10000; % shift flag into .0001's digit position
+	    flags = round(10*rem(dummy*1000,1),1);
+	    obsTypes{end+1} = ['LLI' obsFields{idxObsTypesCarrier(idxLLI)}]; %#ok<AGROW>
+	    obsStruc.(obsTypes{end}) = flags;
+	    obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)}) = round(dummy, 3); % strip off flag digit from observations themselves to restore original values
+	end
+
     [time, date, obsStruc, interval] = ...
         navsu.readfiles.rinexSyncObs(time, week, date, obsStruc, interval);
 end
-<<<<<<< HEAD
-
-for odx = 1:length(obsTypes)
-    obsStruc.(obsTypes{odx}) = squeeze(obsOut(:,:,odx));
-end
-
-% Peel off LLI flags from .0001's digit (relies on modified rinexGetObs observation masking hack!)
-obsFields = fieldnames(obsStruc);
-idxObsTypesCarrier = ... % LLI applies to carrier observations only (obs codes 'Lxx')
-    find(strcmp(cellfun(@(x) x(1), obsFields, 'UniformOutput', false),'L'));
-for idxLLI = 1:length(idxObsTypesCarrier),
-    dummy = obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)});
-    idxBlankFlag = (dummy>0 & dummy<10); % handle blank lines (which parse as zeros) with non-zero LLI flags
-    dummy(idxBlankFlag) = dummy(idxBlankFlag)/10000; % shift flag into .0001's digit position
-    flags = round(10*rem(dummy*1000,1),1);
-    obsTypes{end+1} = ['LLI' obsFields{idxObsTypesCarrier(idxLLI)}]; %#ok<AGROW>
-    obsStruc.(obsTypes{end}) = flags;
-    obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)}) = round(dummy, 3); % strip off flag digit from observations themselves to restore original values
-end
-
-[time, date, obsStruc, interval] = ...
-    navsu.readfiles.rinexSyncObs(time, week, date, obsStruc, interval);
-
-=======
->>>>>>> ammtc-propNavMsg
-end
-
