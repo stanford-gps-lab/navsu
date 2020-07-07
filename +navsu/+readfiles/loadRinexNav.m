@@ -99,7 +99,7 @@ if constellations.QZSS.enabled
     [Eph_J, iono,glut,leapSecond] = navsu.readfiles.rinexGetNav(filename, constellationsi);
 end
 
-if isnan(leapSecond) && ~isempty(Eph_R)
+if any(isnan(leapSecond)) && ~isempty(Eph_R)
     % Pull the actual leap second count
     [~,~,~,leapSecond] = navsu.time.utc2gps(Eph_R(2:7,1)',1);
 end

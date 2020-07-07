@@ -35,11 +35,16 @@ function pos = propNavMsg(beph, prn, const, epochs, varargin)
 
 % prn and const arguments must be the same size
 if ~isequal(size(prn), size(const))
+<<<<<<< .merge_file_62cxal
     error('Must provide one constellation index for each requested PRN/SVN')
+=======
+   error('Must provide one constellation index for each requested PRN/SVN')
+>>>>>>> .merge_file_67FJ0b
 end
 
 % User provided a single epoch --> apply it to all {PRN, const} pairs
 if length(epochs(:)) == 1 && length(prn(:)) > 1
+<<<<<<< .merge_file_62cxal
     epochs = epochs * ones(size(prn));
     % User provided a single {PRN, const} pair --> calculate at all epochs
 elseif length(prn(:)) == 1 && length(epochs(:)) > 1
@@ -56,6 +61,24 @@ if ~isequal(size(prn),size(const),size(epochs))
         '--- OR ---\na single PRN/const pair (to be calculated at all epochs),\n' ...
         '--- OR ---\na vector of epochs the same size as the number of PRN/const pairs.\n' ...
         ]));
+=======
+   epochs = epochs * ones(size(prn));
+% User provided a single {PRN, const} pair --> calculate at all epochs
+elseif length(prn(:)) == 1 && length(epochs(:)) > 1
+   prn = prn * ones(size(epochs));
+   const = const * ones(size(epochs));
+end
+
+% Now we should have (#PRNs)=(#constInds)=(#epochs), either because user
+% provided an epochs vector of the right size, or a single epoch from which
+% we built such a vector just above. Throw error ONLY if neither is true.
+if ~isequal(size(prn),size(const),size(epochs))
+   error(sprintf([ ...
+       'Must specify either a single epoch (to apply to all PRN/const pairs),\n' ...
+       '--- OR ---\na single PRN/const pair (to be calculated at all epochs),\n' ...
+       '--- OR ---\na vector of epochs the same size as the number of PRN/const pairs.\n' ...
+       ]));
+>>>>>>> .merge_file_67FJ0b
 end
 
 nProp = length(prn);
@@ -78,6 +101,7 @@ pos = struct('x', NaN(nProp, 1), 'y', NaN(nProp, 1), 'z', NaN(nProp, 1), ...
 constFull = [1 2 3 4];  % GPS GLO GAL BDS QZSS
 
 for cdx = constFull
+<<<<<<< .merge_file_62cxal
     % Input indices for this constellation
     indsi = const == constFull(cdx);
     
@@ -128,6 +152,58 @@ for cdx = constFull
     for fdx = 1:length(fieldNames)
         pos.(fieldNames{fdx})(indsi) = posi.(fieldNames{fdx});
     end
+=======
+   % Input indices for this constellation
+   indsi = const == constFull(cdx);
+   
+   if ~any(indsi)
+       continue;
+   end
+   
+   switch constFull(cdx)
+       case 1 
+
+           % GPS
+           if isempty(beph.gps),
+               warning('propNavMsg: GPS ephemeris not supplied!'); continue;
+           end
+           posi = navsu.geo.propNavMsgGps(beph.gps,prn(indsi),weeks(indsi),...
+               tows(indsi),'GPS');
+
+       case 2
+           % GLONASS
+           if isempty(beph.glo),
+               warning('propNavMsg: GLO ephemeris not supplied!'); continue;
+           end
+           posi = navsu.geo.propNavMsgGlo(beph.glo,prn(indsi),weeks(indsi),...
+               tows(indsi));
+           
+       case 3
+           % Galileo
+           if isempty(beph.gal),
+               warning('propNavMsg: GAL ephemeris not supplied!'); continue;
+           end
+           posi = navsu.geo.propNavMsgGps(beph.gal,prn(indsi),weeks(indsi),...
+               tows(indsi),'GAL');
+           
+       case 4
+           % BeiDou
+           if isempty(beph.bds),
+               warning('propNavMsg: BDS ephemeris not supplied!'); continue;
+           end
+           posi = navsu.geo.propNavMsgGps(beph.bds,prn(indsi),weeks(indsi),...
+               tows(indsi),'BDS');
+           
+       otherwise
+           warning('This constellation is not supported- sorry')
+   end
+   
+   % Put this data into the output structure
+   fieldNames = fields(posi);
+   for fdx = 1:length(fieldNames)
+       pos.(fieldNames{fdx})(indsi) = posi.(fieldNames{fdx}); 
+   end
+>>>>>>> .merge_file_67FJ0b
     
 end
 

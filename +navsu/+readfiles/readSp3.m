@@ -41,12 +41,16 @@ if (fid == -1)
     fprintf(2, 'Error open %s: %s\n', filename, message);
     return
 end
+if nargin < 2
+    cmToApcFlag = false;
+end
 
 if (nargin < 3)
     strictConstNumFlag = false;
 end
 
 %GRECJ
+
 if nargin < 4
     constellationOut = 1;
 end
@@ -228,6 +232,13 @@ if strictConstNumFlag
         array = outArray;
     end
 end
+
+epochs = ones(NumSV, 1) * (GPS_seconds + ...
+                GPS_week_num*7*24*3600 + ...
+                Epoch_interval .* (0:NumEpochs-1));
+epochs = epochs(:);           
+constInds = constellationOut*ones(size(epochs));
+
 pvt = struct('filename', filename, ...
     'DateTime', DateTime', ...
     'GPS_week_num', GPS_week_num, ...
@@ -238,7 +249,10 @@ pvt = struct('filename', filename, ...
     'PRN', array(:, 1), ...
     'clock_bias', array(:, 5) .* 1e-6, ...
     'position', array(:, 2:4) .* 1000, ...
-    'Event',array(:, 5) .* 0); 
+    'velocity',nan(size(array(:,2:4))), ...
+    'Event',array(:, 5) .* 0,...
+    'epochs', epochs,...
+    'constInds',constInds); 
 
 pvt.Event(abs(pvt.clock_bias) >= 0.999999) = true;
 pvt.Event(any(pvt.position == 0, 2)) = true;

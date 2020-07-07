@@ -202,9 +202,9 @@ else %RINEX v3.xx
         %constellation is required (if not, skip the line)
         consti = strfind('GRECJSI',sysId);
         
-        if ismember([satId consti],[constellations.PRN' constellations.constInds'],'rows')
-            index = constellations.indexes(ismember([constellations.PRN' constellations.constInds'],...
-                [satId consti],'rows'));
+        matches = constellations.constInds == consti & constellations.PRN == satId;
+        if any(matches)
+            index = constellations.indexes(matches);
         else
             continue;
         end
