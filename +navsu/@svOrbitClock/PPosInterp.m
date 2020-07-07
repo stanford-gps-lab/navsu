@@ -211,15 +211,6 @@ for idx = 1:length(PRNs)
             end
         end
     end
-    %     if Pcbiasi(ind1) > 0.999 || Pcbiasi(ind2) > 0.999
-    %         cbias(idx) = 0.99999;
-    %     else
-    %         cbias(idx) = (epochi-Pepochsi(ind1))/(Pepochsi(ind2)-Pepochsi(ind1))*...
-    %             (Pcbiasi(ind2)-Pcbiasi(ind1))+Pcbiasi(ind1);
-    %     end
-    
-    %     posP =
-    
 end
 
 

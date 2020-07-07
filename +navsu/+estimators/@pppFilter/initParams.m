@@ -42,6 +42,9 @@ PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.NoSlipCross)) = 
 PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.NoSlipVertical)) = Inf;
 PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.NoSlipVertical)) = Inf;
 
+PARAMS.measUse.excludeThresh.(char(navsu.internal.MeasEnum.VehicleConstraint)) = Inf;
+PARAMS.measUse.excludeThreshLarge.(char(navsu.internal.MeasEnum.VehicleConstraint)) = Inf;
+
 % Measurement masking- which measurments to actually use in the
 % filter
 PARAMS.measMask = table([1 1 1]',[1 0 0]',[1 0 0]',[1 1 0]',[1 1 0]',...
@@ -116,8 +119,8 @@ PARAMS.Q = struct(...
     'ACC_BIAS',        1e-3*1,...%/100,...             % Accelerometer bias
     'ACC_SCALE',       1e-5,...              % Accelerometer scale
     'W_SCALE',         1e-5,...              % Gyro scale
-    'RXB',             10+0.5,...                % Receiver clock bias
-    'DRXB',            10+0.3,...                % Receiver clock bias
+    'RXB',             1000+0.5,...                % Receiver clock bias
+    'DRXB',            1000+0.3,...                % Receiver clock bias
     'gyro_noise_PSD',  0.0015,...%*100,...   % Gyro noise
     'accel_noise_PSD', 0.005,...%*1000,...   % Accelerometer noise
     'RX_DCB',          0,...                 % Receiver DCB

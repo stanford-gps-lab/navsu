@@ -24,8 +24,9 @@ constsUnique = unique(gnssMeas.constInds);
 
 
 %% Setup state, covariance, and state index mapping
+PARAMS = obj.PARAMS;
 if isempty(obj.INDS_STATE)
-    PARAMS = obj.PARAMS;
+    
     rangeStruc = gnssMeas.range;
     
     obj.INDS_STATE = [];
@@ -137,6 +138,7 @@ end
 
 
 % Initialize attitude - euler angles with body frame
+
 % xi  = -obj.vel./norm(obj.vel);
 % z0i = obj.pos./norm(obj.pos);
 % yi  = -cross(xi,z0i);

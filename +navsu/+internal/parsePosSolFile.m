@@ -54,7 +54,8 @@ switch ext
             pl_chi2_approx2     = temp.debugOutput.pl_chi2_approx2;
         end
         
-    case '.txt' % novatel truth
+    case '.txt'
+        % novatel truth
         solName =  'Novatel Truth';
         novTruth = csvread(filename,1);
         
@@ -62,12 +63,6 @@ switch ext
         llhNov    = novTruth(:,3:5);
         posXyz = navsu.geo.llh2xyz(llhNov,1);
         velEnu = novTruth(:,10:12);
-        
-%         velXyz = nan(size(velEnu));
-%         for idx = 1:size(velXyz,1)
-%            [~,Ri] = XYZ2ENU([0 0 0],llhNov(idx,1)*pi/180,llhNov(idx,2)*pi/180);
-%            velXyz(idx,:) = 
-%         end
         
         cov   = zeros(3,3,length(epochs));
         cov(1,1,:) = novTruth(:,17);
@@ -80,6 +75,30 @@ switch ext
         cov(3,2,:) = novTruth(:,22);
         cov(2,3,:) = novTruth(:,22);
         
+    case '.truth'
+        % Different novatel truth
+        solName =  'Novatel Truth';
+        novTruth = csvread(filename,1);
+        
+        novTruth = [2075*ones(size(novTruth,1),1) novTruth];
+        
+        epochs = navsu.time.gps2epochs(novTruth(:,1),novTruth(:,2));
+        llhNov    = novTruth(:,3:5);
+        posXyz = navsu.geo.llh2xyz(llhNov,1);
+        if size(novTruth,2) > 11
+            velEnu = novTruth(:,10:12);
+            
+            cov   = zeros(3,3,length(epochs));
+            cov(1,1,:) = novTruth(:,17);
+            cov(2,2,:) = novTruth(:,18);
+            cov(3,3,:) = novTruth(:,19);
+            cov(2,1,:) = novTruth(:,20);
+            cov(1,2,:) = novTruth(:,20);
+            cov(3,1,:) = novTruth(:,21);
+            cov(1,3,:) = novTruth(:,21);
+            cov(3,2,:) = novTruth(:,22);
+            cov(2,3,:) = novTruth(:,22);
+        end
         
     case '.pos2' % rtklib
         solName = 'RTK';
@@ -101,7 +120,7 @@ switch ext
         epochs = epochs(indsKeep);
         xyzPos =  xyzPos(indsKeep,:);
         cov = cov(indsKeep,:);
-                
+        
     case '.pos'% nrc ppp
         solName = 'NRC';
         dataNRC    = importdata(filename,' ',8);
@@ -138,7 +157,7 @@ switch ext
         posXyz = datai(:,2:4);
         ztd    = datai(:,5);
         
-%         solData = [solData; {posNrc' epochs' nan(3,3,length(epochs)) ztdNrc0' nan(size(posNrc'))}];
+        %         solData = [solData; {posNrc' epochs' nan(3,3,length(epochs)) ztdNrc0' nan(size(posNrc'))}];
         
     case  '.sum' % jpl
         solNames = [solNames; 'JPL'];
@@ -156,14 +175,14 @@ switch ext
         
         solData = [solData; {posNrc' epochs' nan(3,3,length(epochs)) ztd' nan(size(posNrc'))}];
     case 'xyz' % IGS XYZ position
-       
+        
         if size(filename,1) > size(filename,2)
             posXyz = filename';
         else
-           posXyz = filename; 
+            posXyz = filename;
         end
         
-                
+        
 end
 
 end

@@ -103,11 +103,15 @@ if nMeas > 0
         % Pull one pseudorange for each satellite
         [~,losIndPr] = ismember([[idPr.prn]' [idPr.const]'],prnConstInds,'rows');
         
-        if isempty(measPr) || 1
+        
+        % rough guess at clock bias 
+%          bRxTemp = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));
+        
+        if isempty(measPr) 
             bRxi = x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1);
         else
-            %         bRxi = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));
-            %         obj.clockBias(:) = bRxi;
+            bRxi = nanmedian(measPr-gRangeSv(losIndPr)-satBias(losIndPr));
+            obj.clockBias(:) = bRxi;
         end
         x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1)   = bRxi;
         
@@ -326,7 +330,7 @@ end
 % end
 % 
 % dop = diag(dopBig);
-if norm(pos) > 1000
+if norm(pos) > 1000 && nMeas > 0
     
     [~,Rli] = navsu.geo.xyz2enu(zeros(1,3),llhi(1)*pi/180,llhi(2)*pi/180);
     
