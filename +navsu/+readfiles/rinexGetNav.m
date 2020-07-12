@@ -661,58 +661,58 @@ for constIdx = 1:length(constData)
 
 
         case 2 % GAL (RINEX marker: "E")
-
+            
             % Only parse and save if constellation is active
             if (~constellations.Galileo.enabled), continue, end
-
+                       
             svprn  = data{2};
             year   = data{3};
             year(year < 20) = year(year < 20)+2000;
-
+            
             month  = data{4};
             day    = data{5};
             hour   = data{6};
             minute = data{7};
             second = data{8};
-
+            
             af0 = data{9};
             af1 = data{10};
             af2 = data{11};
-
+            
             IODnav = data{12}; % Analogous to IODE of other GNSSes
             crs    = data{13};
             deltan = data{14};
             M0     = data{15};
-
+            
             cuc   = data{16};
             ecc   = data{17};
             cus   = data{18};
             roota = data{19};
-
+            
             toe    = data{20};
             cic    = data{21};
             Omega0 = data{22};
             cis    = data{23};
-
+            
             i0       = data{24};
             crc      = data{25};
             omega    = data{26};
             Omegadot = data{27};
-
+            
             idot       = data{28};
             code_on_L2 = data{29};
-
+            
             weekno     = data{30};
             % Handle week number rollovers
             weekno(weekno > 2500) = weekno(weekno > 2500) - 1024;
-
+            
             L2flag     = data{31};
-
+            
             svaccur  = data{32};
             svhealth = data{33};
             tgd      = data{34};
             tgd2     = data{35};
-
+            
             tom = data{36};
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. *** See also RINEX 3.4, section 8.3.3,
@@ -721,54 +721,55 @@ for constIdx = 1:length(constData)
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
-
+            
             fit_int = data{37};
+            
 
-            Eph(1,ephInds)  = svprn;
-            Eph(2,ephInds)  = year-2000;
-            Eph(3,ephInds)  = month;
-            Eph(4,ephInds)  = day;
-            Eph(5,ephInds)  = hour;
-            Eph(6,ephInds)  = minute;
-            Eph(7,ephInds)  = second;
-            Eph(8,ephInds)  = af0;
-            Eph(9,ephInds)  = af1;
-            Eph(10,ephInds) = af2;
-            Eph(11,ephInds) = IODnav; % Analogous to IODE of other GNSSes
-            Eph(12,ephInds) = crs;
-            Eph(13,ephInds) = deltan;
-            Eph(14,ephInds) = M0;
-            Eph(15,ephInds) = cuc;
-            Eph(16,ephInds) = ecc;
-            Eph(17,ephInds) = cus;
-            Eph(18,ephInds) = roota;
-            Eph(19,ephInds) = toe;
-            Eph(20,ephInds) = cic;
-            Eph(21,ephInds) = Omega0;
-            Eph(22,ephInds) = cis;
-            Eph(23,ephInds) = i0;
-            Eph(24,ephInds) = crc;
-            Eph(25,ephInds) = omega;
-            Eph(26,ephInds) = Omegadot;
-            Eph(27,ephInds) = idot;
-            Eph(28,ephInds) = code_on_L2;
-            Eph(29,ephInds) = weekno; if (const == 3); weekno( weekno> 2500) = weekno( weekno> 2500) - 1024; end;
-            Eph(30,ephInds) = L2flag;
-            Eph(31,ephInds) = svaccur;
-            Eph(32,ephInds) = svhealth;
-            Eph(33,ephInds) = tgd;
-            Eph(34,ephInds) = tgd2;
-            Eph(35,ephInds) = tom;
-            Eph(36,ephInds) = fit_int;
-
+            Eph(1,:)  = svprn;
+            Eph(2,:)  = year-2000;
+            Eph(3,:)  = month;
+            Eph(4,:)  = day;
+            Eph(5,:)  = hour;
+            Eph(6,:)  = minute;
+            Eph(7,:)  = second;
+            Eph(8,:)  = af0;
+            Eph(9,:)  = af1;
+            Eph(10,:) = af2;
+            Eph(11,:) = IODnav;
+            Eph(12,:) = crs;
+            Eph(13,:) = deltan;
+            Eph(14,:) = M0;
+            Eph(15,:) = cuc;
+            Eph(16,:) = ecc;
+            Eph(17,:) = cus;
+            Eph(18,:) = roota;
+            Eph(19,:) = toe;
+            Eph(20,:) = cic;
+            Eph(21,:) = Omega0;
+            Eph(22,:) = cis;
+            Eph(23,:) = i0;
+            Eph(24,:) = crc;
+            Eph(25,:) = omega;
+            Eph(26,:) = Omegadot;
+            Eph(27,:) = idot;
+            Eph(28,:) = code_on_L2;
+            Eph(29,:) = weekno;
+            Eph(30,:) = L2flag;
+            Eph(31,:) = svaccur;
+            Eph(32,:) = svhealth;
+            Eph(33,:) = tgd;
+            Eph(34,:) = tgd2;
+            Eph(35,:) = tom;
+            Eph(36,:) = fit_int;
+                      
             if suglFlag
                 suglInfo1 = data{38};
                 suglInfo2 = data{39};
-
+                
                 Eph(37,:) = suglInfo1;
                 Eph(38,:) = suglInfo2;
             end
-
+            
             if 1; %LSB_RECOVERY
                 A = Eph';
                 piGPS = 3.1415926535898;
