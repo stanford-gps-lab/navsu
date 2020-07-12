@@ -1,5 +1,5 @@
 function epochs = gps2epochs(gpsWeek,tow)
-% epochs2gps 
+% gps2epochs
 % DESCRIPTION:
 %   Convert from  GPS week and GPS time of week to GPS epochs (seconds 
 %   since start of GPS time)
