@@ -45,7 +45,9 @@ function [Eph,ionoCorr,timeCorr,leapSecs] = rinexGetNav(file_nav, constellations
 
 %% General setup
 
-% verbose output -- flag should be assigned in calling function
+% Verbose output
+% -- Enable for debugging (0 = quiet, 1 = verbose, 2 = verbose...er)
+% -- Flag should normally be assigned in calling function
 global DEBUG;
 
 Eph = [];
@@ -81,6 +83,7 @@ fclose(fid);
 
 %perform some simple checks
 if any(cellfun(@isempty,allData))
+    fprintf('any(cellfun(@isempty,allData)) returns TRUE.')
     warning('Error reading %s -- unexpected blank line(s) found!\n', file_nav);
     return
 else
@@ -112,6 +115,12 @@ for idx = 1:header_end
                 error(['Error in header of %s -- RINEX %.2f file type = %s is undefined ' ...
                     '(allowed: N [GPS], G [GLONASS], H [SBAS/Geo]).\n'], ...
                     file_nav, rinexVersion, rinexType);
+            elseif strcmp(rinexType, 'N'),
+                rinexSatelliteSystem = 'G';
+            elseif strcmp(rinexType, 'G'),
+                rinexSatelliteSystem = 'R';
+            else
+                rinexSatelliteSystem = 'S';
             end
         elseif floor(rinexVersion) == 3, % Known versions are 3.00 -- 3.04 (May 2020)
             if rinexType ~= 'N',
@@ -245,20 +254,20 @@ for idx = 1:header_end
                 ionoCorrType = cell2mat(data{1});
                 ionoCorrCoeffs(1:4) = deal(cell2mat(data(2:5)));
                 % these are required for BDS, optional for other systems:
-                if exist('timeMark','var') && ~strcmp(timeMark, data{6})
+                if exist('timeMark','var') && ~strcmp(timeMark, data{6}),
                     warning(['Iono correction time mark in line with label ''%s'' has different ' ...
                         'time mark than previously parsed value.\n'], ionoCorrType);
                 end
-                if exist('ionoSVID','var') && ~isempty(ionoSVID) && (ionoSVID~=data{7})
+                if exist('ionoSVID','var') && ~isempty(ionoSVID) && (ionoSVID~=data{7}),
                     warning(['Iono correction time mark in line with label ''%s'' has different ' ...
                         'SVID (%d) than previously parsed value (%d).\n'], ionoCorrType, data{7}, ionoSVID);
                 end
                 timeMark = data(6); ionoSVID = data{7}; % transmission time, SVID (mandatory for BDS, optional for other systems)
-                if (strcmp(data{1},'BDSA')) && ~all(data{6:7})
+                if (strcmp(data{1},'BDSA')) && ~all(data{6:7}),
                     warning('Error reading %s -- missing mandatory time mark and/or SVID field in BeiDou line!\n', file_nav);
                 end
             case {'GPSB','QZSB','BDSB','IRNB'}
-                if ~any(isnan(ionoCorrCoeffs(5:8))) % no longer NaNs once an IONO CORR line is parsed
+                if ~any(isnan(ionoCorrCoeffs(5:8))), % no longer NaNs once an IONO CORR line is parsed
                     warning(['In input file %s:\n' ...
                         'Multiple GPSB/QZSB/BDSB/IRNB IONOSPHERIC CORR lines found! ' ...
                         'Overwriting previously parsed parameters.\n' ...
@@ -269,11 +278,11 @@ for idx = 1:header_end
                 ionoCorrType = cell2mat(data{1});
                 ionoCorrCoeffs(5:8) = deal(cell2mat(data(2:5)));
                 % these are required for BDS, optional for other systems:
-                if exist('timeMark','var') && ~strcmp(timeMark,data{6})
+                if exist('timeMark','var') && ~strcmp(timeMark,data{6}),
                     warning(['Iono correction time mark in line with label ''%s'' has different ' ...
                         'time mark than previously parsed value.\n'], ionoCorrType);
                 end
-                if exist('ionoSVID','var') && ~isempty(ionoSVID) && (ionoSVID~=data{7})
+                if exist('ionoSVID','var') && ~isempty(ionoSVID) && (ionoSVID~=data{7}),
                     warning(['Iono correction time mark in line with label ''%s'' has different ' ...
                         'SVID (%d) than previously parsed value (%d).\n'], ionoCorrType, data{7}, ionoSVID);
                 end
@@ -289,8 +298,8 @@ for idx = 1:header_end
     end % if ~isempty(ionoCorrIdx
 
     % Whether RINEX 2 or 3, assemble "Iono Corrections" struct
-    if all(~isnan(ionoCorrCoeffs))
-        if ~strcmp(ionoCorrType, 'RINEX2_A0-B3')
+    if all(~isnan(ionoCorrCoeffs)),
+        if ~strcmp(ionoCorrType, 'RINEX2_A0-B3'),
             ionoCorrType = ionoCorrType(1:3); % strip off 'A'/'B'
         end
         dummy = struct( ...
@@ -298,7 +307,7 @@ for idx = 1:header_end
             'ionoCorrCoeffs', ionoCorrCoeffs, ...
             'timeMark', timeMark, 'ionoSVID', ionoSVID);
         ionoCorrCoeffs = nan(8,1); % avoid duplicating parsed data into iono struct next time around
-        if ~isstruct(ionoCorr)
+        if ~isstruct(ionoCorr),
             ionoCorr = dummy; % first line encountered
             clear dummy;
         else
@@ -308,16 +317,27 @@ for idx = 1:header_end
     end
 
     %%% Leap second [OPTIONAL]
+    %
+    % RINEX 3: (Table A2, A5) This optional header line contains four integer
+    % values, plus a 3-char text label. These specify the current number of
+    % leap seconds, plus the immediately preceding (or, if week and day
+    % number in the next two fields are in the future, upcoming) number of
+    % leap seconds; week and day number of the day before the leap second
+    % reflected by this current counter (first value on this line) was
+    % introduced; and a system identifier (as of 2020, only allowable IDs
+    % are GPS or BDS).
     leapInd = strfind(lin,'LEAP SECONDS');
-    if ~isempty(leapInd)
+    if ~isempty(leapInd),
         leap_found = 1; %#ok<NASGU>
         data = textscan(lin(1:leapInd-1),'%6d%6d%6d%6d%3c%*[^\n]');
         dataIdx = find(~cellfun(@isempty,data(1:end-1))); %if non-empty, last element (time sys ID) is a string
         leapSecs(dataIdx) = cell2mat(data(dataIdx));
-        if ~cellfun(@isempty, data(end))
-            % No obvious place to return time system ID string found in
-            % LEAP SECOND header line, so at just print warning for now.
-            warning('Discarding time system identifier ''%s'', found in LEAP SECOND header line.\n', data{end});
+        if any(strcmp(data(end), {'GPS', ''})), % blank system ID --> default to GPS
+            leapSecs(end) = 1; % GPS
+        elseif strcmp(data(end), 'BDS'),
+            leapSecs(end) = 4; % BDS
+        else
+            warning('Invalid time system identifier ''%s'', found in LEAP SECOND header line.\n', data(end));
         end
     end
 
@@ -325,7 +345,7 @@ end % for idx = 1:header_end
 
 % Enforce mandatory header version info (but ignore contents of PGM / RUN BY / DATE
 % for now, since that info is not needed for our GNSS calculations)
-if ~vers_found
+if ~vers_found,
     error('Error in header of %s -- no RINEX version number found.\n', file_nav);
 end
 
@@ -335,18 +355,18 @@ if DEBUG
     fprintf('Version = %.2f\nFile type = ''%s''\nSatellite system = ''%s''\n', ...
         rinexVersion, rinexType, rinexSatelliteSystem);
     fprintf('\ntimeCorr =\n\n');
-    if isstruct(timeCorr)
+    if isstruct(timeCorr),
         % use 'AsArray' because some files cause this struct to have fields with different numbers of rows
         disp(struct2table(timeCorr, 'AsArray', true));
     else
         timeCorr, %#ok<NOPRT>
     end
     fprintf('\nionoCorr =\n\n');
-    if isstruct(ionoCorr)
+    if isstruct(ionoCorr),
         % use 'AsArray' because some files cause this struct to have fields with different numbers of rows
         disp(struct2table(ionoCorr, 'AsArray', true));
-        fprintf('ionoCorrCoeffs =\n\n%s\n', ...
-            evalc('disp(cell2mat(struct2table(ionoCorr,''AsArray'',true).ionoCorrCoeffs''))'));
+        fprintf('\nionoCorrCoeffs =\n\n%s\n', ...
+            evalc('disp(cell2mat(struct2table(ionoCorr,''AsArray'',true).ionoCorrCoeffs''))')  );
     else
         ionoCorr, %#ok<NOPRT>
     end
@@ -356,6 +376,18 @@ end % if DEBUG
 
 %% Set up TEXTSCAN format specifiers for defined GNSS entries
 
+% XXX navsu "constellations" struct uses a *different* order (CRECJS) than
+%     the definition of the constData struct, below. this is irrelevant
+%     when indexing by name, but could be a hassle and/or opportunity to
+%     introduce hard-to-find bugs when indexing by number.
+%
+% XXX also, not a functional/performance issue, but the names of intermediate
+%     ephem quantities might be worth cleaning up (e.g. we use "IODE" but
+%     "iodc" while the GPS ICD uses all caps for both; {crs, cus, cis, ...}
+%     should be written {Crs, Cus, Cis, ...} to match the ICD; and so on.
+
+
+
 constData = struct( ...
     'constLetter', {'G'  'E'  'R'  'J'  'C'  'S'  'I'  'R2'}, ...
     'blockLines', {8 8 4 8 8 4 8 4}, ...
@@ -363,97 +395,99 @@ constData = struct( ...
     'enabled', cell(1,8) ... % placeholder; allows programmatic addressing in addition to "constellations.*.enabled" calls
 );
 
-recordFormat = '%f ';   % This previously '%19.12f ', but not all RINEX creators adhere to the standard
-
-% GPS Data Record (RINEX 3.03, Table A6) -- System Identifier "G"
-constData(1).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,4) repmat(recordFormat,1,4) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1; see note "***"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
-    repmat(recordFormat,1,4) ... % broadcast orbit - 4
-    repmat(recordFormat,1,4) ... % broadcast orbit - 5
-    repmat(recordFormat,1,4) ... % broadcast orbit - 6
-    repmat(recordFormat,1,4) ... % broadcast orbit - 7
+% GPS Data Record -- System Identifier "G"
+if floor(rinexVersion) == 2, % Known versions are 2.00 -- 2.11 (May 2020)
+    constData(1).formatString = [ '%1s %2d ' repmat('%3d ',1,5) '%5.1f ' repmat('%19.12f ',1,3) ]; % SV / Epoch / SV Clk -- see note "*"
+elseif floor(rinexVersion) == 3, % (RINEX 3.03, Table A6) -- System Identifier "G"
+    constData(1).formatString = [ '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat('%19.12f ',1,3) ]; % SV / Epoch / SV Clk -- see note "*"
+end
+constData(1).formatString = [ constData(1).formatString ...
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1; see note "***"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 4
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 5
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 6
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 7
     ];
 constData(1).enabled = constellations.GPS.enabled;
 
 % Galileo Data Record (RINEX 3.03, Table A8) -- System Identifier "E"
 constData(2).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat(recordFormat,1,3) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1 -- see note "***"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
-    repmat(recordFormat,1,4) ... % broadcast orbit - 4
-    repmat(recordFormat,1,4) ... % broadcast orbit - 5 -- see note "****"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 6 -- see note "*****"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 7 -- see note "**"
+    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat('%19.12f ',1,3) ... % SV / Epoch / SV Clk -- see note "*"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1 -- see note "***"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 4
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 5 -- see note "****"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 6 -- see note "*****"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 7 -- see note "**"
     ];
 constData(2).enabled = constellations.Galileo.enabled;
 
 % GLONASS Data Record (RINEX 3.03, Table A10) -- System Identifier "R"
 constData(3).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat(recordFormat,1,3) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
+    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat('%19.12f ',1,3) ... % SV / Epoch / SV Clk -- see note "*"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
     ];
 constData(3).enabled = constellations.GLONASS.enabled;
 
 % QZSS Data Record (RINEX 3.03, Table A12) -- System Identifier "J"
 constData(4).formatString = [ ...
-    '%1s %2d %4d ' repmat('%2d ',1,5) repmat(recordFormat,1,3) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
-    repmat(recordFormat,1,4) ... % broadcast orbit - 4
-    repmat(recordFormat,1,4) ... % broadcast orbit - 5
-    repmat(recordFormat,1,4) ... % broadcast orbit - 6
-    repmat(recordFormat,1,4) ... % broadcast orbit - 7 -- see note "**"
+    '%1s %2d %4d ' repmat('%2d ',1,5) repmat('%19.12f ',1,3) ... % SV / Epoch / SV Clk -- see note "*"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 4
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 5
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 6
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 7 -- see note "**"
     ];
 constData(4).enabled = constellations.QZSS.enabled;
 
 % BDS (BeiDou) Data Record (RINEX 3.03, Table A14) -- System Identifier "C"
 constData(5).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat(recordFormat,1,3) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1 -- see note "**"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
-    repmat(recordFormat,1,4) ... % broadcast orbit - 4
-    repmat(recordFormat,1,4) ... % broadcast orbit - 5 -- see note "***"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 6
-    repmat(recordFormat,1,4) ... % broadcast orbit - 7 -- see note "****"
+    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat('%19.12f ',1,3) ... % SV / Epoch / SV Clk -- see note "*"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1 -- see note "**"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 4
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 5 -- see note "***"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 6
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 7 -- see note "****"
     ];
 constData(5).enabled = constellations.BeiDou.enabled;
 
 % SBAS Data Record (RINEX 3.03, Table A16) -- System Identifier "S"
 constData(6).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat(recordFormat,1,3) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
+    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat('%19.12f ',1,3) ... % SV / Epoch / SV Clk -- see note "*"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
 ];
 constData(6).enabled = constellations.SBAS.enabled;
 
 % IRNSS Data Record (RINEX 3.03, Table A18) -- System Identifier "I"
 constData(7).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat(recordFormat,1,3) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1 -- see note "***"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
-    repmat(recordFormat,1,4) ... % broadcast orbit - 4
-    repmat(recordFormat,1,4) ... % broadcast orbit - 5
-    repmat(recordFormat,1,4) ... % broadcast orbit - 6
-    repmat(recordFormat,1,4) ... % broadcast orbit - 7 -- see note "**"
+    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat('%19.12f ',1,3) ... % SV / Epoch / SV Clk -- see note "*"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1 -- see note "***"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 4
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 5
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 6
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 7 -- see note "**"
     ];
 constData(7).enabled = 0; % As of May 2020, constellations.IRNSS.enabled not defined yet...
 
 % GLONASS2 Data Record (RINEX 3.03, Table A10[??]) -- "R2" [??]
 constData(8).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat(recordFormat,1,3) ... % SV / Epoch / SV Clk -- see note "*"
-    repmat(recordFormat,1,4) ... % broadcast orbit - 1
-    repmat(recordFormat,1,4) ... % broadcast orbit - 2
-    repmat(recordFormat,1,4) ... % broadcast orbit - 3
+    '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat('%19.12f ',1,3) ... % SV / Epoch / SV Clk -- see note "*"
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 1
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 2
+    repmat('%19.12f ',1,4) ... % broadcast orbit - 3
     ];
 constData(8).enabled = constellations.GLONASS.enabled;
 
@@ -464,30 +498,39 @@ constData(8).enabled = constellations.GLONASS.enabled;
 firstChars = cellfun(@(x) x(1), allData((header_end+1):end), 'un', 0);
 
 % check GNSS identifiers (first character of each data block)
-if ~any(cellfun(@(x) ismember(x,[constData(1:end-1).constLetter]), firstChars))
-    if floor(rinexVersion) == 2  % RINEX 2.x
+if ~any(cellfun(@(x) ismember(x,[constData(1:end-1).constLetter]), firstChars)),
+    if floor(rinexVersion) == 2,  % RINEX 2.x
         if DEBUG, warning('No constellation identifiers in first column of input. (This is LEGAL in RINEX 2.x)'); end
-        if rinexType == 'N'      % GPS
+        if rinexType == 'N',      % GPS
             dummy = 'G';
-        elseif rinexType == 'G'  % GLONASS
+        elseif rinexType == 'G',  % GLONASS
             dummy = 'R';
         else
             dummy = 'S';          % SBAS/GEO
         end
     else % RINEX v3.x
-        if rinexType == 'M'
+        if rinexType == 'M',
             error(['Error in header of %s -- File Type = M (mixed constellation data),\n' ...
                 'so no way to tell which GNSS each parameter block refers to.\n\n'], file_nav);
         else
             dummy = rinexType; % assume all parameter blocks are for the indicated GNSS
         end
     end
-    % Insert appropriate identifiers, padding first column of remaining lines w/ spaces
+
+    % Insert appropriate identifiers, padding first column of remaining
+    % lines w/ spaces and single-digit SVNs with leading zeros
     if DEBUG, warning('Inserting ''%c'' at start of each parameter block.\n\n', dummy); end
-    firstLines = find(cellfun(@(x) ~isspace(x(2)), allData((header_end+1):end))); % first line of each parameter block; insert identifier here
+
+    firstLines = header_end + find(cellfun(@(x) ~isspace(x(2)), allData((header_end+1):end)));
+    idxLeadZero = cellfun(@(x) isspace(x(1)), allData(firstLines));
+    allData(firstLines(idxLeadZero)) = ...
+        cellfun(@(x) ['0' x(2:end)], allData(firstLines(idxLeadZero)), 'UniformOutput', false);
+
+    % row index of first line of each parameter block; insert identifier here
     firstChars = repmat({' '}, size(allData,1)-header_end, 1); % one-space column for padding
-    firstChars(firstLines) = repmat({dummy}, size(firstLines,1), 1);
+    firstChars(firstLines-header_end) = repmat({dummy}, size(firstLines,1), 1);
     allData((header_end+1):end) = strcat(firstChars, allData((header_end+1):end));
+
 end
 
 %constLetters = {'G' 'E' 'R' 'J' 'C' 'S' 'I' 'R2'};
@@ -507,7 +550,7 @@ if isempty(entries)
     error('In input file %s: no GNSS navigation data entries found!\n', file_nav);
 end
 
-for constIdx = 1:length(constData)
+for constIdx = 1:length(constData),
 
     if DEBUG, fprintf('constIdx = %d, constLetter = "%s" ...\n', constIdx, constData(constIdx).constLetter); end %#ok<*UNRCH>
 
@@ -547,7 +590,7 @@ for constIdx = 1:length(constData)
     dummy3 = [ vertcat(dummy2padded{:}) repmat(char(13), constData(constIdx).numSats, 1) ];
 
     % Parse all entries for this constellation into cell array using appropriate format string
-    data = textscan(reshape(dummy3', 1, []), constData(1).formatString);
+    data = textscan(reshape(dummy3', 1, []), constData(constIdx).formatString);
 
     switch constIdx
 
@@ -661,59 +704,64 @@ for constIdx = 1:length(constData)
 
 
         case 2 % GAL (RINEX marker: "E")
-            
+
             % Only parse and save if constellation is active
             if (~constellations.Galileo.enabled), continue, end
-                       
+
             svprn  = data{2};
             year   = data{3};
             year(year < 20) = year(year < 20)+2000;
-            
+
+            % SV / EPOCH / SV CLK
             month  = data{4};
             day    = data{5};
             hour   = data{6};
             minute = data{7};
             second = data{8};
-            
-            af0 = data{9};
-            af1 = data{10};
-            af2 = data{11};
-            
-            IODnav = data{12}; % Analogous to IODE of other GNSSes
-            crs    = data{13};
-            deltan = data{14};
-            M0     = data{15};
-            
+            af0    = data{9};
+            af1    = data{10};
+            af2    = data{11};
+
+            % BROADCAST ORBIT - 1
+            IODnav   = data{12}; % used to be IODE, copied from GPS block
+            crs      = data{13};
+            deltan   = data{14};
+            M0       = data{15};
+
+            % BROADCAST ORBIT - 2
             cuc   = data{16};
             ecc   = data{17};
             cus   = data{18};
             roota = data{19};
-            
+
+            % BROADCAST ORBIT - 3
             toe    = data{20};
             cic    = data{21};
             Omega0 = data{22};
             cis    = data{23};
-            
+
+            % BROADCAST ORBIT - 4
             i0       = data{24};
             crc      = data{25};
             omega    = data{26};
             Omegadot = data{27};
-            
-            idot       = data{28};
-            code_on_L2 = data{29};
-            
-            weekno     = data{30};
+
+            % BROADCAST ORBIT - 5
+            idot         = data{28};
+            data_sources = data{29};
+            weekno       = data{30};
             % Handle week number rollovers
-            weekno(weekno > 2500) = weekno(weekno > 2500) - 1024;
-            
-            L2flag     = data{31};
-            
+            weekno(weekno > 2500) = weekno(weekno > 2500) - 1024; % wrong??? see RINEX 3.4 Table A8, comment "****)" (page A26)
+            spare5p1   = data{31}; % this field is BLANK in the RINEX 3.4 examples (Table A9); does TEXTSCAN handle it correctly??
+
+            % BROADCAST ORBIT - 6
             svaccur  = data{32};
             svhealth = data{33};
-            tgd      = data{34};
-            tgd2     = data{35};
-            
-            tom = data{36};
+            bgd      = data{34};
+            bgd2     = data{35};
+
+            % BROADCAST ORBIT - 7
+            tom      = data{36};
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. *** See also RINEX 3.4, section 8.3.3,
             % which prescribes adjusting ToM by +/-604800 relative to the
@@ -721,8 +769,9 @@ for constIdx = 1:length(constData)
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
-            
-            fit_int = data{37};
+            spare7p1  = data{37};
+            spare7p2  = data{38};
+            spare7p3  = data{39};
             
 
             Eph(1,:)  = svprn;
@@ -735,7 +784,7 @@ for constIdx = 1:length(constData)
             Eph(8,:)  = af0;
             Eph(9,:)  = af1;
             Eph(10,:) = af2;
-            Eph(11,:) = IODnav;
+            Eph(11,:) = IODnav; % formerly "IODE" -- see comment above
             Eph(12,:) = crs;
             Eph(13,:) = deltan;
             Eph(14,:) = M0;
@@ -752,24 +801,28 @@ for constIdx = 1:length(constData)
             Eph(25,:) = omega;
             Eph(26,:) = Omegadot;
             Eph(27,:) = idot;
-            Eph(28,:) = code_on_L2;
+            Eph(28,:) = data_sources;
             Eph(29,:) = weekno;
-            Eph(30,:) = L2flag;
+            Eph(30,:) = spare5p1;
             Eph(31,:) = svaccur;
             Eph(32,:) = svhealth;
-            Eph(33,:) = tgd;
-            Eph(34,:) = tgd2;
+            Eph(33,:) = bgd;
+            Eph(34,:) = bgd2;
             Eph(35,:) = tom;
-            Eph(36,:) = fit_int;
-                      
+            Eph(36,:) = 3;   % ??? "fit_int" seems incorrect here. unlike for GPS, RINEX 3.4 does not include an explicit fit interval
+                             % for GAL. moreover, worth handling carefully in practice due to potentially undocumented (and unexpected)
+                             % behavior related to GAL ephemeris updates -- see, for example,
+                             %    https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/ 
+            if DEBUG, warning('Setting fit_int for GAL to 3 hours... see <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>.'); end
+            
             if suglFlag
                 suglInfo1 = data{38};
                 suglInfo2 = data{39};
-                
+
                 Eph(37,:) = suglInfo1;
                 Eph(38,:) = suglInfo2;
             end
-            
+
             if 1; %LSB_RECOVERY
                 A = Eph';
                 piGPS = 3.1415926535898;
@@ -808,7 +861,7 @@ for constIdx = 1:length(constData)
             % %XXX needs to be what? the above (incomplete) comment is in
             % %XXX original GitHub checkout as of April 2020
             for jdx = 2:length(data)
-               Eph(jdx-1,:) = data{jdx};
+               Eph(jdx-1,:) = data{jdx}; %#ok<AGROW>
             end
 
 
