@@ -69,7 +69,8 @@ if strcmp(constellation,'GAL')
     % <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>,
     % might it be more appropriate to take this value from eph.TTOM (that
     % is, array(:, 35)) instead?
-    eph.IODE         = array(:, 19); % this is just eph.Toe
+    eph.IODnav       = array(:, 11); % this is just eph.Toe
+    %eph.IODE       = array(:, 19); % this is just eph.Toe
 else
     eph.IODE         = array(:, 11);
 end
@@ -109,8 +110,10 @@ eph.health           = array(:, 32);
 eph.TGD              = array(:, 33);
 if strcmp(constellation,'GPS')
     eph.IODC         = array(:, 34);
+elseif strcmp(constellation, 'GAL')
+    eph.IODC         = eph.IODnav; % IODC undefined for GAL
 else % no iodc saved? idk
-    eph.IODC = eph.IODE;
+    eph.IODC         = eph.IODE;
 end
 
 if strcmp(constellation,'BDS')

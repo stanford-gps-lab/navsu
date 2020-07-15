@@ -327,6 +327,7 @@ else
 	    idxBlankFlag = (dummy>0 & dummy<10); % handle blank lines (which parse as zeros) with non-zero LLI flags
 	    dummy(idxBlankFlag) = dummy(idxBlankFlag)/10000; % shift flag into .0001's digit position
 	    flags = mod(round(dummy*10000), 10);
+        if any(any(flags>3)), assert('LLI parser encountered floating point rounding error!'); pause; end;
         % flags = round(10*rem(dummy*1000,1),1); % occasional floating point
         %                                        % errors -- e.g. 136147309.434
         %                                        % --> 10 (wrong), not 0 (right)
