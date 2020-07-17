@@ -326,7 +326,10 @@ else
     	dummy = obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)});
 	    idxBlankFlag = (dummy>0 & dummy<10); % handle blank lines (which parse as zeros) with non-zero LLI flags
 	    dummy(idxBlankFlag) = dummy(idxBlankFlag)/10000; % shift flag into .0001's digit position
-	    flags = round(10*rem(dummy*1000,1),1);
+	    flags = mod(round(dummy*10000), 10);
+        % flags = round(10*rem(dummy*1000,1),1); % occasional floating point
+        %                                        % errors -- e.g. 136147309.434
+        %                                        % --> 10 (wrong), not 0 (right)
 	    obsTypes{end+1} = ['LLI' obsFields{idxObsTypesCarrier(idxLLI)}]; %#ok<AGROW>
 	    obsStruc.(obsTypes{end}) = flags;
 	    obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)}) = round(dummy, 3); % strip off flag digit from observations themselves to restore original values
