@@ -565,6 +565,32 @@ for constIdx = 1:length(constData)
     dummy = arrayfun(@(x) x+(0:(constData(constIdx).blockLines - 1)), constData(constIdx).firstLinesIdx, 'UniformOutput', false);
     constData(constIdx).allLines = [dummy{:}];
 
+    % Replace *mid-line* blank/spare fields with zeros (per RINEX 3.x section 6.6); end-of-line
+    % blank/spare fields dealt with separately below
+    %
+    % - when field following blank is nonnegative
+    allData((header_end+1):end) = cellfun(@(x) strrep(x,blanks(20),' 0.000000000000E+00 '), ...
+        allData((header_end+1):end), 'UniformOutput', false);
+    % - when field following blank is negative
+    allData((header_end+1):end) = cellfun(@(x) strrep(x,[blanks(19) '-'],' 0.000000000000E+00-'), ...
+        allData((header_end+1):end), 'UniformOutput', false);
+    
+    % Replace one or more *end-of-line* blank/empty fields with zeros (per RINEX 3.x section 6.6)
+    lineLengths = cellfun(@numel, allData((header_end+1):end));
+    idxMalformedLines = header_end + find(~ismember(lineLengths, [23 42 61 80])); % lines whose length does not indicate
+    if any(idxMalformedLines),                                                    % exactly 0, 1, 2, or 3 non-empty fields
+        warning([ ...
+            sprintf('*** In %s: possible corrupted/truncated lines: ', file_nav) ...
+            sprintf('%d, ', header_end+idxMalformedLines) sprintf('\b\b.\n')]);
+    end
+    idxShortLines = header_end + find(lineLengths < 80);
+    idxShortLines = setdiff(idxShortLines, idxMalformedLines); % don't try to fix possibly corrupted lines
+    for idx = 1:numel(idxShortLines),
+        while size(allData{idxShortLines(idx)}, 2) < 80,
+            allData{idxShortLines(idx)} = [allData{idxShortLines(idx)} ' 0.000000000000E+00'];
+        end
+    end
+            
     % Reshape all entries for this constellation into correct format for TEXTSCAN,
     % padding with spaces to handle longer lines (e.g. those containing data in 'spare' fields
     dummy2 = join( reshape( allData(constData(constIdx).allLines), constData(constIdx).blockLines, constData(constIdx).numSats )' );
