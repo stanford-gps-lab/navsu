@@ -530,7 +530,8 @@ entries(entries == 2 & prnEntries > 100) = 8; % newest occasional GLOANSS PRN 13
 
 % Find number of SVs listed for each constellation
 entryCounts = num2cell(hist(entries,1:8)); %#ok<HIST>
-%entryCounts = num2cell(histogram(entries,'BinLimits',[1,8],'BinMethod','integers').Values); %recommended for R2014a or newer
+% entryCounts = ...
+%     num2cell(histogram(entries, 'BinLimits', [1, 8], 'BinMethod', 'integers').Values); %recommended for R2014a or newer
 [constData.numSats] = entryCounts{:};
 
 % Check if we have any data to work with...
@@ -539,9 +540,9 @@ if isempty(entries)
 end
 
 for constIdx = 1:length(constData)
-
+    
     if DEBUG, fprintf('constIdx = %d, constLetter = "%s" ...\n', constIdx, constData(constIdx).constLetter); end %#ok<*UNRCH>
-
+    
     % Skip constellations not requested, or with no entries in input file
     if ~constData(constIdx).numSats
         if DEBUG, fprintf('Skipping constellation %s -- no entries in input file...\n', constData(constIdx).constLetter); end
@@ -557,50 +558,86 @@ for constIdx = 1:length(constData)
     % Row indices of FIRST lines of all SV data blocks for this constellation
     constData(constIdx).firstLinesIdx = header_end + find(strcmp(constData(constIdx).constLetter, firstChars));
 
-    % Number of satellites for this constellation
-    %%% UNNECESSARY -- done above using hist() for all constellations in a single step
-    % constData(constIdx).numSats = length(constData(constIdx).firstLinesIdx);
+    % Number of satellites for this constellation (NO LONGER NECESSARY —
+    % done above using hist() for all constellations in a single step
+    %constData(constIdx).numSats = length(constData(constIdx).firstLinesIdx);
 
     % Row indices of ALL SV data blocks for this constellation, based upon FIRST line indices found above
-    dummy = arrayfun(@(x) x+(0:(constData(constIdx).blockLines - 1)), constData(constIdx).firstLinesIdx, 'UniformOutput', false);
-    constData(constIdx).allLines = [dummy{:}];
+    dummy = arrayfun(@(x) x+(0:(constData(constIdx).blockLines - 1)), ...
+        constData(constIdx).firstLinesIdx, 'UniformOutput', false);
+    constData(constIdx).allLinesIdx = [dummy{:}];
 
-    % Replace *mid-line* blank/spare fields with zeros (per RINEX 3.x section 6.6); end-of-line
-    % blank/spare fields dealt with separately below
+    % Check for non-compliant (too long) lines (> 80 char); truncate and warn
+    % if any are found.
     %
-    % - when field following blank is nonnegative
-    allData((header_end+1):end) = cellfun(@(x) strrep(x,blanks(20),' 0.000000000000E+00 '), ...
-        allData((header_end+1):end), 'UniformOutput', false);
-    % - when field following blank is negative
-    allData((header_end+1):end) = cellfun(@(x) strrep(x,[blanks(19) '-'],' 0.000000000000E+00-'), ...
-        allData((header_end+1):end), 'UniformOutput', false);
-    
-    % Replace one or more *end-of-line* blank/empty fields with zeros (per RINEX 3.x section 6.6)
+    % CAUTION: according to RINEX 3.x section 5.11, the 80-character limit has
+    % been removed -- but that seems to only apply to *obs* files, not nav.
+    % Need to verify that it DOES apply to .nav files, otherwise the following
+    % check (and remaining references to the 80-char limit) should be removed.
     lineLengths = cellfun(@numel, allData((header_end+1):end));
-    idxMalformedLines = header_end + find(~ismember(lineLengths, [23 42 61 80])); % lines whose length does not indicate
-    if any(idxMalformedLines),                                                    % exactly 0, 1, 2, or 3 non-empty fields
+    idxLongLines = header_end + find(lineLengths > 80);
+    if any(idxLongLines),
+        warning([ ...
+            sprintf('*** In %s: possible corrupted lines (> 80 char long): ', file_nav) ...
+            sprintf('%d, ', header_end+idxLongLines) sprintf('\b\b. Truncating to 80 chars.\n')]);
+        for idx = 1:numel(idxLongLines),
+            allData{idxLongLines(idx)} = allData{idxLongLines(idx)}(1:80);
+            lineLengths(lineLengths > 80) = 80;
+        end
+    end
+     
+    % Check for possibly corrupted lines (in which the # of chars does not
+    % correspond to exactly 1, 2, 3, or 4 fields)
+    idxMalformedLines = header_end + find(~ismember(lineLengths, [23 42 61 80]));
+    if any(idxMalformedLines),                                                    
         warning([ ...
             sprintf('*** In %s: possible corrupted/truncated lines: ', file_nav) ...
             sprintf('%d, ', header_end+idxMalformedLines) sprintf('\b\b.\n')]);
     end
-    idxShortLines = header_end + find(lineLengths < 80);
+    
+    % Find short lines and space-pad them to 80 chars, skipping suspected
+    % malformed lines from above
+    idxShortLines = header_end + find(lineLengths < 80); % truncated lines
     idxShortLines = setdiff(idxShortLines, idxMalformedLines); % don't try to fix possibly corrupted lines
     for idx = 1:numel(idxShortLines),
         while size(allData{idxShortLines(idx)}, 2) < 80,
             allData{idxShortLines(idx)} = [allData{idxShortLines(idx)} ' 0.000000000000E+00'];
         end
     end
-            
+   
+    % Finally, look for blank fields in all (non-header) lines and replace them
+    % explicitly with zeros prior to parsing numerical values. For each SV
+    % ephemeris parameter block, the first line should have exactly three
+    % decimal points (at columns 26, 45, and 64); the rest should have exactly
+    % four (at columns 7, 26, 45, and 64). This should be correct regardless
+    % of whether the values expressed in scientific notation are formatted
+    % with a leading digit in front of the decimal point (e.g. 0.1234E+05)
+    % or not (e.g. .01234E+06). Note that even the RINEX 3.04 spec is
+    % ambiguous about this: Table A7 (GPS Navigation Message File example)
+    % contains ephemeris blocks with NO leading digit and a "D" as the exponent
+    % separator; while Table A11 (GNSS Navigation Message File – Example:
+    % Mixed GPS / GLONASS) contains blocks with a zero as the leading digit
+    % and an "E" as the exponent separator.
+    for idx = 1:numel(constData(constIdx).allLinesIdx)
+        if ismember(constData(constIdx).allLinesIdx(idx), constData(constIdx).firstLinesIdx),
+            decimalPtPos = [26 45 64];
+        else
+            decimalPtPos = [7 26 45 64];
+        end
+        idxBlank = ~eq(allData{constData(constIdx).allLinesIdx(idx)}(decimalPtPos), '.');
+        decimalPtPos = decimalPtPos(idxBlank); % keep only entries that need to be padded
+        for idx2 = 1:numel(decimalPtPos),
+            allData{constData(constIdx).allLinesIdx(idx)}(decimalPtPos(idx2)+(-2:16)) = ...
+                    ' 0.000000000000E+00'; 
+        end
+    end    
+
     % Reshape all entries for this constellation into correct format for TEXTSCAN,
     % padding with spaces to handle longer lines (e.g. those containing data in 'spare' fields
-    dummy2 = join( reshape( allData(constData(constIdx).allLines), constData(constIdx).blockLines, constData(constIdx).numSats )' );
+    dummy2 = join( reshape( allData(constData(constIdx).allLinesIdx), constData(constIdx).blockLines, constData(constIdx).numSats )' );
     maxLen = max(cellfun(@(x) size(x,2), dummy2)); % widest row
     dummy2padded = cellfun(@(x) [x repmat(' ', 1, maxLen-size(x,2))], dummy2, 'UniformOutput', false);
 
-%     if length(unique(cellfun(@(x) size(x, 2), dummy2))) > 1,
-%         warning('One or more lines in input FAILS because not all rows of dummy2 are of equal lengths... PAUSED');
-%         pause;
-%     end
     dummy3 = [ vertcat(dummy2padded{:}) repmat(char(13), constData(constIdx).numSats, 1) ];
 
     % Parse all entries for this constellation into cell array using appropriate format string
