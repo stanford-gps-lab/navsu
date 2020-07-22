@@ -39,6 +39,7 @@ eph.filename         = filename;
 eph.leapSecond       = leapSecond;
 eph.PRN              = array(:, 1);
 [~,eph.Toc,eph.GPS_weekday] = navsu.time.jd2gps(navsu.time.cal2jd(array(:,2),array(:,3),array(:,4)+array(:,5)/24+array(:,6)/(24*60)+array(:,7)/(86400)));
+eph.Toc = round(eph.Toc, 3); % Clean up rounding artifacts from navsu.time.jd2gps() call — RINEX specifies whole seconds
 eph.clock_bias       = array(:, 8);
 
 if strcmp(constellation,'SBAS') % rows 11-22 mostly follow GLONASS(!) record layout...
