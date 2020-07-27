@@ -108,11 +108,7 @@ for ddx = 1:length(dayList)
                     change = 1;
                     
                     if unzipFlag
-                        if strcmpi(exti,'.GZ')
-                            gunzip([target_dir '\' serverName]);
-                        else
-                            unzip([target_dir '\' serverName]);
-                        end
+                        [~, ~] = navsu.readfiles.unzipFile([target_dir filesep serverName]);
                     end
                 end
             end

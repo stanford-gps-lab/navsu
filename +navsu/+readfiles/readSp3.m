@@ -261,7 +261,7 @@ pvt.Event(any(pvt.position == 0, 2)) = true;
 if cmToApcFlag
     % Pull sun position for each time in SP3 file
     
-    if ~contains(path,'\mice\src\mic')
+    if ~contains(path, strrep('\mice\src\mic', '\', filesep)) % handle both Windows and other platforms
         navsu.thirdparty.attachToMice();
     end
     t = GPS_seconds:Epoch_interval:(GPS_seconds+NumEpochs*Epoch_interval);

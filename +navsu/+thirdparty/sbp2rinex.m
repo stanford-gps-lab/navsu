@@ -93,7 +93,7 @@ epochEnd   = res.epochEnd;
 
 % The exe is expected to be in the +thirdparty folder
 s = what('utility');
-pathExe = [s.path '\+thirdparty\sbp2rinex.exe'];
+pathExe = [s.path '\+thirdparty\sbp2rinex.exe']; % leave with backslashes since this is implicitly Windows
 
 % Go through each of the options and add text to the system inputs
 optionText = [];

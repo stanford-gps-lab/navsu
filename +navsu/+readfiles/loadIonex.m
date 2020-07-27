@@ -76,7 +76,7 @@ else
     dcbData = [];
     
     destDir      = settings.dcbDir;
-    destPath   = [int2str(yearList) '\' num2str(dayList,'%03d') '\'];
+    destPath   = [int2str(yearList) filesep num2str(dayList,'%03d') filesep];
     
     filenamei = [center 'g' num2str(dayList,'%03d') '0.' num2str(mod(yearList,100),'%02d') 'i'];
     target_dir = [destDir destPath];
