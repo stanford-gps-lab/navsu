@@ -64,7 +64,7 @@ eph.clock_drift      = array(:, 9);
 eph.clock_drift_rate = array(:, 10);
 if strcmp(constellation,'GAL')
     % IODE is not defined for GAL -- the most closely analogous quantity is
-    % called IODNav -- so take this value from ToE (see below) instead.
+    % called IODNav -- so take this value from Toe (see below) instead.
     %
     % QUESTION: per the (somewhat hard-to-follow) discusslion presented in
     % <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>,

@@ -36,8 +36,8 @@ for loop = 1:tmArrayLen
     vel = eph.V(I,:)'/1000;
     acc = eph.A(I,:)'/1000;
     acc(abs(acc) > 1e-5) = acc(abs(acc) > 1e-5)*1e-10;
-    toe = mod(eph.ToE(I),7*86400);
-    tfinal = tmArray(loop)-eph.ToE(I)-eph.leapSecond;
+    toe = mod(eph.Toe(I),7*86400);
+    tfinal = tmArray(loop)-eph.Toe(I)-eph.leapSecond;
     
     
     ho = sign(tfinal)*60;
@@ -94,14 +94,14 @@ for loop = 1:tmArrayLen
     pos.t_m_toc(loop) = tfinal;
     %     pos.accuracy(loop) = eph.accuracy(I);
     pos.health(loop) = eph.health(I);
-    pos.IODC(loop) = eph.ToE(I);
-    %     pos.AoD(loop) = tmArray(loop)- eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.ToE(I);
-    pos.t_m_toe(loop) = tmArray(loop)- eph.ToE(I);
+    pos.IODC(loop) = eph.Toe(I);
+    %     pos.AoD(loop) = tmArray(loop)- eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.Toe(I);
+    pos.t_m_toe(loop) = tmArray(loop)- eph.Toe(I);
     
     pos.tslu(loop) = tmArray(loop)- eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.tk(I) +eph.AoOper(I)*86400;
     pos.tslu(loop) = eph.AoOper(I)*86400;
     
-    pos.toe_m_ttom(loop) = eph.ToE(I) - eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.tk(I);
+    pos.toe_m_ttom(loop) = eph.Toe(I) - eph.GPS_week_num(I) * 604800 - eph.GPS_weekday(I)*86400- eph.tk(I);
 
     pos.Fit_interval(loop) = 900;
     pos.freqNum(loop) = eph.freqNum(I);

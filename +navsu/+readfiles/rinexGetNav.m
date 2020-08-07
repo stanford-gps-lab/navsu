@@ -709,7 +709,7 @@ for constIdx = 1:length(constData)
             % which prescribes adjusting this ToM by -604800 relative to the
             % received value, resulting in a negative value, for messages
             % broadcast near the midnight Saturday/Sunday (UTC) boundary,
-            % when ToE and ToC already refer to the following week.
+            % when Toe and Toc already refer to the following week.
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
@@ -816,7 +816,7 @@ for constIdx = 1:length(constData)
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. *** See also RINEX 3.4, section 8.3.3,
             % which prescribes adjusting ToM by +/-604800 relative to the
-            % received value, rather than 7200 sec before ToE, as here.
+            % received value, rather than 7200 sec before Toe, as here.
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
@@ -1083,7 +1083,7 @@ for constIdx = 1:length(constData)
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. NOTE: text in 6.13 says to reduce ToM
             % by 604800 (possibly going negative) to refer to same week as
-            % ToE refers to... would that be more correct than (toe-7200),
+            % Toe refers to... would that be more correct than (toe-7200),
             % as done here?
             if abs(tom) > 86400*7
                 tom = toe-7200;
