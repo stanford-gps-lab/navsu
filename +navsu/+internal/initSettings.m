@@ -71,7 +71,7 @@ settings.orbitInterpMethod = 'lagrange';
 
 %% Primary directory
 baseDir = preciseProdDir;
-tempDir = [baseDir '\Temp Dir\'];
+tempDir = [baseDir filesep 'Temp Dir' filesep];
 
 settings.tempDir = tempDir;
 

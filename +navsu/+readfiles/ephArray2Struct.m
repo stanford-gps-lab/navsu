@@ -39,6 +39,7 @@ eph.filename         = filename;
 eph.leapSecond       = leapSecond;
 eph.PRN              = array(:, 1);
 [~,eph.Toc,eph.GPS_weekday] = navsu.time.jd2gps(navsu.time.cal2jd(array(:,2),array(:,3),array(:,4)+array(:,5)/24+array(:,6)/(24*60)+array(:,7)/(86400)));
+eph.Toc = round(eph.Toc, 3); % Clean up rounding artifacts from navsu.time.jd2gps() call — RINEX specifies whole seconds
 eph.clock_bias       = array(:, 8);
 
 if strcmp(constellation,'SBAS') % rows 11-22 mostly follow GLONASS(!) record layout...
@@ -63,13 +64,14 @@ eph.clock_drift      = array(:, 9);
 eph.clock_drift_rate = array(:, 10);
 if strcmp(constellation,'GAL')
     % IODE is not defined for GAL -- the most closely analogous quantity is
-    % called IODNav -- so take this value from ToE (see below) instead.
+    % called IODNav -- so take this value from Toe (see below) instead.
     %
     % QUESTION: per the (somewhat hard-to-follow) discusslion presented in
     % <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>,
     % might it be more appropriate to take this value from eph.TTOM (that
     % is, array(:, 35)) instead?
-    eph.IODE         = array(:, 19); % this is just eph.Toe
+    eph.IODnav       = array(:, 11); % this is just eph.Toe
+    %eph.IODE       = array(:, 19); % this is just eph.Toe
 else
     eph.IODE         = array(:, 11);
 end
@@ -109,8 +111,10 @@ eph.health           = array(:, 32);
 eph.TGD              = array(:, 33);
 if strcmp(constellation,'GPS')
     eph.IODC         = array(:, 34);
+elseif strcmp(constellation, 'GAL')
+    eph.IODC         = eph.IODnav; % IODC undefined for GAL
 else % no iodc saved? idk
-    eph.IODC = eph.IODE;
+    eph.IODC         = eph.IODE;
 end
 
 if strcmp(constellation,'BDS')
@@ -125,5 +129,4 @@ if size(array,2) == 38
    eph.suglInfo2 = array(:,38);
 
 end
-
 

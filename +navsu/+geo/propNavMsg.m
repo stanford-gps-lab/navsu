@@ -35,27 +35,27 @@ function pos = propNavMsg(beph, prn, const, epochs, varargin)
 
 % prn and const arguments must be the same size
 if ~isequal(size(prn), size(const))
-   error('Must provide one constellation index for each requested PRN/SVN')
+    error('Must provide one constellation index for each requested PRN/SVN')
 end
 
 % User provided a single epoch --> apply it to all {PRN, const} pairs
 if length(epochs(:)) == 1 && length(prn(:)) > 1
-   epochs = epochs * ones(size(prn));
-% User provided a single {PRN, const} pair --> calculate at all epochs
+    epochs = epochs * ones(size(prn));
+    % User provided a single {PRN, const} pair --> calculate at all epochs
 elseif length(prn(:)) == 1 && length(epochs(:)) > 1
-   prn = prn * ones(size(epochs));
-   const = const * ones(size(epochs));
+    prn = prn * ones(size(epochs));
+    const = const * ones(size(epochs));
 end
 
-% Now we should have (#PRNs)=(#constInds)=(#epochs), either because user
-% provided an epochs vector of the right size, or a single epoch from which
+% Now we should have (#PRNs)=(#constInds)=(#epochs), because user provided
+% either an epochs vector of the right size, or a single epoch from which
 % we built such a vector just above. Throw error ONLY if neither is true.
 if ~isequal(size(prn),size(const),size(epochs))
-   error(sprintf([ ...
-       'Must specify either a single epoch (to apply to all PRN/const pairs),\n' ...
-       '--- OR ---\na single PRN/const pair (to be calculated at all epochs),\n' ...
-       '--- OR ---\na vector of epochs the same size as the number of PRN/const pairs.\n' ...
-       ]));
+    error(sprintf([ ...
+        'Must specify either a single epoch (to apply to all PRN/const pairs),\n' ...
+        '--- OR ---\na single PRN/const pair (to be calculated at all epochs),\n' ...
+        '--- OR ---\na vector of epochs the same size as the number of PRN/const pairs.\n' ...
+        ]));
 end
 
 nProp = length(prn);
@@ -65,12 +65,12 @@ pos = struct('x', NaN(nProp, 1), 'y', NaN(nProp, 1), 'z', NaN(nProp, 1), ...
     'x_dot', NaN(nProp, 1), 'y_dot', NaN(nProp, 1), 'z_dot', NaN(nProp, 1), ...
     'clock_bias', NaN(nProp, 1), 'clock_drift', NaN(nProp, 1),'clock_rel', NaN(nProp, 1), ...
     'accuracy', NaN(nProp, 1), 'health', NaN(nProp, 1), ...
-	'IODC', NaN(nProp, 1), 't_m_toe', NaN(nProp, 1), ...
+    'IODC', NaN(nProp, 1), 't_m_toe', NaN(nProp, 1), ...
     'tslu', NaN(nProp, 1), 'toe_m_ttom', NaN(nProp, 1), ...
     'Fit_interval', NaN(nProp, 1),'TGD',NaN(nProp,1),'t_m_toc',NaN(nProp,1),...
     'freqNum',nan(nProp,1));
 
-% Inputs to the subfunctions are actually week number and time of week 
+% Inputs to the subfunctions are actually week number and time of week
 [weeks,tows] = navsu.time.epochs2gps(epochs);
 
 
@@ -87,11 +87,11 @@ for cdx = constFull
    
    switch constFull(cdx)
        case 1 
+
            % GPS
            if isempty(beph.gps),
                warning('propNavMsg: GPS ephemeris not supplied!'); continue;
            end
-
            posi = navsu.geo.propNavMsgGps(beph.gps,prn(indsi),weeks(indsi),...
                tows(indsi),'GPS');
 
@@ -101,7 +101,7 @@ for cdx = constFull
                warning('propNavMsg: GLO ephemeris not supplied!'); continue;
            end
            posi = navsu.geo.propNavMsgGlo(beph.glo,prn(indsi),weeks(indsi),...
-                   tows(indsi));
+               tows(indsi));
            
        case 3
            % Galileo
@@ -120,8 +120,7 @@ for cdx = constFull
                tows(indsi),'BDS');
            
        otherwise
-           warning('This constellation is not supported- sorry');
-           
+           warning('This constellation is not supported- sorry')
    end
    
    % Put this data into the output structure
@@ -131,11 +130,5 @@ for cdx = constFull
    end
     
 end
-
-
-
-
-
-
 
 end

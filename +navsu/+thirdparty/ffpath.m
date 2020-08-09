@@ -30,7 +30,7 @@ if nargin<1
     error('The function requires one input argument (file name)')
 end
 pth = pwd;
-if exist([pth '\' fname],'file'), return, end % fname found in current dir
+if exist([pth filesep fname],'file'), return, end % fname found in current dir
 
 tp = matlabpath;
 t  = 0;
@@ -38,7 +38,7 @@ for j = 1:2
     I = [t, findstr(tp,';'), length(tp)+1];
     for k = 1:length(I)-1               %   search in path's directories
         pth = tp(I(k)+1:I(k+1)-1);
-        if exist([pth '\' fname],'file'), return, end
+        if exist([pth filesep fname],'file'), return, end
     end
     [status,tp] = system('path');
     if status, break, end           %   if status~=0

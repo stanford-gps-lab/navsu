@@ -48,12 +48,12 @@ end
 % eph.Zdd              = array(:, 21);
 % eph.AOI              = array(:, 22);
 
-ToE = datenum(array(:, 2:7));
-nd = mode(floor(ToE)) - datenum([1980 1 6]);
-nd2 = floor(ToE)- datenum([1980 1 6]);
+Toe = datenum(array(:, 2:7));
+nd = mode(floor(Toe)) - datenum([1980 1 6]);
+nd2 = floor(Toe)- datenum([1980 1 6]);
 eph.GPS_week_num     = floor(nd2 / 7);
 eph.GPS_weekday      = mod(nd2, 7);
-eph.ToE              = round((ToE - datenum([1980 1 6])) * 86400);   % seconds since 1980-1-6
+eph.Toe              = round((Toe - datenum([1980 1 6])) * 86400);   % seconds since 1980-1-6
 eph.filename         = filename;
 eph.leapSecond       = leapSecond;
 eph.PRN              = array(:, 1);

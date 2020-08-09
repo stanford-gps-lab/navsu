@@ -74,7 +74,7 @@ for ddx = 1:length(yearList)
             ftpStruc.destDir      = settings.dcbDir;
             ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
             ftpStruc.sourceFormat = '[''/gnss/products/bias/'' num2str(year) ''/'']';
-            ftpStruc.destFormat   = '[int2str(year) ''/'']';
+            ftpStruc.destFormat   = ['[int2str(year) ''' filesep ''']'];
             ftpStruc.fileFormat   =  {'[''DLR0MGXFIN_'' num2str(year,''%04d'') num2str(floor(floor(dayNum/91)*91/10),''%02d'') ''*0000_03L_01D_DCB.BSX*'']' };
             filenamei = [settings.dcbDir eval(ftpStruc.destFormat) eval(ftpStruc.fileFormat{1})];
             
@@ -121,7 +121,7 @@ for ddx = 1:length(yearList)
             ftpStruc.destDir      = settings.dcbDir;
             ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
             ftpStruc.sourceFormat = '[''/gnss/products/ionex/'' num2str(year) ''/'' num2str(dayNum,''%03d'') ''/'']';
-            ftpStruc.destFormat   = '[int2str(year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+            ftpStruc.destFormat   = ['[int2str(year) ''' filesep ''' num2str(dayNum,''%03d'') ''' filesep ''']'];
             ftpStruc.fileFormat   =  {'[''codg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(year,100),''%02d'') ''i*'']' ;
                 '[''casg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(year,100),''%02d'') ''i*'']' ;};
             ftpStruc.unzipFlag    = 1;
@@ -137,7 +137,7 @@ for ddx = 1:length(yearList)
             ftpStruc.destDir      = settings.dcbDir;
             ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
             ftpStruc.sourceFormat = '[''/pub/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
-            ftpStruc.destFormat   = '[int2str(year) ''/'' num2str(dayNum,''%03d'') ''/'']';
+            ftpStruc.destFormat   = ['[int2str(year) ''' filesep ''' num2str(dayNum,''%03d'') ''' filesep ''']'];
             ftpStruc.fileFormat   =  {'[''com'' num2str(gpsWeek,''%04d'') num2str(gpsDow) ''.bia.Z'']' };
             ftpStruc.unzipFlag    = 1;
             filenamei = [settings.dcbDir eval(ftpStruc.destFormat) eval(ftpStruc.fileFormat{1})];
@@ -150,7 +150,7 @@ for ddx = 1:length(yearList)
                 ftpStruc.destDir      = settings.dcbDir;
                 ftpStruc.ftpSite      = 'cddis.gsfc.nasa.gov';
                 ftpStruc.sourceFormat = '[''/pub/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
-                ftpStruc.destFormat   = '[int2str(year) ''/'' num2str(dayNum,''%03d'') ''/'']';
+                ftpStruc.destFormat   = ['[int2str(year) ''' filesep ''' num2str(dayNum,''%03d'') ''' filesep ''']'];
                 ftpStruc.fileFormat   =  {'[''COD0MGXFIN_'' int2str(year) num2str(dayNum , ''%03i'') ''0000_01D_01D_OSB.BIA.gz'']' };
                 ftpStruc.unzipFlag    = 1;
                 

@@ -85,7 +85,7 @@ if any(cellfun(@isempty,allData))
     return
 else
     header_end = find(cellfun(@(x) ~isempty(x), strfind(allData,'END OF HEADER')));
-    if isempty(header_end) 
+    if isempty(header_end)
         warning('Error reading %s -- end of header not found!\n', file_nav);
         return
     end
@@ -97,21 +97,27 @@ suglFlag = ~isempty(strfind(file_nav,'sugl'));
 %% Parse the header
 
 for idx = 1:header_end
-    
+
     lin = allData{idx};
-    
+
     %%% RINEX version and file type
     if ~isempty(strfind(lin, 'RINEX VERSION / TYPE'))
-        vers_found = 1; 
-        rinexVersion = cell2mat(textscan(lin(1:9), '%9.2f')); 
+        vers_found = 1;
+        rinexVersion = cell2mat(textscan(lin(1:9), '%9.2f'));
         rinexType = lin(21);
-        
+
         % sanity check version and system type
         if floor(rinexVersion) == 2, % Known versions are 2.00 -- 2.11 (May 2020)
             if ~ismember(rinexType, 'NGH'), % N=GPS[Table A3]; G=GLONASS[Table A10]; H=SBAS/Geo [Table A15]
                 error(['Error in header of %s -- RINEX %.2f file type = %s is undefined ' ...
                     '(allowed: N [GPS], G [GLONASS], H [SBAS/Geo]).\n'], ...
                     file_nav, rinexVersion, rinexType);
+            elseif strcmp(rinexType, 'N'),
+                rinexSatelliteSystem = 'G';
+            elseif strcmp(rinexType, 'G'),
+                rinexSatelliteSystem = 'R';
+            else
+                rinexSatelliteSystem = 'S';
             end
         elseif floor(rinexVersion) == 3, % Known versions are 3.00 -- 3.04 (May 2020)
             if rinexType ~= 'N',
@@ -128,9 +134,9 @@ for idx = 1:header_end
         else
             error('Error in header of %s -- RINEX version %.2f unknown!', file_nav, rinexVersion);
         end
-        
+
     end
-    
+
     %%% Time system corrections [OPTIONAL]
     %
     % RINEX 2: (Table A3) Time corrections must be marked with the header
@@ -151,7 +157,7 @@ for idx = 1:header_end
     %          header. Each such line indicates corrections between two
     %          specific time systems, taken pairwise (UTC, GPS, GAL, GLO,
     %          QZSS, IRNSS, and SBAS). The first field of each such line
-    %          must be marked with a 4-character identifier specifying the 
+    %          must be marked with a 4-character identifier specifying the
     %          two systems related by the parameters given on that line. All
     %          such lines contain the same four parameters: a0, a1, T and W.
     %
@@ -186,8 +192,8 @@ for idx = 1:header_end
         end
         [timeCorrR2_found, timeCorrR3_found] = deal(0); % avoid extraneous warnings
     end
-    
-    
+
+
     %%% Iono corrections [OPTIONAL]
     %
     % RINEX 2: (Table A3) A full set of iono correction params requires both
@@ -216,9 +222,9 @@ for idx = 1:header_end
                                                     % time mark and UTC ID
                                                     % without confusing TEXTSCAN
     if ~isempty(ionoCorrIdx),
-        
+
         data = textscan(lin(1:ionoCorrIdx-1), '%4s%12.4f%12.4f%12.4f%12.4f%c%2d%*[^\n]');
-        
+
         switch cell2mat(data{1})
             case 'GAL'
                 if ~any(isnan(ionoCorrCoeffs)), % no longer NaNs once an IONO CORR line is parsed
@@ -229,10 +235,10 @@ for idx = 1:header_end
                         'struct(s) to handle parameters from multiple systems!\n' ]);
                 end
                 % 'GAL', ai0 - ai2, then a blank
-                ionoCorrType = cell2mat(data{1}); 
+                ionoCorrType = cell2mat(data{1});
                 ionoCorrCoeffs(1:3) = deal(cell2mat(data(2:4)));
                 ionoCorrCoeffs(4:8) = 0;
-                timeMark = data(6); ionoSVID = data{7}; % transmission time, SVID (mandatory for BDS, optional for other systems)                
+                timeMark = data(6); ionoSVID = data{7}; % transmission time, SVID (mandatory for BDS, optional for other systems)
             case {'GPSA','QZSA','BDSA','IRNA'}
                 if ~any(isnan(ionoCorrCoeffs(1:4))), % no longer NaNs once an IONO CORR line is parsed
                     warning(['In input file %s:\n' ...
@@ -242,7 +248,7 @@ for idx = 1:header_end
                         file_nav);
                 end
                 % 'xxxA', then alpha0 - alpha3
-                ionoCorrType = cell2mat(data{1}); 
+                ionoCorrType = cell2mat(data{1});
                 ionoCorrCoeffs(1:4) = deal(cell2mat(data(2:5)));
                 % these are required for BDS, optional for other systems:
                 if exist('timeMark','var') && ~strcmp(timeMark, data{6})
@@ -253,7 +259,7 @@ for idx = 1:header_end
                     warning(['Iono correction time mark in line with label ''%s'' has different ' ...
                         'SVID (%d) than previously parsed value (%d).\n'], ionoCorrType, data{7}, ionoSVID);
                 end
-                timeMark = data(6); ionoSVID = data{7}; % transmission time, SVID (mandatory for BDS, optional for other systems)                
+                timeMark = data(6); ionoSVID = data{7}; % transmission time, SVID (mandatory for BDS, optional for other systems)
                 if (strcmp(data{1},'BDSA')) && ~all(data{6:7})
                     warning('Error reading %s -- missing mandatory time mark and/or SVID field in BeiDou line!\n', file_nav);
                 end
@@ -277,7 +283,7 @@ for idx = 1:header_end
                     warning(['Iono correction time mark in line with label ''%s'' has different ' ...
                         'SVID (%d) than previously parsed value (%d).\n'], ionoCorrType, data{7}, ionoSVID);
                 end
-                timeMark = data(6); ionoSVID = data{7}; % transmission time, SVID (mandatory for BDS, optional for other systems)                
+                timeMark = data(6); ionoSVID = data{7}; % transmission time, SVID (mandatory for BDS, optional for other systems)
                 if (strcmp(data{1},'BDSB')) && ~all(data{6:7})
                     warning('Error reading %s -- missing mandatory time mark and/or SVID field in BeiDou line!\n', file_nav);
                 end
@@ -287,14 +293,14 @@ for idx = 1:header_end
         end % switch
 
     end % if ~isempty(ionoCorrIdx
-    
+
     % Whether RINEX 2 or 3, assemble "Iono Corrections" struct
     if all(~isnan(ionoCorrCoeffs))
         if ~strcmp(ionoCorrType, 'RINEX2_A0-B3')
             ionoCorrType = ionoCorrType(1:3); % strip off 'A'/'B'
         end
         dummy = struct( ...
-            'ionoCorrType', ionoCorrType, ... 
+            'ionoCorrType', ionoCorrType, ...
             'ionoCorrCoeffs', ionoCorrCoeffs, ...
             'timeMark', timeMark, 'ionoSVID', ionoSVID);
         ionoCorrCoeffs = nan(8,1); % avoid duplicating parsed data into iono struct next time around
@@ -306,21 +312,32 @@ for idx = 1:header_end
             clear dummy;
         end
     end
-    
+
     %%% Leap second [OPTIONAL]
+    %
+    % RINEX 3: (Table A2, A5) This optional header line contains four integer
+    % values, plus a 3-char text label. These specify the current number of
+    % leap seconds, plus the immediately preceding (or, if week and day
+    % number in the next two fields are in the future, upcoming) number of
+    % leap seconds; week and day number of the day before the leap second
+    % reflected by this current counter (first value on this line) was
+    % introduced; and a system identifier (as of 2020, only allowable IDs
+    % are GPS or BDS).
     leapInd = strfind(lin,'LEAP SECONDS');
     if ~isempty(leapInd)
         leap_found = 1; %#ok<NASGU>
         data = textscan(lin(1:leapInd-1),'%6d%6d%6d%6d%3c%*[^\n]');
         dataIdx = find(~cellfun(@isempty,data(1:end-1))); %if non-empty, last element (time sys ID) is a string
         leapSecs(dataIdx) = cell2mat(data(dataIdx));
-        if ~cellfun(@isempty, data(end))
-            % No obvious place to return time system ID string found in
-            % LEAP SECOND header line, so at just print warning for now.
-            warning('Discarding time system identifier ''%s'', found in LEAP SECOND header line.\n', data{end});
+        if any(strcmp(data(end), {'GPS', ''})), % blank system ID --> default to GPS
+            leapSecs(end) = 1; % GPS
+        elseif strcmp(data(end), 'BDS'),
+            leapSecs(end) = 4; % BDS
+        else
+            warning('Invalid time system identifier ''%s'', found in LEAP SECOND header line.\n', data(end));
         end
     end
-    
+
 end % for idx = 1:header_end
 
 % Enforce mandatory header version info (but ignore contents of PGM / RUN BY / DATE
@@ -328,7 +345,7 @@ end % for idx = 1:header_end
 if ~vers_found
     error('Error in header of %s -- no RINEX version number found.\n', file_nav);
 end
-    
+
 % Summarize parsed header
 if DEBUG
     fprintf('Parsed header:\n\n');
@@ -345,8 +362,8 @@ if DEBUG
     if isstruct(ionoCorr)
         % use 'AsArray' because some files cause this struct to have fields with different numbers of rows
         disp(struct2table(ionoCorr, 'AsArray', true));
-        fprintf('ionoCorrCoeffs =\n\n%s\n', ...
-            evalc('disp(cell2mat(struct2table(ionoCorr,''AsArray'',true).ionoCorrCoeffs''))'));
+        fprintf('\nionoCorrCoeffs =\n\n%s\n', ...
+            evalc('disp(cell2mat(struct2table(ionoCorr,''AsArray'',true).ionoCorrCoeffs''))')  );
     else
         ionoCorr, %#ok<NOPRT>
     end
@@ -363,11 +380,16 @@ constData = struct( ...
     'enabled', cell(1,8) ... % placeholder; allows programmatic addressing in addition to "constellations.*.enabled" calls
 );
 
-recordFormat = '%f ';   % This previously '%19.12f ', but not all RINEX creators adhere to the standard
+recordFormat = '%f ';   % This was previously '%19.12f ', but not all RINEX creators adhere to the standard
 
-% GPS Data Record (RINEX 3.03, Table A6) -- System Identifier "G"
-constData(1).formatString = [ ...
-    '%1s %2.2d %4d ' repmat('%2.2d ',1,4) repmat(recordFormat,1,4) ... % SV / Epoch / SV Clk -- see note "*"
+% GPS Data Record -- System Identifier "G"
+if floor(rinexVersion) == 2, % Known versions are 2.00 -- 2.11 (May 2020)
+    constData(1).formatString = [ '%1s %2d ' repmat('%3d ',1,5) '%5.1f ' repmat(recordFormat,1,3) ];
+elseif floor(rinexVersion) == 3, % (RINEX 3.03, Table A6) -- System Identifier "G"
+    constData(1).formatString = [ '%1s %2.2d %4d ' repmat('%2.2d ',1,5) repmat(recordFormat,1,3) ];
+end
+
+constData(1).formatString = [ constData(1).formatString ... % SV / Epoch / SV Clk -- see note "*"
     repmat(recordFormat,1,4) ... % broadcast orbit - 1; see note "***"
     repmat(recordFormat,1,4) ... % broadcast orbit - 2
     repmat(recordFormat,1,4) ... % broadcast orbit - 3
@@ -464,7 +486,7 @@ constData(8).enabled = constellations.GLONASS.enabled;
 firstChars = cellfun(@(x) x(1), allData((header_end+1):end), 'un', 0);
 
 % check GNSS identifiers (first character of each data block)
-if ~any(cellfun(@(x) ismember(x,[constData(1:end-1).constLetter]), firstChars)) 
+if ~any(cellfun(@(x) ismember(x,[constData(1:end-1).constLetter]), firstChars))
     if floor(rinexVersion) == 2  % RINEX 2.x
         if DEBUG, warning('No constellation identifiers in first column of input. (This is LEGAL in RINEX 2.x)'); end
         if rinexType == 'N'      % GPS
@@ -480,16 +502,25 @@ if ~any(cellfun(@(x) ismember(x,[constData(1:end-1).constLetter]), firstChars))
                 'so no way to tell which GNSS each parameter block refers to.\n\n'], file_nav);
         else
             dummy = rinexType; % assume all parameter blocks are for the indicated GNSS
-        end            
+        end
     end
-    % Insert appropriate identifiers, padding first column of remaining lines w/ spaces
+
+    % Insert appropriate identifiers, padding first column of remaining
+    % lines w/ spaces and single-digit SVNs with leading zeros
     if DEBUG, warning('Inserting ''%c'' at start of each parameter block.\n\n', dummy); end
-    firstLines = find(cellfun(@(x) ~isspace(x(2)), allData((header_end+1):end))); % first line of each parameter block; insert identifier here
+
+    firstLines = header_end + find(cellfun(@(x) ~isspace(x(2)), allData((header_end+1):end)));
+    idxLeadZero = cellfun(@(x) isspace(x(1)), allData(firstLines));
+    allData(firstLines(idxLeadZero)) = ...
+        cellfun(@(x) ['0' x(2:end)], allData(firstLines(idxLeadZero)), 'UniformOutput', false);
+
+    % row index of first line of each parameter block; insert identifier here
     firstChars = repmat({' '}, size(allData,1)-header_end, 1); % one-space column for padding
-    firstChars(firstLines) = repmat({dummy}, size(firstLines,1), 1); 
+    firstChars(firstLines-header_end) = repmat({dummy}, size(firstLines,1), 1);
     allData((header_end+1):end) = strcat(firstChars, allData((header_end+1):end));
+
 end
-        
+
 %constLetters = {'G' 'E' 'R' 'J' 'C' 'S' 'I' 'R2'};
 [~,entries] = ismember(firstChars,{constData.constLetter});
 entries(entries == 0) = [];
@@ -499,7 +530,8 @@ entries(entries == 2 & prnEntries > 100) = 8; % newest occasional GLOANSS PRN 13
 
 % Find number of SVs listed for each constellation
 entryCounts = num2cell(hist(entries,1:8)); %#ok<HIST>
-%entryCounts = num2cell(histogram(entries,'BinLimits',[1,8],'BinMethod','integers').Values); %recommended for R2014a or newer
+% entryCounts = ...
+%     num2cell(histogram(entries, 'BinLimits', [1, 8], 'BinMethod', 'integers').Values); %recommended for R2014a or newer
 [constData.numSats] = entryCounts{:};
 
 % Check if we have any data to work with...
@@ -516,43 +548,105 @@ for constIdx = 1:length(constData)
         if DEBUG, fprintf('Skipping constellation %s -- no entries in input file...\n', constData(constIdx).constLetter); end
         continue;
     % % Include the following block for slighly more efficient parsing; the short-circuit logic is
-    % % already handled by the "if(~constellations.*.enabled), continue; end" blocks below, but 
+    % % already handled by the "if(~constellations.*.enabled), continue; end" blocks below, but
     % % this part will avoid repeatedly parsing input lines that would get discarded later anyway
     elseif ~constData(constIdx).enabled
         if DEBUG, fprintf('Skipping constellation %s -- processing not requested by calling function...\n', constData(constIdx).constLetter); end
         continue;
     end
-    
+
     % Row indices of FIRST lines of all SV data blocks for this constellation
     constData(constIdx).firstLinesIdx = header_end + find(strcmp(constData(constIdx).constLetter, firstChars));
-    
-    % Number of satellites for this constellation
-    %%% UNNECESSARY -- done above using hist() for all constellations in a single step
-    % constData(constIdx).numSats = length(constData(constIdx).firstLinesIdx);
-    
+
+    % Number of satellites for this constellation (NO LONGER NECESSARY —
+    % done above using hist() for all constellations in a single step
+    %constData(constIdx).numSats = length(constData(constIdx).firstLinesIdx);
+
     % Row indices of ALL SV data blocks for this constellation, based upon FIRST line indices found above
-    dummy = arrayfun(@(x) x+(0:(constData(constIdx).blockLines - 1)), constData(constIdx).firstLinesIdx, 'UniformOutput', false);
-    constData(constIdx).allLines = [dummy{:}];
+    dummy = arrayfun(@(x) x+(0:(constData(constIdx).blockLines - 1)), ...
+        constData(constIdx).firstLinesIdx, 'UniformOutput', false);
+    constData(constIdx).allLinesIdx = [dummy{:}];
+
+    % Check for non-compliant (too long) lines (> 80 char); truncate and warn
+    % if any are found.
+    %
+    % CAUTION: according to RINEX 3.x section 5.11, the 80-character limit has
+    % been removed -- but that seems to only apply to *obs* files, not nav.
+    % Need to verify that it DOES apply to .nav files, otherwise the following
+    % check (and remaining references to the 80-char limit) should be removed.
+    lineLengths = cellfun(@numel, allData((header_end+1):end));
+    idxLongLines = header_end + find(lineLengths > 80);
+    if any(idxLongLines),
+        warning([ ...
+            sprintf('*** In %s: possible corrupted lines (> 80 char long): ', file_nav) ...
+            sprintf('%d, ', header_end+idxLongLines) sprintf('\b\b. Truncating to 80 chars.\n')]);
+        for idx = 1:numel(idxLongLines),
+            allData{idxLongLines(idx)} = allData{idxLongLines(idx)}(1:80);
+            lineLengths(lineLengths > 80) = 80;
+        end
+    end
+     
+    % Check for possibly corrupted lines (in which the # of chars does not
+    % correspond to exactly 1, 2, 3, or 4 fields)
+    idxMalformedLines = header_end + find(~ismember(lineLengths, [23 42 61 80]));
+    if any(idxMalformedLines),                                                    
+        warning([ ...
+            sprintf('*** In %s: possible corrupted/truncated lines: ', file_nav) ...
+            sprintf('%d, ', header_end+idxMalformedLines) sprintf('\b\b.\n')]);
+    end
     
+    % Find short lines and space-pad them to 80 chars, skipping suspected
+    % malformed lines from above
+    idxShortLines = header_end + find(lineLengths < 80); % truncated lines
+    idxShortLines = setdiff(idxShortLines, idxMalformedLines); % don't try to fix possibly corrupted lines
+    for idx = 1:numel(idxShortLines),
+        while size(allData{idxShortLines(idx)}, 2) < 80,
+            allData{idxShortLines(idx)} = [allData{idxShortLines(idx)} ' 0.000000000000E+00'];
+        end
+    end
+   
+    % Finally, look for blank fields in all (non-header) lines and replace them
+    % explicitly with zeros prior to parsing numerical values. For each SV
+    % ephemeris parameter block, the first line should have exactly three
+    % decimal points (at columns 26, 45, and 64); the rest should have exactly
+    % four (at columns 7, 26, 45, and 64). This should be correct regardless
+    % of whether the values expressed in scientific notation are formatted
+    % with a leading digit in front of the decimal point (e.g. 0.1234E+05)
+    % or not (e.g. .01234E+06). Note that even the RINEX 3.04 spec is
+    % ambiguous about this: Table A7 (GPS Navigation Message File example)
+    % contains ephemeris blocks with NO leading digit and a "D" as the exponent
+    % separator; while Table A11 (GNSS Navigation Message File – Example:
+    % Mixed GPS / GLONASS) contains blocks with a zero as the leading digit
+    % and an "E" as the exponent separator.
+    for idx = 1:numel(constData(constIdx).allLinesIdx)
+        if ismember(constData(constIdx).allLinesIdx(idx), constData(constIdx).firstLinesIdx),
+            decimalPtPos = [26 45 64];
+        else
+            decimalPtPos = [7 26 45 64];
+        end
+        idxBlank = ~eq(allData{constData(constIdx).allLinesIdx(idx)}(decimalPtPos), '.');
+        decimalPtPos = decimalPtPos(idxBlank); % keep only entries that need to be padded
+        for idx2 = 1:numel(decimalPtPos),
+            allData{constData(constIdx).allLinesIdx(idx)}(decimalPtPos(idx2)+(-2:16)) = ...
+                    ' 0.000000000000E+00'; 
+        end
+    end    
+
     % Reshape all entries for this constellation into correct format for TEXTSCAN,
     % padding with spaces to handle longer lines (e.g. those containing data in 'spare' fields
-    dummy2 = join( reshape( allData(constData(constIdx).allLines), constData(constIdx).blockLines, constData(constIdx).numSats )' );
+    dummy2 = join( reshape( allData(constData(constIdx).allLinesIdx), constData(constIdx).blockLines, constData(constIdx).numSats )' );
     maxLen = max(cellfun(@(x) size(x,2), dummy2)); % widest row
     dummy2padded = cellfun(@(x) [x repmat(' ', 1, maxLen-size(x,2))], dummy2, 'UniformOutput', false);
-    
-%     if length(unique(cellfun(@(x) size(x, 2), dummy2))) > 1,
-%         warning('One or more lines in input FAILS because not all rows of dummy2 are of equal lengths... PAUSED');
-%         pause;
-%     end
+
     dummy3 = [ vertcat(dummy2padded{:}) repmat(char(13), constData(constIdx).numSats, 1) ];
-    
+
     % Parse all entries for this constellation into cell array using appropriate format string
-    data = textscan(reshape(dummy3', 1, []), constData(1).formatString);
+    data = textscan(reshape(dummy3', 1, []), constData(constIdx).formatString);
 
     switch constIdx
-        
+
         case {1 4 7 8} % GPS/QZSS/IRNSS/GLONASSv2 (RINEX markers: "G"/"J"/"I"/"R2")
-            
+
             % Only parse and save if constellation is active
             switch constData(constIdx).constLetter
                 case 'G'
@@ -564,64 +658,64 @@ for constIdx = 1:length(constData)
                 case 'I'
                     if (~0), continue, end % IRNSS support ever?
             end
-          
+
             svprn  = data{2};
             year   = data{3};
             year(year<20) = year(year<20)+2000; % See RINEX 3 section 6.10
-            
+
             month  = data{4};
             day    = data{5};
             hour   = data{6};
             minute = data{7};
             second = data{8};
-            
+
             af0    = data{9};
             af1    = data{10};
             af2    = data{11};
-            
+
             IODE   = data{12};
             crs    = data{13};
             deltan = data{14};
             M0     = data{15};
-            
+
             cuc    = data{16};
             ecc    = data{17};
             cus    = data{18};
             roota  = data{19};
-            
+
             toe    = data{20};
             cic    = data{21};
             Omega0 = data{22};
             cis    = data{23};
-            
+
             i0         = data{24};
             crc        = data{25};
             omega      = data{26};
             Omegadot   = data{27};
-            
+
             idot       = data{28};
             code_on_L2 = data{29};
             weekno     = data{30};
             L2flag     = data{31};
-            
+
             svaccur    = data{32};
             svhealth   = data{33};
             tgd        = data{34};
             iodc       = data{35};
-            
+
             tom        = data{36};
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. *** See also RINEX 3.4, section 6.1.3,
             % which prescribes adjusting this ToM by -604800 relative to the
             % received value, resulting in a negative value, for messages
             % broadcast near the midnight Saturday/Sunday (UTC) boundary,
-            % when ToE and ToC already refer to the following week.
+            % when Toe and Toc already refer to the following week.
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
-            
+
             fit_int    = data{37};
-            
+
             Eph(1,:)  = svprn;
             Eph(2,:)  = year-2000;
             Eph(3,:)  = month;
@@ -657,73 +751,79 @@ for constIdx = 1:length(constData)
             Eph(33,:) = tgd;
             Eph(34,:) = iodc;
             Eph(35,:) = tom;
-            Eph(36,:) = fit_int;         
-            
-            
+            Eph(36,:) = fit_int;
+
+
         case 2 % GAL (RINEX marker: "E")
-            
+
             % Only parse and save if constellation is active
             if (~constellations.Galileo.enabled), continue, end
-                       
+
             svprn  = data{2};
             year   = data{3};
             year(year < 20) = year(year < 20)+2000;
-            
+
+            % SV / EPOCH / SV CLK
             month  = data{4};
             day    = data{5};
             hour   = data{6};
             minute = data{7};
             second = data{8};
-            
-            af0 = data{9};
-            af1 = data{10};
-            af2 = data{11};
-            
-            IODnav = data{12}; % Analogous to IODE of other GNSSes
-            crs    = data{13};
-            deltan = data{14};
-            M0     = data{15};
-            
+            af0    = data{9};
+            af1    = data{10};
+            af2    = data{11};
+
+            % BROADCAST ORBIT - 1
+            IODnav   = data{12}; % used to be IODE, copied from GPS block
+            crs      = data{13};
+            deltan   = data{14};
+            M0       = data{15};
+
+            % BROADCAST ORBIT - 2
             cuc   = data{16};
             ecc   = data{17};
             cus   = data{18};
             roota = data{19};
-            
+
+            % BROADCAST ORBIT - 3
             toe    = data{20};
             cic    = data{21};
             Omega0 = data{22};
             cis    = data{23};
-            
+
+            % BROADCAST ORBIT - 4
             i0       = data{24};
             crc      = data{25};
             omega    = data{26};
             Omegadot = data{27};
-            
-            idot       = data{28};
-            code_on_L2 = data{29};
-            
-            weekno     = data{30};
+
+            % BROADCAST ORBIT - 5
+            idot         = data{28};
+            data_sources = data{29};
+            weekno       = data{30};
             % Handle week number rollovers
-            weekno(weekno > 2500) = weekno(weekno > 2500) - 1024;
-            
-            L2flag     = data{31};
-            
+            weekno(weekno > 2500) = weekno(weekno > 2500) - 1024; % wrong??? see RINEX 3.4 Table A8, comment "****)" (page A26)
+            spare5p1   = data{31}; % this field is BLANK in the RINEX 3.4 examples (Table A9); does TEXTSCAN handle it correctly??
+
+            % BROADCAST ORBIT - 6
             svaccur  = data{32};
             svhealth = data{33};
-            tgd      = data{34};
-            tgd2     = data{35};
-            
-            tom = data{36};
+            bgd      = data{34};
+            bgd2     = data{35};
+
+            % BROADCAST ORBIT - 7
+            tom      = data{36};
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. *** See also RINEX 3.4, section 8.3.3,
             % which prescribes adjusting ToM by +/-604800 relative to the
-            % received value, rather than 7200 sec before ToE, as here.
+            % received value, rather than 7200 sec before Toe, as here.
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
-            
-            fit_int = data{37};
-            
+            spare7p1  = data{37};
+            spare7p2  = data{38};
+            spare7p3  = data{39};
+
 
             Eph(1,:)  = svprn;
             Eph(2,:)  = year-2000;
@@ -752,24 +852,28 @@ for constIdx = 1:length(constData)
             Eph(25,:) = omega;
             Eph(26,:) = Omegadot;
             Eph(27,:) = idot;
-            Eph(28,:) = code_on_L2;
+            Eph(28,:) = data_sources;
             Eph(29,:) = weekno;
-            Eph(30,:) = L2flag;
+            Eph(30,:) = spare5p1;
             Eph(31,:) = svaccur;
             Eph(32,:) = svhealth;
-            Eph(33,:) = tgd;
-            Eph(34,:) = tgd2;
+            Eph(33,:) = bgd;
+            Eph(34,:) = bgd2;
             Eph(35,:) = tom;
-            Eph(36,:) = fit_int;
-                      
+            Eph(36,:) = 3;   % ??? "fit_int" seems incorrect here. unlike for GPS, RINEX 3.4 does not include an explicit fit interval
+                             % for GAL. moreover, worth handling carefully in practice due to potentially undocumented (and unexpected)
+                             % behavior related to GAL ephemeris updates -- see, for example,
+                             %    https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/
+            if DEBUG, warning('Setting fit_int for GAL to 3 hours... see <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>.'); end
+
             if suglFlag
                 suglInfo1 = data{38};
                 suglInfo2 = data{39};
-                
+
                 Eph(37,:) = suglInfo1;
                 Eph(38,:) = suglInfo2;
             end
-            
+
             if 1; %LSB_RECOVERY
                 A = Eph';
                 piGPS = 3.1415926535898;
@@ -780,8 +884,8 @@ for constIdx = 1:length(constData)
                   [-34 -46 -59   0  -6 -43 -31 -31 -33 -31 -19   3 -31 -31 -31 -31  -6 -31 -43 -43  -32 -32]);
  %                [-31 -43 -55   0  -5 -43 -31 -29 -33 -29 -19   4 -29 -31 -29 -31  -5 -31 -43 -43  -31]);
                  % af0 af1 af2 IODE crs dn  M0 cuc   e cus  ra toe cic  O0 cis   i crc   w  Wd  id tgd tgd2
-                
-                
+
+
 %                 scaleFactors(end-1:end) = 1e-9*0.1;
                 limits = pow2([21 15 7 8 15 15 31 15 32 15 32 16 15 31 15 31 15 31 23 13 10 10]);
                 A1 = bsxfun(@rdivide, A(:, indices), scaleFactors);
@@ -797,70 +901,70 @@ for constIdx = 1:length(constData)
                 A(:, indices) = bsxfun(@times, A2, scaleFactors);
                 Eph = A';
             end
-            
-            
+
+
         case 3 % GLOv1 (RINEX marker: "R")
-            
-            if (~constellations.GLONASS.enabled), continue, end            
-                        
+
+            if (~constellations.GLONASS.enabled), continue, end
+
             % Parse and add to eph matrix... which needs to be
             %
             % %XXX needs to be what? the above (incomplete) comment is in
             % %XXX original GitHub checkout as of April 2020
             for jdx = 2:length(data)
-               Eph(jdx-1,:) = data{jdx}; 
+               Eph(jdx-1,:) = data{jdx};
             end
-            
-            
+
+
         case 5 % BDS (RINEX marker: "C")
-            
+
             % Only parse and save if constellation is active
              if (~constellations.BeiDou.enabled), continue, end
-                        
+
             svprn = data{2};
             year   = data{3};
             year(year < 20) = year(year < 20)+2000;
-            
+
             month  = data{4};
             day    = data{5};
             hour   = data{6};
             minute = data{7};
             second = data{8};
-            
+
             af0 = data{9};
             af1 = data{10};
             af2 = data{11};
-            
+
             IODE   = data{12}; %AODE
             crs    = data{13};
             deltan = data{14};
             M0     = data{15};
-            
+
             cuc   = data{16};
             ecc   = data{17};
             cus   = data{18};
             roota = data{19};
-            
+
             toe    = data{20};
             cic    = data{21};
             Omega0 = data{22};
             cis    = data{23};
-            
+
             i0       = data{24};
             crc      = data{25};
             omega    = data{26};
             Omegadot = data{27};
-            
+
             idot       = data{28};
             code_on_L2 = data{29};
             weekno     = data{30};
             L2flag     = data{31};
-            
+
             svaccur  = data{32};
             svhealth = data{33};
             tgd      = data{34};
             tgd2     = data{35};
-            
+
             tom = data{36};
             %             aoc = data{37};
             % If time of message is invalid (garbage data input) use 2 hours
@@ -868,9 +972,9 @@ for constIdx = 1:length(constData)
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
-            
+
             fit_int = data{37};
-            
+
             Eph(1,:)  = svprn;
             Eph(2,:)  = year-2000;
             Eph(3,:)  = month;
@@ -904,7 +1008,7 @@ for constIdx = 1:length(constData)
             Eph(31,:) = svaccur;
             Eph(32,:) = svhealth;
             Eph(33,:) = tgd;
- 
+
             % need to convert many tgd2 values
             convInds = find(tgd2 >= 1 & tgd2 <= 1024 & floor(tgd2) == tgd2);
             if ~isempty(convInds)
@@ -915,19 +1019,19 @@ for constIdx = 1:length(constData)
             if ~isempty(backwardsScalingInds)
                 tgd2(backwardsScalingInds) = tgd2(backwardsScalingInds)*(1e-9*0.1)^2;
             end
-            
+
             Eph(34,:) = tgd2;
             Eph(35,:) = tom;
             Eph(36,:) = fit_int;
-            
+
             if suglFlag
                 suglInfo1 = data{38};
                 suglInfo2 = data{39};
-                
+
                 Eph(37,:) = suglInfo1;
                 Eph(38,:) = suglInfo2;
             end
-            
+
             if 1; %LSB_RECOVERY
                 A = Eph';
                 piGPS = 3.1415926535898;
@@ -937,7 +1041,7 @@ for constIdx = 1:length(constData)
                 scaleFactors = pow2([1 1 1 1 1 piGPS piGPS 1 1 1 1 1 1 piGPS 1 piGPS 1 piGPS piGPS piGPS 1 1], ...
                     [-33 -50 -66   0  -6 -43 -31 -31 -33 -31 -19   3 -31 -31 -31 -31  -6 -31 -43 -43   0   0]);
                 % af0 af1 af2 IODE crs dn  M0 cuc   e cus  ra toe cic  O0 cis   i crc   w  Wd  id tgd tgd2
-                             
+
                 scaleFactors(end-1:end) = 1e-9*0.1;
                 limits = pow2([21 15 7 8 15 15 31 15 32 15 32 16 15 31 15 31 15 31 23 13 10 10]);
                 A1 = bsxfun(@rdivide, A(:, indices), scaleFactors);
@@ -954,52 +1058,52 @@ for constIdx = 1:length(constData)
                 Eph = A';
                 %                 A(idx, :) = [];
             end
-            
-            
+
+
         case 6 % SBAS (RINEX marker: "S")
-            
+
             if (~constellations.SBAS.enabled), continue, end
-            
+
             svprn = data{2};
             year  = data{3};
             year(year < 20) = year(year < 20)+2000; % is this necessary? Only
                                                     % RINEX v1 and v2 RINEX
                                                     % used a 2-digit year. See
                                                     % Section 6.10. Table A16 specifies a 4-digit year...
-            
+
             month  = data{4};
             day    = data{5};
             hour   = data{6};
             minute = data{7};
             second = data{8};
-            
+
             aGf0 = data{9};
             aGf1 = data{10};
             tom  = data{11}; % See RINEX 3.4, section 6.13
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. NOTE: text in 6.13 says to reduce ToM
             % by 604800 (possibly going negative) to refer to same week as
-            % ToE refers to... would that be more correct than (toe-7200),
+            % Toe refers to... would that be more correct than (toe-7200),
             % as done here?
             if abs(tom) > 86400*7
                 tom = toe-7200;
             end
-            
+
             svposX          = data{12};
             svvelXdot       = data{13};
             svaccXdoubledot = data{14};
             svhealth        = data{15};
-            
+
             svposY          = data{16};
             svvelYdot       = data{17};
             svaccYdoubledot = data{18};
             ura             = data{19};
-            
+
             svposZ          = data{20};
             svvelZdot       = data{21};
             svaccZdoubledot = data{22};
             IODN            = data{23};
-       
+
             Eph(1,:)  = svprn;
             Eph(2,:)  = year-2000;
             Eph(3,:)  = month;
@@ -1022,7 +1126,7 @@ for constIdx = 1:length(constData)
             Eph(20,:) = svvelZdot;
             Eph(21,:) = svaccZdoubledot;
             Eph(22,:) = IODN;
-            
+
     end % switch constIdx
 
 end % for constIdx
