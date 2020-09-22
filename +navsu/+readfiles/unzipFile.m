@@ -32,7 +32,7 @@ if ispc
     
 else
     
-    if endswith(filename, '.zip', 'IgnoreCase', true), % {gunzip, uncompress}: these fail (tested on macOS 10.14)
+    if endsWith(filename, '.zip', 'IgnoreCase', true), % {gunzip, uncompress}: these fail (tested on macOS 10.14)
         
         try
             result = unzip(filename, outLocation); status = 0;            
@@ -40,7 +40,7 @@ else
             result = []; status = 1;
         end
         
-    elseif endswith(filename, '.gz', 'IgnoreCase', true),  % {unzip, uncompress}: these fail (tested on macOS 10.14)
+    elseif endsWith(filename, '.gz', 'IgnoreCase', true),  % {unzip, uncompress}: these fail (tested on macOS 10.14)
         
         % MATLAB built-in gunzip introduced before R2006a)
         try
@@ -52,7 +52,7 @@ else
         %   [status,result] = system(['gunzip ' filename]);
         
                 
-    elseif endswith(filename, '.Z'),
+    elseif endsWith(filename, '.Z'),
         
         % host machine's native executable
         [status,result] = system(['gunzip ' filename]);
