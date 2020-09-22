@@ -101,7 +101,7 @@ for ddx = 1:length(dayList)
                 change = 1;
                 
                 if unzipFlag
-                    navsu.readfiles.unzipFile([target_dir '\' serverName]);
+                    navsu.readfiles.unzipFile(fullfile(target_dir,  serverName));
                 end
             end
           
