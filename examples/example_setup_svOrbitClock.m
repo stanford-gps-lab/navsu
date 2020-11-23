@@ -9,13 +9,18 @@ constUse = [1 1 0 0 0];
 % default.ini file that already exists. 
 configFile = 'config.ini';
 
+% Username and password file for NASA data/products download. See: 
+% [1] https://cddis.nasa.gov/Data_and_Derived_Products/CDDIS_Archive_Access.html
+% [2] https://cddis.nasa.gov/Data_and_Derived_Products/CreateNetrcFile.html
+netrcFile = 'C:\Users\kazgu\Documents\cddislogin.netrc';
+
 % Initialize the GNSS correction data object
-datai = navsu.svOrbitClock('constUse',[1 1 0 0 0]);
+datai = navsu.svOrbitClock('constUse',[1 1 0 0 0],'netrcFile',netrcFile);
 
 % Year and day of year of interest- this is just arbitrary for this
 % example
 year = 2020;
-doy  = 20;
+doy  = 180;
 
 %% Choose an example time frame and satellite
 % Choose a time from the middle of the day (need to be able to interpolate

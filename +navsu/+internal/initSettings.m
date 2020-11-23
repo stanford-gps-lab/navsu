@@ -3,9 +3,26 @@ function settings = initSettings(varargin)
 % Parse inputs
 p = inputParser;
 p.addParameter('configFile', []); 
+p.addParameter('netrcFile',[]);
+p.addParameter('cookieFile',[]);
+p.addParameter('cookieDir',[]);
 parse(p, varargin{:});
 res = p.Results;
 iniFile = res.configFile;
+
+% cookieDir
+%   Local folder where cookies from NASA CDDIS web access can/should be
+%   stored.  
+% cookieFile
+%   A storage file can also be specified for cookie storage.
+% netrcFile
+%   Username and password file for NASA CDDIS data/product access.
+%   Information about general access can be found at [1], and specifics of
+%   what this file should look like can be found at [2] once a username and
+%   password have been created. 
+
+% [1] https://cddis.nasa.gov/Data_and_Derived_Products/CDDIS_Archive_Access.html
+% [2] https://cddis.nasa.gov/Data_and_Derived_Products/CreateNetrcFile.html
 
 %% Pull info from the .ini file if available
 if ~isempty(iniFile)
@@ -19,6 +36,21 @@ else
     obsDir         = [cdi '/data/'];
 end
 
+
+%% NASA login/download setup
+defaultCookieFilename = 'nasa_cddis_cookies.txt';
+if ~isempty(res.cookieFile)
+    % A specific filename of the cookie was provided
+    settings.cookieFile = res.cookieFile; 
+elseif ~isempty(res.cookieDir)
+    % only a directory was provided- 
+    settings.cookieFile = fullfile(res.cookieDir,defaultCookieFilename);
+else
+    % No location information about where to place teh cookie file was
+    % provided
+    settings.cookieFile = fullfile(preciseProdDir,defaultCookieFilename);
+end
+settings.netrcFile = res.netrcFile;
 
 %% Data directories
 % GPS----------------------------------------------------------------------

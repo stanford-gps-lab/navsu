@@ -59,6 +59,19 @@ classdef svOrbitClock < handle
             %                else. This tells the code where to put your
             %                products on your local machine when they are
             %                downloaded.
+            %   netrcFile  - REQUIRED FOR NASA CDDIS DOWNLOADS. 
+            %                Username and password file for NASA CDDIS 
+            %                data/product access. Information about general 
+            %                access can be found at [1], and specifics of
+            %                what this file should look like can be found at 
+            %                [2] once a username and password have been created.
+            %   cookieDir  - Local folder where cookies from NASA CDDIS web 
+            %                access can/should be stored.
+            %   cookieFile - A storage file can also be specified for cookie storage. 
+            % 
+            % References: 
+            % [1] https://cddis.nasa.gov/Data_and_Derived_Products/CDDIS_Archive_Access.html
+            % [2] https://cddis.nasa.gov/Data_and_Derived_Products/CreateNetrcFile.html
             %
             % OUTPUT:
             %   obj        - the object!
@@ -69,6 +82,9 @@ classdef svOrbitClock < handle
             p = inputParser;
             p.addParameter('constUse',[1 0 0 0 0]);
             p.addParameter('configFile',[]);
+            p.addParameter('netrcFile',[]);
+            p.addParameter('cookieFile',[]);
+            p.addParameter('cookieDir',[]);
             parse(p, varargin{:});
             res = p.Results;
             constUse = res.constUse;
@@ -94,6 +110,21 @@ classdef svOrbitClock < handle
             obj.settings.navMgxDir      = [basePreciseProdDir 'nav-daily/'];
             
             obj.settings.constUse       = constUse;
+            
+            %% NASA login/download setup
+            defaultCookieFilename = 'nasa_cddis_cookies.txt';
+            if ~isempty(res.cookieFile)
+                % A specific filename of the cookie was provided
+                obj.settings.cookieFile = res.cookieFile;
+            elseif ~isempty(res.cookieDir)
+                % only a directory was provided-
+                obj.settings.cookieFile = fullfile(res.cookieDir,defaultCookieFilename);
+            else
+                % No location information about where to place teh cookie file was
+                % provided
+                obj.settings.cookieFile = fullfile(basePreciseProdDir,defaultCookieFilename);
+            end
+            obj.settings.netrcFile = res.netrcFile;
 
         end
     end

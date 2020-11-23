@@ -24,11 +24,11 @@ if ispc
     % Windows machines use the included copy of 7zip
     s = what('+navsu');
     
-    utilityPath = [s.path '/+thirdparty/7zip/'];
+    utilityPath = fullfile(s.path, '/+thirdparty/7zip/');
     
-    loc7zip = [utilityPath '7za.exe'];
+    loc7zip = fullfile(utilityPath ,'7za.exe');
     % Use 7zip to open!
-    [status,result] = system(['"' loc7zip '" -y x ' '"' filename '"' ' -o' '"' outLocation '"']);
+    [status,result] = system(['"' loc7zip '" -y x ' '"' filename '"' ' -o' '"' outLocation '\"']);
     
 else
     
