@@ -567,7 +567,8 @@ for constIdx = 1:length(constData)
           
             svprn  = data{2};
             year   = data{3};
-            year(year<20) = year(year<20)+2000; % See RINEX 3 section 6.10
+            year(year<80) = year(year<80)+2000; % See RINEX 3 section 6.10
+            year(year<=99) = year(year<=99)+1900; % See RINEX 3 section 6.10
             
             month  = data{4};
             day    = data{5};
@@ -667,7 +668,8 @@ for constIdx = 1:length(constData)
                        
             svprn  = data{2};
             year   = data{3};
-            year(year < 20) = year(year < 20)+2000;
+            year(year<80) = year(year<80)+2000; % See RINEX 3 section 6.10
+            year(year<=99) = year(year<=99)+1900; % See RINEX 3 section 6.10
             
             month  = data{4};
             day    = data{5};
@@ -819,7 +821,8 @@ for constIdx = 1:length(constData)
                         
             svprn = data{2};
             year   = data{3};
-            year(year < 20) = year(year < 20)+2000;
+            year(year<80) = year(year<80)+2000; % See RINEX 3 section 6.10
+            year(year<=99) = year(year<=99)+1900; % See RINEX 3 section 6.10
             
             month  = data{4};
             day    = data{5};
@@ -962,10 +965,9 @@ for constIdx = 1:length(constData)
             
             svprn = data{2};
             year  = data{3};
-            year(year < 20) = year(year < 20)+2000; % is this necessary? Only
-                                                    % RINEX v1 and v2 RINEX
-                                                    % used a 2-digit year. See
-                                                    % Section 6.10. Table A16 specifies a 4-digit year...
+            year(year<80) = year(year<80)+2000; % See RINEX 3 section 6.10
+            year(year<=99) = year(year<=99)+1900; % See RINEX 3 section 6.10
+            
             
             month  = data{4};
             day    = data{5};
