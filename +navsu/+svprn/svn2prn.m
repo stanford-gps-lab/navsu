@@ -38,7 +38,7 @@ end
 if any(epoch < 3000)
     pdx = epoch < 3000;
     year = floor(epoch(pdx));
-    dayn = ceil(navsu.time.yearDays(year)*(epoch(pdx) - year));
+    dayn = ceil(navsu.time.YearDays(year)*(epoch(pdx) - year));
     epoch(pdx) = navsu.time.doy2jd(year, dayn);
 end
 if length(epoch) == 1
