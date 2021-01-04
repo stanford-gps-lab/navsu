@@ -35,6 +35,7 @@ pos = struct('x', NaN(tmArrayLen, 1), 'y', NaN(tmArrayLen, 1), 'z', NaN(tmArrayL
     'accuracy', NaN(tmArrayLen, 1), 'health', NaN(tmArrayLen, 1), ...
 	'IODC', NaN(tmArrayLen, 1), 't_m_toe', NaN(tmArrayLen, 1), ...
     'tslu', NaN(tmArrayLen, 1), 'toe_m_ttom', NaN(tmArrayLen, 1), ...
+    'AoD',NaN(tmArrayLen,1),...
     'Fit_interval', NaN(tmArrayLen, 1),'TGD',NaN(tmArrayLen,1),'t_m_toc',NaN(tmArrayLen,1));
 
 if strcmp(constellation,'GAL')
@@ -250,6 +251,7 @@ for loop = 1:tmArrayLen
     pos.health(loop) = eph.health(I);
     pos.IODC(loop) = eph.IODC(I);
     pos.t_m_toe(loop) = tmArray(loop) - eph.GPS_week_num(I) * 604800 - eph.Toe(I);
+    pos.AoD(loop) = tmArray(loop) - eph.GPS_week_num(I) * 604800 - eph.Toe(I);
     
     switch constellation 
         case 'GPS'

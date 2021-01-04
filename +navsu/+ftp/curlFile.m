@@ -63,46 +63,52 @@ for ddx = 1:length(dayList)
     llist = dir(target_dir);
     
     lname = {llist(:).name};
-    ldate = [llist(:).datenum];
+    %     ldate = [llist(:).datenum];
     
-    change = 0;
-    %         rlist = dir(mw);
-    rlist = navsu.ftp.curlGetDirectoryContents(sourcePath,netrcFile,cookieFile);
-    
-    for i = 1:length(rlist)
-        %only download if we do not have it or the remote version is newer
+    if matches(fileFormat{1},'[''*'']')
+        % download the entire directory
+        change = 1;
+        navsu.ftp.curlDownloadDirectory(sourcePath,target_dir,netrcFile,cookieFile)
         
-        serverName = rlist{i};
-        if isempty(lname)
-            have = 0;
-        else
-            [have, idx] = ismember(serverName,lname);
-        end
+    else
+        change = 0;
+        rlist = navsu.ftp.curlGetDirectoryContents(sourcePath,netrcFile,cookieFile);
         
-        % Check if this is one of the files we want
-        desired = 0;
-        
-        for fdx = 1:length(fileFormat)
-            desiredName = regexptranslate('wildcard',eval(fileFormat{fdx}));
+        for i = 1:length(rlist)
+            %only download if we do not have it or the remote version is newer
             
-            desired = desired || ~isempty(regexp(serverName, desiredName,'once'));
-            
-            if desired
-                break
+            serverName = rlist{i};
+            if isempty(lname)
+                have = 0;
+            else
+                [have, idx] = ismember(serverName,lname);
             end
-        end
-        
-        if ~have && desired
-            %                 mget(mw, serverName, target_dir);
             
-            navsu.ftp.curlDownloadSingleFile([sourcePath serverName],target_dir,netrcFile,cookieFile);
-            change = 1;
+            % Check if this is one of the files we want
+            desired = 0;
             
-            if unzipFlag
-                navsu.readfiles.unzipFile(fullfile(target_dir,  serverName));
+            for fdx = 1:length(fileFormat)
+                desiredName = regexptranslate('wildcard',eval(fileFormat{fdx}));
+                
+                desired = desired || ~isempty(regexp(serverName, desiredName,'once'));
+                
+                if desired
+                    break
+                end
             end
+            
+            if ~have && desired
+                %                 mget(mw, serverName, target_dir);
+                
+                navsu.ftp.curlDownloadSingleFile([sourcePath serverName],target_dir,netrcFile,cookieFile);
+                change = 1;
+                
+                if unzipFlag
+                    navsu.readfiles.unzipFile(fullfile(target_dir,  serverName));
+                end
+            end
+            
         end
-        
     end
     
     %     end

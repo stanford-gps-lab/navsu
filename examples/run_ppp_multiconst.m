@@ -3,7 +3,7 @@
 %% inputs
 % RINEX v3 observation file
 % filenameGnss = 'D:\PNT Data\Roof logs\swift-gnss- 20200312-093212.sbp.obs';
-filenameGnss = 'C:\Users\kazgu\Desktop\Stanford\swift-gnss-20200312-093212.sbp.obs';
+filenameGnss = 'C:\Users\kazgu\Documents\data\swift-gnss-20200312-093212.obs';
 
 % need a configutation file to set where to put downloaded products.  The
 % default included is called default.ini
@@ -31,7 +31,7 @@ filter.PARAMS.measMask.f1 = [0 0 1]';
 filter.PARAMS.measMask.f2 = [0 0 0]';
 filter.PARAMS.measMask.f3 = [0 0 0]';
 
-filter.PARAMS.measUse.noVertVel = 1;
+filter.PARAMS.measUse.noVertVel = 0;
 
 %% Read observation file
 if ~exist('obsStruc','var')   
@@ -47,8 +47,8 @@ if ~exist('obsStruc','var')
     obsGnssRaw.tLock     = [];
 end
 
-epochStart = min(epochs)+200*60+60*10;
-downsampleFac = 30;
+epochStart = min(epochs);
+downsampleFac = 10;
 
 %%
 if ~exist('corrData','var')
@@ -94,12 +94,12 @@ end
 %% preprocess observations
 [gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,...
      corrData,'downsampleFac',downsampleFac,'epochStart',epochStart,...
-     'epochEnd',epochStart+60*3*Inf);
+     'epochEnd',epochStart+30*60);
  
  % Build position measurement
-posMeas = navsu.ppp.buildPosMeas(gnssMeas.epochs,truePosEcef',0.1,1);
+% posMeas = navsu.ppp.buildPosMeas(gnssMeas.epochs,truePosEcef',0.1,1);
 
-velMeas = navsu.ppp.buildVelMeas(gnssMeas.epochs,[0 0 0]',0.01,1);
+% velMeas = navsu.ppp.buildVelMeas(gnssMeas.epochs,[0 0 0]',0.01,1);
 
  
 %% Estimate!
@@ -109,7 +109,7 @@ corrData.clkMode = 'BROADCAST';
 corrData.orbMode = 'PRECISE';
 corrData.clkMode = 'PRECISE';
 
-outData = navsu.ppp.runPpp(filter,{gnssMeas posMeas velMeas},corrData);
+outData = navsu.ppp.runPpp(filter,{gnssMeas },corrData);
 
 %%
 close all;

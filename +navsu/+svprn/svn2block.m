@@ -1,4 +1,4 @@
-function block = svn2block(svn,const,flag_number,source)
+function [block, blockNums] = svn2block(svn,const,flag_number,source)
 % Function to translate GNSS SVN to block 
 % CONST is index of GNSS constellation:
 % GPS = 1, GLO = 2, GAL = 3, BDS = 4
@@ -34,20 +34,23 @@ end
 
 for i = 1:length(svn)
     idx = svndata(svndata(:,1) == svn(i),13);
-    if flag_number
-        if ~isempty(idx)
-            block(i) = idx(1);
-        else
-            block(i) = NaN;
-        end
+    %     if flag_number
+    if ~isempty(idx)
+        blockNums(i) = idx(1);
     else
-        if ~isempty(idx)
-            block{i} = blockText{idx};
-        else
-            block{i} = '';
-        end
+        blockNums(i) = NaN;
     end
-  
+    %     else
+    if ~isempty(idx)
+        block{i} = blockText{idx};
+    else
+        block{i} = '';
+    end
+    %     end
+end
+
+if flag_number
+    block = blockNums;
 end
 end
 

@@ -1,10 +1,10 @@
 function [yearChange,dayChange] = ftpFile(yearList,dayList,ftpStruc,varargin)
 % ftpFile
 % DESCRIPTION:
-%   This should just be called by navsu.ftp.download. Downloads products 
-%   or data from IGS ftp sites given a day, year, information pointing to 
+%   This should just be called by navsu.ftp.download. Downloads products
+%   or data from IGS ftp sites given a day, year, information pointing to
 %   the specific product, and information about where to put the downloaded
-%   products locally.  
+%   products locally.
 % INPUT:
 %   yearList = year corresponding to each day of desired downloads [Nx1]
 %   dayList  = day of year of desired downloads [Nx1]
@@ -13,7 +13,7 @@ function [yearChange,dayChange] = ftpFile(yearList,dayList,ftpStruc,varargin)
 %              structure. This is populated in navsu.ftp.download
 %
 % OUTPUT:
-%   yearChange = year corresponding to each day where products were updated  
+%   yearChange = year corresponding to each day where products were updated
 %   dayChange  = day of year when products were updated
 %
 % See also: navsu.ftp.download, navsu.ftp.ftpFileHr
@@ -96,7 +96,9 @@ for ddx = 1:length(dayList)
                 end
             end
             
+            %             if (~have || rlist(i).datenum > ldate(idx)) && desired
             if (~have || rlist(i).datenum > ldate(idx)) && desired
+                
                 mget(mw, serverName, target_dir);
                 change = 1;
                 
@@ -104,7 +106,7 @@ for ddx = 1:length(dayList)
                     navsu.readfiles.unzipFile(fullfile(target_dir,  serverName));
                 end
             end
-          
+            
         end
         
     end

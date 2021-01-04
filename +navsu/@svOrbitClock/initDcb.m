@@ -30,6 +30,7 @@ DOWNLOAD        = res.DOWNLOAD;        % indicator to check for downloads and do
 settings = obj.settings;
 
 dcbType = 3; % 1 = CODE, 0/2 = SU, 3 = DLR
+dcbType = 1; % 1 = CODE, 0/2 = SU, 3 = DLR
 
 typeMap = [0 1 3;
            5 4 2];

@@ -38,7 +38,7 @@ if length(dayNum) > 1
         eph.leapSecond = ephi.leapSecond;
 
         BFileName{idx} = BFileNamei;
-        BFileNameFull(idx) = BFileNameFulli;
+        BFileNameFull{idx} = BFileNameFulli;
     end
     
 else
@@ -48,17 +48,57 @@ else
     [yr,mn,dy]= navsu.time.jd2cal(jd);
     [doy,~]= navsu.time.jd2doy(jd);
     
+    % Default multi-GNSS file
     BfileNameFormat = '%4d/%03d/brdm%03d0.%02dp';
-    BpathName = settings.navMgxDir;
-    BFileName = sprintf(BfileNameFormat, yr, doy, doy, mod(yr, 100));
+    brdmPath = settings.navMgxDir;
+    brdmFilename = sprintf(BfileNameFormat, yr, doy, doy, mod(yr, 100));
+    
+    if settings.constUse(1)
+        % GPS
+        if isfield(settings,'gpsNavSource') && strcmp(settings.gpsNavSource,'s')
+            BfileNameFormat = '%4d/sugl%03d0.%02dn';
+            BpathName = settings.suglGpsDir;
+            BFileName = sprintf(BfileNameFormat, yr, doy, mod(yr, 100));
+        else
+            % MGEX file
+            BFileName = brdmFilename;
+            BpathName = brdmPath;
+        end
+        constellations = navsu.readfiles.initConstellation(1,0,0,0,0);
         
-    BFileNameFull = {[BpathName BFileName]};
-    
-    constellations = navsu.readfiles.initConstellation(1,1,1,1,1);
-    
-    if ~FLAG_NO_LOAD
-        eph = navsu.readfiles.loadRinexNav([BpathName BFileName], 'constellations',constellations,'outFormat','array');
+        BFileNameFull{1} = fullfile([BpathName BFileName]);
+        if ~FLAG_NO_LOAD
+            ephi = navsu.readfiles.loadRinexNav(fullfile([BpathName BFileName]),'constellations',constellations, 'outFormat','array');
+            eph.gps = ephi.gps;
+        end
     end
+    
+    if settings.constUse(3)
+        % Galileo
+        if strcmp(settings.galNavSource,'c') % BKG product
+            BfileNameFormat = '%4d/%03d/BRDC00WRD_R_%03d%03d0000_01D_MN.rnx';
+            BpathName = settings.rnxMgexNavDir;
+            BFileName = sprintf(BfileNameFormat, yr, doy, yr,doy);
+        elseif strcmp(settings.galNavSource ,'m')  % default to the TUM/DLR files
+            BfileNameFormat = '%4d/%03d/brdm%03d0.%02dp';
+            BpathName = settings.rnxMgexNavDir;
+            BFileName = sprintf(BfileNameFormat, yr, doy, doy, mod(yr, 100));
+        elseif strcmp(settings.galNavSource, 's') % SUGL file lol
+            BfileNameFormat = '%4d/sugl%03d0.%02dl';
+            BpathName = settings.suglGalDir;
+            
+            BFileName = sprintf(BfileNameFormat, yr, doy, mod(yr, 100));
+        end
+        BFileNameFull{1} = fullfile([BpathName BFileName]);
+
+        constellations = navsu.readfiles.initConstellation(0, 0, 1, 0, 0, 0);
+        if ~FLAG_NO_LOAD
+            ephi = navsu.readfiles.loadRinexNav(fullfile([BpathName BFileName]),'constellations',constellations, 'outFormat','array');
+            eph.gal = ephi.gal;
+        end
+    end
+    
+        
 end
 
 if strcmp(outFormat,'struct')

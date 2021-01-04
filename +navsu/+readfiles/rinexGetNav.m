@@ -89,6 +89,11 @@ else
         warning('Error reading %s -- end of header not found!\n', file_nav);
         return
     end
+    
+    if length(header_end) > 1
+        warning('Error reading %s -- multiple headers found!\n', file_nav);
+       return 
+    end
 end
 
 suglFlag = ~isempty(strfind(file_nav,'sugl'));
@@ -708,14 +713,23 @@ for constIdx = 1:length(constData)
             % Handle week number rollovers
             weekno(weekno > 2500) = weekno(weekno > 2500) - 1024;
             
-            L2flag     = data{31};
             
-            svaccur  = data{32};
-            svhealth = data{33};
-            tgd      = data{34};
-            tgd2     = data{35};
+            if size(dummy3,2) < 580
+                % Some files don't put any data in the spare field (rather
+                % than using zeros), which offsets the outputs
+               noSpareData = 1;
+               L2flag = zeros(size(data{31}));
+            else
+               noSpareData = 0; 
+               L2flag     = data{31};
+            end            
             
-            tom = data{36};
+            svaccur  = data{32-noSpareData};
+            svhealth = data{33-noSpareData};
+            tgd      = data{34-noSpareData};
+            tgd2     = data{35-noSpareData};
+            
+            tom = data{36-noSpareData};
             % If time of message is invalid (garbage data input) use 2 hours
             % before ephemeris time. *** See also RINEX 3.4, section 8.3.3,
             % which prescribes adjusting ToM by +/-604800 relative to the
@@ -911,7 +925,7 @@ for constIdx = 1:length(constData)
             % need to convert many tgd2 values
             convInds = find(tgd2 >= 1 & tgd2 <= 1024 & floor(tgd2) == tgd2);
             if ~isempty(convInds)
-                tgd2(convInds) = twosComp2dec(dec2bin(tgd2(convInds),10))*1e-9*0.1;
+                tgd2(convInds) = constmon.vote.twosComp2dec(dec2bin(tgd2(convInds),10))*1e-9*0.1;
             end
 
             backwardsScalingInds = find(abs(tgd2)> 1e8);

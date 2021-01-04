@@ -321,6 +321,7 @@ switch inChoice
         ftpStruc.sourceFormat = '[''/archive/gnss/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''p/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''*MN.rnx*'']'};
+        ftpStruc.fileFormat   = {'[''*'']'};
         ftpStruc.unzipFlag    = 0;
         
         [YearChangei,dayChangei] =navsu.ftp.curlFile(YearList,dayList,ftpStruc,netrcFile,cookieFile);

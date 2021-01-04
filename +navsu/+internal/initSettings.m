@@ -53,6 +53,7 @@ end
 settings.netrcFile = res.netrcFile;
 
 %% Data directories
+settings.baseDir = preciseProdDir;
 % GPS----------------------------------------------------------------------
 % Daily precise products (orbit and clock)
 settings.preciseProdDir = [preciseProdDir 'precise-daily/'];

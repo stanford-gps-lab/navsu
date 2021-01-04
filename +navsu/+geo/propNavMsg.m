@@ -67,6 +67,7 @@ pos = struct('x', NaN(nProp, 1), 'y', NaN(nProp, 1), 'z', NaN(nProp, 1), ...
     'accuracy', NaN(nProp, 1), 'health', NaN(nProp, 1), ...
 	'IODC', NaN(nProp, 1), 't_m_toe', NaN(nProp, 1), ...
     'tslu', NaN(nProp, 1), 'toe_m_ttom', NaN(nProp, 1), ...
+    'AoD', NaN(nProp, 1), ...
     'Fit_interval', NaN(nProp, 1),'TGD',NaN(nProp,1),'t_m_toc',NaN(nProp,1),...
     'freqNum',nan(nProp,1));
 
@@ -88,7 +89,7 @@ for cdx = constFull
    switch constFull(cdx)
        case 1 
            % GPS
-           if isempty(beph.gps),
+           if isempty(beph.gps)
                warning('propNavMsg: GPS ephemeris not supplied!'); continue;
            end
 
@@ -97,7 +98,7 @@ for cdx = constFull
 
        case 2
            % GLONASS
-           if isempty(beph.glo),
+           if isempty(beph.glo)
                warning('propNavMsg: GLO ephemeris not supplied!'); continue;
            end
            posi = navsu.geo.propNavMsgGlo(beph.glo,prn(indsi),weeks(indsi),...
@@ -105,7 +106,7 @@ for cdx = constFull
            
        case 3
            % Galileo
-           if isempty(beph.gal),
+           if isempty(beph.gal)
                warning('propNavMsg: GAL ephemeris not supplied!'); continue;
            end
            posi = navsu.geo.propNavMsgGps(beph.gal,prn(indsi),weeks(indsi),...
@@ -113,7 +114,7 @@ for cdx = constFull
            
        case 4
            % BeiDou
-           if isempty(beph.bds),
+           if isempty(beph.bds)
                warning('propNavMsg: BDS ephemeris not supplied!'); continue;
            end
            posi = navsu.geo.propNavMsgGps(beph.bds,prn(indsi),weeks(indsi),...

@@ -63,7 +63,7 @@ if cmToApcFlag && isempty(atxData)
     error(['Antenna phase center data (IGS .atx file) required to ' ...
         'translate from center of mass to antenna phase center']);
 end
-   
+
 NumSV = -1;
 % Default constellation is GPS
 const = 'GPS';
@@ -234,9 +234,9 @@ if strictConstNumFlag
 end
 
 epochs = ones(NumSV, 1) * (GPS_seconds + ...
-                GPS_week_num*7*24*3600 + ...
-                Epoch_interval .* (0:NumEpochs-1));
-epochs = epochs(:);           
+    GPS_week_num*7*24*3600 + ...
+    Epoch_interval .* (0:NumEpochs-1));
+epochs = epochs(:);
 constInds = constellationOut*ones(size(epochs));
 
 pvt = struct('filename', filename, ...
@@ -252,7 +252,7 @@ pvt = struct('filename', filename, ...
     'velocity',nan(size(array(:,2:4))), ...
     'Event',array(:, 5) .* 0,...
     'epochs', epochs,...
-    'constInds',constInds); 
+    'constInds',constInds);
 
 pvt.Event(abs(pvt.clock_bias) >= 0.999999) = true;
 pvt.Event(any(pvt.position == 0, 2)) = true;
@@ -261,17 +261,23 @@ pvt.Event(any(pvt.position == 0, 2)) = true;
 if cmToApcFlag
     % Pull sun position for each time in SP3 file
     
-    if ~contains(path,'\mice\src\mic')
-        navsu.thirdparty.attachToMice();
-    end
+    %     if ~contains(path,'\mice\src\mic')
+    %         navsu.thirdparty.attachToMice();
+    %     end
     t = GPS_seconds:Epoch_interval:(GPS_seconds+NumEpochs*Epoch_interval);
-    jd = gps2jd(GPS_week_num,t);
-    sunpos = zeros(3,length(t));
-    for i = 1:length(jd)
-        et          = cspice_str2et(['jd ' num2str(jd(1))]);
-        sunposi     = cspice_spkezr( 'sun',et , 'itrf93', 'none', 'earth');
-        sunpos(:,i) = sunposi(1:3)*1000;
-    end
+    jd = navsu.time.gps2jd(GPS_week_num,t);
+    epochsSun = navsu.time.gps2epochs(GPS_week_num*ones(size(t)),t);
+    %     sunpos = zeros(3,length(t));
+    %     for i = 1:length(jd)
+    %         et          = cspice_str2et(['jd ' num2str(jd(1))]);
+    %         sunposi     = cspice_spkezr( 'sun',et , 'itrf93', 'none', 'earth');
+    %         sunpos(:,i) = sunposi(1:3)*1000;
+    %     end
+    % ECEF sun position
+    sunpos = navsu.geo.sunVecEcef(jd)';
+    
+    
+    
     
     PRNs = unique(array(:,1));
     
@@ -284,7 +290,7 @@ if cmToApcFlag
     for pdx = 1:NumSV
         prn = PRNs(pdx);
         % Use the IGS antenna phase center file
-        svni = prn2svn(prn,jd(1),constNum);
+        svni = navsu.svprn.prn2svn(prn,jd(1),constNum);
         if isnan(svni)
             offset = nan(3,1);
         else
@@ -295,7 +301,6 @@ if cmToApcFlag
             else
                 offset = nan(3,1);
             end
-            
         end
         
         inds = find(array(:,1) == prn);
@@ -305,17 +310,11 @@ if cmToApcFlag
                 sunposi = sunpos(:,tdx);
                 svPosi  = pvt.position(inds(tdx),:)';
                 
-                % Build body axis rotation matrix
-                e = (sunposi-svPosi)./norm(sunposi-svPosi);
-                k = -svPosi./norm(svPosi);
-                % yhat = cross(e,k)./norm(cross(e,k));
-                j = cross(k,e)/norm(cross(k,e));
-                i = cross(j,k)/norm(cross(j,k));
+                R = navsu.geo.svLocalFrame(svPosi',epochsSun(tdx),sunposi);
                 
-                R = [i j k];
                 offsetECEF = R*offset;
-                pvt.position(inds(tdx),:) = svPosi+offsetECEF;
                 
+                pvt.position(inds(tdx),:) = svPosi+offsetECEF;
             end
         end
     end

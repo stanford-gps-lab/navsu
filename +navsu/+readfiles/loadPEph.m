@@ -1,6 +1,6 @@
 function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP)
 % loadPEph
-% DESCRIPTION: 
+% DESCRIPTION:
 % Find and parse IGS clock corrections.  The files to be parsed should
 % already exist locally.
 %
@@ -106,16 +106,22 @@ else
             case 'NGA'
                 PfileNameFormat1 = 'NGA%04d%1d.APC';
                 PfileNameFormat2 = 'apc%04d%1d';
+                PfileNameFormat3 = 'nga%04d%1d.apc';
+                
                 PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
                 
                 PFileName = sprintf(PfileNameFormat1, floor((gps_day)/7), mod((gps_day),7));
-                if yr > 2011
+                if yr >= 2020
+                    PFileName = sprintf(PfileNameFormat3, floor((gps_day)/7), mod((gps_day),7));
+                    
+                elseif yr > 2011
                     PFileName = sprintf(PfileNameFormat2, floor((gps_day)/7), mod((gps_day),7));
                 end
                 tmp = sprintf(PpathNameFormat, yr,dayNum);
                 
                 if ~FLAG_NO_LOAD
-                    Peph = ExpandPeph(ReadAPC([tmp PFileName]));
+%                                         Peph = ExpandPeph(navsu.readfiles.readSp3([tmp PFileName]));
+                    Peph = (navsu.readfiles.readApc(fullfile([tmp PFileName])));
                     
                     Peph.epochs = ones(Peph.NumSV, 1) * (Peph.GPS_seconds + ...
                         Peph.GPS_week_num*7*24*3600 + ...
@@ -158,13 +164,13 @@ else
                 
             case 'jplu'
                 % jpl ultra rapids are actually in a different format
-%                 [ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']
-
+                %                 [ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']
+                
                 PpathNameFormat =  [settings.preciseProdDir '%d/%03d/'];
                 % filename is just year-mn-dy.pos
                 PfileNameFormat1 = '%04d-%02d-%02d.pos';
                 
-                 tmp = sprintf(PpathNameFormat, yr,dayNum);
+                tmp = sprintf(PpathNameFormat, yr,dayNum);
                 PFileName = sprintf(PfileNameFormat1, yr, mn,dy);
                 
                 Peph = navsu.readfiles.readJplPos([tmp PFileName]);
@@ -172,7 +178,7 @@ else
             otherwise
                 ephCenter = settings.gpsEphCenter;
                 
-                [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,1,TIME_STRIP);
+                [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,1,TIME_STRIP,atxData);
                 
         end
         
@@ -223,7 +229,7 @@ else
             case 'MGEX'
                 ephCenter = settings.gloEphCenter;
                 
-                [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,2,TIME_STRIP);
+                [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,2,TIME_STRIP,atxData);
                 
         end
         
@@ -231,13 +237,13 @@ else
         % Only have an MGEX option here!
         ephCenter = settings.galEphCenter;
         
-        [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,3,TIME_STRIP);
+        [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,3,TIME_STRIP,atxData);
         
     elseif all(settings.constUse ==  [0 0 0 1 0])
         % Only have an MGEX option here!
         ephCenter = settings.bdsEphCenter;
         
-        [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,4,TIME_STRIP) ;
+        [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,4,TIME_STRIP,atxData) ;
         
     else
         % Multi-GNSS
@@ -260,7 +266,7 @@ else
                 settings2.constUse(cdx) = 1;
                 
                 % Call yourself
-                [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
+                [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP,atxData);
                 
                 if ~FLAG_NO_LOAD
                     PRN           = [PRN; Pephi.PRN];
@@ -288,7 +294,7 @@ else
     end
 end
 
-    function [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,constOut,TIME_STRIP)
+    function [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,constOut,TIME_STRIP,atxData)
         
         % day of year can sometimes be fractional for ultra rapids- need to
         % clean it up
@@ -302,7 +308,7 @@ end
         Peph.velocity      = [];
         Peph.Event         = [];
         Peph.epochs        = [];
-        Peph.constellation = [];        
+        Peph.constellation = [];
         PFileName     = [];
         PFileNameFull = [];
         % look for RINEX3 format file first, then fall back on old
@@ -340,7 +346,7 @@ end
         end
         
         if ~FLAG_NO_LOAD
-            Peph = navsu.readfiles.readSp3([tmp PFileName],FLAG_APC_OFFSET,1,constOut);
+            Peph = navsu.readfiles.readSp3([tmp PFileName],FLAG_APC_OFFSET,1,constOut,atxData);
             
             % Ensure all fields are filled
             if ~isfield(Peph,'clock_drift')
@@ -356,7 +362,7 @@ end
             Peph.epochs = Peph.epochs(:);
             
             Peph.Event(isnan(Peph.Event)) = 1;
-           
+            
             
             % strip off epochs that aren't on correct day
             if TIME_STRIP
