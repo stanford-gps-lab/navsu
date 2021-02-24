@@ -534,7 +534,7 @@ switch const
         % All data from wikipedia:
         % https://en.wikipedia.org/wiki/List_of_Galileo_satellites
         svndata = [
-            %                  |     Launch Time       |     Decommission Time      |
+            %            |     Commission Time       |     Decommission Time      |
             %SVN  PRN  Year   Mon   Day  Hour   Min  Year   Mon   Day  Hour   Day  Block
             1      -1  2005    12    28     0     0  2012     7    30     0     0     1; % GIOVE
             2      -2  2008     4    26     0     0  2012     7    23     0     0     1; % GIOVE
@@ -545,7 +545,7 @@ switch const
             201    18  2014     8    22     0     0  2014     8    22     0     0     3; % Launched into wrong orbit
             202    14  2014     8    22     0     0  2014     8    22     0     0     3; % Launched into wrong orbit
             203    26  2015    12     3     0     0   Inf     1     1     0     0     3;
-            204    22  2015    12     4     0     0   Inf     1     1     0     0     3;
+            204    22  2015    12     4     0     0  2017    12     8     7    30     3;
             205    24  2016     1    28     0     0   Inf     1     1     0     0     3;
             206    30  2016     1    28     0     0   Inf     1     1     0     0     3;
             208     8  2015    12    17     0     0   Inf     1     1     0     0     3;
@@ -555,7 +555,15 @@ switch const
             212     3  2017     8     1     0     0   Inf     1     1     0     0     3;
             213     4  2017     8     9     0     0   Inf     1     1     0     0     3;
             214     5  2017     5    29     0     0   Inf     1     1     0     0     3;
-            207     7  2017     5    29     0     0   Inf     1     1     0     0     3;]; 
+            207     7  2017     5    29     0     0   Inf     1     1     0     0     3;
+            218    31  2018     8     2     7    27   Inf     1     1     0     0     3;
+            216    25  2018     8     2     8     6   Inf     1     1     0     0     3;
+            217    27  2018     8     2     8    31   Inf     1     1     0     0     3; 
+            215    21  2018    10    12     8     7   Inf     1     1     0     0     3;
+            219    36  2019     2    11    10    26   Inf     1     1     0     0     3; 
+            222    33  2019     2    11    10    56   Inf     1     1     0     0     3; 
+            220    13  2019     2    11    11    26   Inf     1     1     0     0     3;
+            221    15  2019     2    11    12    10   Inf     1     1     0     0     3;]; 
         elseif source == 2 % LAUNCH DATES- USED FOR IDENTIFICATION OF SATELLITES BEFORE USABLE DATES
             svndata = [
             %                  |     Launch Time       |     Decommission Time      |
