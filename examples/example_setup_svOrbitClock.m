@@ -15,12 +15,12 @@ configFile = 'config.ini';
 netrcFile = 'C:\Users\kazgu\Documents\cddislogin.netrc';
 
 % Initialize the GNSS correction data object
-datai = navsu.svOrbitClock('constUse',[1 1 0 0 0],'netrcFile',netrcFile);
+datai = navsu.svOrbitClock('constUse',constUse,'netrcFile',netrcFile);
 
 % Year and day of year of interest- this is just arbitrary for this
 % example
 year = 2020;
-doy  = 180;
+doy  = 110;
 
 %% Choose an example time frame and satellite
 % Choose a time from the middle of the day (need to be able to interpolate

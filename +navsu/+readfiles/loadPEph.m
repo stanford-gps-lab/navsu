@@ -266,7 +266,7 @@ else
                 settings2.constUse(cdx) = 1;
                 
                 % Call yourself
-                [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP,atxData);
+                [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
                 
                 if ~FLAG_NO_LOAD
                     PRN           = [PRN; Pephi.PRN];

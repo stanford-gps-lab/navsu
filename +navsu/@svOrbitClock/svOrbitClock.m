@@ -7,14 +7,14 @@ classdef svOrbitClock < handle
             'miceDir',                   [],... % Directory containing NASA MICE files
             'preciseProdDir',            [],... % Directory containing precise products
             'obsDir',                    [],... % Directory containting IGS observations
-            'gpsEphCenter',           'com',... % IGS AC code for GPS precise eph
-            'gloEphCenter',           'com',... % IGS AC code for GLO precise eph
-            'galEphCenter',           'com',... % IGS AC code for GAL precise eph
-            'bdsEphCenter',           'com',... % IGS AC code for BDS precise eph
-            'gpsClkCenter',           'com',... % IGS AC code for GPS precise clk
-            'gloClkCenter',           'com',... % IGS AC code for GLO precise clk
-            'galClkCenter',           'com',... % IGS AC code for GAL precise clk
-            'bdsClkCenter',           'com',... % IGS AC code for BDS precise clk
+            'gpsEphCenter',           'GRG',... % IGS AC code for GPS precise eph
+            'gloEphCenter',           'GRG',... % IGS AC code for GLO precise eph
+            'galEphCenter',           'GRG',... % IGS AC code for GAL precise eph
+            'bdsEphCenter',           'GRG',... % IGS AC code for BDS precise eph
+            'gpsClkCenter',           'GRG',... % IGS AC code for GPS precise clk
+            'gloClkCenter',           'GRG',... % IGS AC code for GLO precise clk
+            'galClkCenter',           'GRG',... % IGS AC code for GAL precise clk
+            'bdsClkCenter',           'GRG',... % IGS AC code for BDS precise clk
             'dcbSource',                  2,... % Differential code bias source 2 = DLR- just use that
             'orbitInterpMethod', 'lagrange',...
             'polyfit',   struct('nPolyFit',12,'pfit',8,'cdfit',2),...                 
