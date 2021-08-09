@@ -75,7 +75,7 @@ for idx = 1:length(yrs)
         b = fix(y/400) - fix(y/100);
     else
 %         warning('Dates between October 5 & 15, 1582 do not exist');
-        return;
+        continue;
     end
     if y > 0
         jd = fix(365.25*y) + fix(30.6001*(m+1)) + b + 1720996.5 + dy;
