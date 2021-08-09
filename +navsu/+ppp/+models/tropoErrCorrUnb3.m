@@ -1,6 +1,6 @@
 function [tropo_corr, Mw,tropDataExtra] = tropoErrCorrUnb3(el, h, lat,doy)
 
-tropo_corr = zeros(size(el));
+% tropo_corr = zeros(size(el));
 
 % 
 latTable = [15 30 45 60 75];
@@ -20,19 +20,11 @@ table2 = [ 0.00  0.00 0.00 0.00e-3 0.00
           -0.50 14.50 3.39 0.62e-3 0.30   ];
       
 % Interpolating all values 
-metValue0 = zeros(length(lat),5);
-dmetValue = zeros(length(lat),5);
+% get lat values for interpolation
+absLat = max(min(abs(lat), latTable(end)), latTable(1));
 
-for idx = 1:5
-    metValue0(:,idx)  = interp1(latTable,table1(:,idx),abs(lat));
-    dmetValue(:,idx)  = interp1(latTable,table2(:,idx),abs(lat));
-    
-    metValue0(abs(lat) <= latTable(1),idx) = table1(1,idx);
-    metValue0(abs(lat) >= latTable(end),idx) = table1(5,idx);
-    
-    dmetValue(abs(lat) <= latTable(1),idx)   = table2(1,idx);
-    dmetValue(abs(lat) >= latTable(end),idx) = table2(5,idx);
-end
+metValue0 = interp1(latTable', table1, absLat);
+dmetValue = interp1(latTable', table2, absLat);
 
 Dmin = 28*ones(size(el));
 Dmin(lat < 0) = 211;
@@ -63,9 +55,9 @@ d_wet = (1-B.*h./T).^((lam+1).*g./(Rd.*B)-1).*((10^-6*k2*Rd.*e)./(T.*(gm.*(lam+1
 % Md = m(:,2);
 
 tropo_corr = Md.*d_dry+Mw.*d_wet;
-tropo_corr = tropo_corr;
+% tropo_corr = tropo_corr;
 
-Mw = Mw;
+% Mw = Mw;
 
 tropDataExtra.trototSave = d_dry;
 tropDataExtra.gmfwSave   = Mw;
@@ -80,26 +72,3 @@ if ~isreal(tropo_corr)
 end
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

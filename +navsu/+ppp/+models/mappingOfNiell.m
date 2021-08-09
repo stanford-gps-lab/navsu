@@ -18,13 +18,11 @@ wetTable = [...
     1.4275268e-3 1.5138625e-3 1.4572752e-3 1.5007428e-3 1.7599082e-3; ... % b
     4.3472961e-2 4.6729510e-2 4.3908931e-2 4.4626982e-2 5.4736038e-2];    % c
 
-abc = zeros(length(lat),3);
-for idx = 1:3
-    abc(:,idx)  = interp1(latTable,wetTable(idx,:),lat);
-   
-    abc(lat <= latTable(1),idx) = wetTable(idx,1);
-    abc(lat >= latTable(end),idx) = wetTable(idx,end);
-end
+% get lat values for interpolation
+absLat = max(min(abs(lat), latTable(end)), latTable(1));
+% do interpolation
+abc  = interp1(latTable', wetTable', absLat);
+
 a = abc(:,1);
 b = abc(:,2);
 c = abc(:,3);
@@ -44,17 +42,9 @@ dryTable = [ ...
 
 heightCorrAbc = [2.53e-5 5.49e-3 1.14e-3];
 
-abc2 = zeros(length(lat),6);
-for idx = 1:6
-    abc2(:,idx)  = interp1(latTable,dryTable(idx,:),lat);
-   
-    % Areas lower than 15 deg or greater than 75 are just set to the first
-    % or last value, respectively
-    abc2(lat <= latTable(1),idx)   = dryTable(idx,1);
-    abc2(lat >= latTable(end),idx) = dryTable(idx,end);
-end
+abc2  = interp1(latTable', dryTable', absLat);
 
-abcDry = zeros(length(lat),3);
+% abcDry = zeros(length(lat),3);
 aDry = abc2(:,1)-abc2(:,4).*cos(2*pi*(doy-28)/365.25);
 bDry = abc2(:,2)-abc2(:,5).*cos(2*pi*(doy-28)/365.25);
 cDry = abc2(:,3)-abc2(:,6).*cos(2*pi*(doy-28)/365.25);
@@ -73,18 +63,3 @@ dm = (1./sin(elRad)-mht).*h/1000;
 Md = Md0+dm;
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
