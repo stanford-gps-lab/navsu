@@ -65,7 +65,7 @@ for loop = 1:tmArrayLen
                 idx = find(eph.PRN == prn(loop));
             case 'GAL'
                 % Need to use af0 and af1 for E5a (CODE using E5a, not b)
-                idx = find(eph.PRN == prn(loop) & galClkRef == 1 & galEphSource == 2);
+                idx = find(eph.PRN == prn(loop));% & galClkRef == 1 & galEphSource == 2);
                 
             case 'BDS'
                 idx = find(eph.PRN == prn(loop));
