@@ -75,22 +75,24 @@ pos = struct('x', NaN(nProp, 1), 'y', NaN(nProp, 1), 'z', NaN(nProp, 1), ...
 [weeks,tows] = navsu.time.epochs2gps(epochs);
 
 
-% Loop through each potential constellation and do the propgation for that
-constFull = [1 2 3 4];  % GPS GLO GAL BDS QZSS
+% % Loop through each potential constellation and do the propgation for that
+% constFull = [1 2 3 4];  % GPS GLO GAL BDS QZSS
 
-for cdx = constFull
+% Loop through all queried constellations, propagate the ones we can
+for cdx = unique(const)'
    % Input indices for this constellation
-   indsi = const == constFull(cdx);
+   indsi = const == cdx;
    
    if ~any(indsi)
        continue;
    end
    
-   switch constFull(cdx)
+   switch cdx
        case 1 
            % GPS
            if isempty(beph.gps)
-               warning('propNavMsg: GPS ephemeris not supplied!'); continue;
+               warning('propNavMsg: GPS ephemeris not supplied!');
+               continue;
            end
 
            posi = navsu.geo.propNavMsgGps(beph.gps,prn(indsi),weeks(indsi),...
@@ -99,7 +101,8 @@ for cdx = constFull
        case 2
            % GLONASS
            if isempty(beph.glo)
-               warning('propNavMsg: GLO ephemeris not supplied!'); continue;
+               warning('propNavMsg: GLO ephemeris not supplied!');
+               continue;
            end
            posi = navsu.geo.propNavMsgGlo(beph.glo,prn(indsi),weeks(indsi),...
                    tows(indsi));
@@ -107,7 +110,8 @@ for cdx = constFull
        case 3
            % Galileo
            if isempty(beph.gal)
-               warning('propNavMsg: GAL ephemeris not supplied!'); continue;
+               warning('propNavMsg: GAL ephemeris not supplied!');
+               continue;
            end
            posi = navsu.geo.propNavMsgGps(beph.gal,prn(indsi),weeks(indsi),...
                tows(indsi),'GAL');
@@ -115,13 +119,15 @@ for cdx = constFull
        case 4
            % BeiDou
            if isempty(beph.bds)
-               warning('propNavMsg: BDS ephemeris not supplied!'); continue;
+               warning('propNavMsg: BDS ephemeris not supplied!');
+               continue;
            end
            posi = navsu.geo.propNavMsgGps(beph.bds,prn(indsi),weeks(indsi),...
                tows(indsi),'BDS');
            
        otherwise
-           warning('This constellation is not supported- sorry');
+           warning(['Constellation #', num2str(cdx), ' is not supported - sorry']);
+           continue;
            
    end
    
@@ -132,10 +138,6 @@ for cdx = constFull
    end
     
 end
-
-
-
-
 
 
 
