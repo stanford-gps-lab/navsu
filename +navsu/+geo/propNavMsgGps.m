@@ -153,7 +153,9 @@ for loop = 1:tmArrayLen
     
     % save the important indices for this satellite
     iEph(loop) = I;
-    iLastU(loop) = K;
+    if strcmp(constellation, 'GPS')
+        iLastU(loop) = K;
+    end
     
 end
 
