@@ -1,6 +1,6 @@
-function [posP, velP,pPosInds,pPosPoly,ROut] = PPosInterp(obj,PRNs, epochs,Ppos,Pprns,...
-    Pepochs,settings,Pvel,pPosInds,pPosPoly,constInds,PconstInds,FLAG_APC_OFFSET,...
-    atxData,sunPos,dttx)
+function [posP, velP, pPosInds, pPosPoly,ROut] = PPosInterp(obj, PRNs, epochs,...
+    settings, Pvel, pPosInds, pPosPoly, constInds, FLAG_APC_OFFSET,...
+    atxData, sunPos, dttx)
 
 %% PPosInterp
 % Given IGS precise orbit from IGS products, this function performs either
@@ -42,6 +42,12 @@ function [posP, velP,pPosInds,pPosPoly,ROut] = PPosInterp(obj,PRNs, epochs,Ppos,
 
 
 %%
+
+% pull obsolete inputs from object
+Ppos = obj.PEph.position;
+Pprns = obj.PEph.PRN;
+Pepochs = obj.PEph.epochs;
+PconstInds = obj.PEph.constellation;
 
 % Set up interpolation constants
 n     = settings.polyfit.nPolyFit; % number of nominal points to use for polynominal fit

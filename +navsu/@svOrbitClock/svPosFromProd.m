@@ -23,10 +23,10 @@ orbClockData = obj;
 
 if strcmp(orbClockData.orbMode,'PRECISE')
     % this should be adjusted to allow for all of the inputs
-    [svPos, svVel] = obj.PPosInterp(prns, epochs,orbClockData.PEph.position,...
-        orbClockData.PEph.PRN,orbClockData.PEph.epochs,settings,NaN,...
-        [],[],constInds,orbClockData.PEph.constellation,FLAG_APC_OFFSET,...
-        atxData,sunPos,dttx);
+    [svPos, svVel] = obj.PPosInterp(prns, epochs, ...
+        settings, NaN,...
+        [], [], constInds, FLAG_APC_OFFSET,...
+        atxData, sunPos, dttx);
     
     % Just setting a standard orbit sigma here :)
     sigOrbit = 0.03*ones(size(svPos,1),1);
@@ -34,7 +34,7 @@ if strcmp(orbClockData.orbMode,'PRECISE')
 else
     
     % propNavMsg handles the various constellations
-    pos = navsu.geo.propNavMsg(orbClockData.BEph, prns, constInds, epochs);
+    pos = navsu.geo.propNavMsg(obj.BEph, prns, constInds, epochs);
     
     svPos       = [pos.x pos.y pos.z];
     svVel       = [pos.x_dot pos.y_dot pos.z_dot];
