@@ -1,6 +1,21 @@
 function pos = propNavMsgGps(eph, prn, GPSweek, GPSsec, constellation,dualFreq)
+%Propagate navigation broadcast for constellations that propagate like GPS.
+% Accepts inputs for one constellation at a time.
+% 
+% propNavMsgGps(eph, prn, GPSweek, GPSsec, constellation,dualFreq)
+%   
+% INPUTS:
+%   eph     - broadcast ephemeris structure for the constellation
+%   prn     - Nx1 vector of desired PRN to propagate
+%   GPSweek - Nx1 vector of GPS week numbers of propagation times
+%   GPSsec  - Nx1 vector of GPS second of week of propagation times
+%   constellation   - string identifying constellation to propagate. Has to
+%                   be 'GPS', 'GAL' or 'BDS'. Defaults to 'GPS'.
+%   dualFreq        - optional extra input flag for TGD adjustment for BDS
 
 % It's probably easier just to call propNavMsg- :)
+
+
 
 % Default to GPS
 if nargin < 5
