@@ -143,8 +143,9 @@ else
                 fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  num2str(dayNum,'%03d')];
                 % check the directory for a file from that day
                 diri = dir(pathStr);
-                fileInd = find(~cellfun(@isempty,strfind({diri.name},fname1)) & ...
-                    cellfun(@isempty,strfind({diri.name},'.gz')) & ~cellfun(@isempty,strfind({diri.name},'.CLK')) );
+                fileInd = find(contains({diri.name},fname1) ...
+                             & ~contains({diri.name},'.gz') ...
+                             & contains({diri.name},'.CLK'));
                 
                 if ~isempty(fileInd)
                     tmp = pathStr;
@@ -214,8 +215,9 @@ else
                 fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  num2str(dayNum,'%03d')];
                 % check the directory for a file from that day
                 diri = dir(pathStr);
-                fileInd = find(~cellfun(@isempty,strfind({diri.name},fname1)) & cellfun(@isempty,strfind({diri.name},'.gz')) ...
-                    & ~cellfun(@isempty,strfind({diri.name},'CLK'))  );
+                fileInd = find(contains({diri.name},fname1) ...
+                            & ~contains({diri.name},'.gz') ...
+                            & contains({diri.name},'CLK'));
                 
                 if ~isempty(fileInd)
                     tmp = pathStr;
