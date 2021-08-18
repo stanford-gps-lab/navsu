@@ -9,9 +9,6 @@ function [posP, velP, pPosInds, pPosPoly,ROut] = PPosInterp(obj, PRNs, epochs,..
 % Required Inputs:
 %  PRNs                - N-length vector of PRN per desired interpolation
 %  epochs              - N-length GPS epoch per desired interpolation
-%  Ppos                - Precise position matrix from IGS products
-%  Pprns               - PRNS associated with Ppos
-%  Pepochs             - GPS epochs associated with Ppos
 %  settings            - settings structure that contains...
 %   .nPolyFit          - number of points to use for the polynomial fit
 %   .pfit              - order of fit for polynomial interpolation
@@ -23,7 +20,6 @@ function [posP, velP, pPosInds, pPosPoly,ROut] = PPosInterp(obj, PRNs, epochs,..
 %  pPosPoly
 %  constInds           - N-length vector of constellation index per desired
 %                        interpolation.  Defaults to all GPS
-%  PconstInds    
 %  FLAG_APC_OFFSET     - flag indicating whether or not to offset the
 %                        output position by the antenna phase center using 
 %                        a nominal attitude model
@@ -43,7 +39,7 @@ function [posP, velP, pPosInds, pPosPoly,ROut] = PPosInterp(obj, PRNs, epochs,..
 
 %%
 
-% pull obsolete inputs from object
+% pull some ephemeris parameters from object
 Ppos = obj.PEph.position;
 Pprns = obj.PEph.PRN;
 Pepochs = obj.PEph.epochs;
