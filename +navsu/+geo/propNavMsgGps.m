@@ -123,11 +123,11 @@ for loop = 1:tmArrayLen
                 tmp = tmArray(loop) - eph.GPS_week_num(jdx) * 604800 - eph.TTOM(jdx);
                 tmp(tmp < 0) = max(tmp) - tmp(tmp < 0);
                 %     t(t < 60) = max(t) - t(t < 60);
-                [~, iLastUpload] = min(tmp(end:-1:1));
-                iLastUpload = jdx(length(tmp) + 1 - iLastUpload);
+                [~, K] = min(tmp(end:-1:1));
+                K = jdx(length(tmp) + 1 - K);
             else
                 [~, tmp] = min(eph.GPS_week_num(idx) * 604800 + eph.TTOM(idx));
-                iLastUpload = idx(tmp);
+                K = idx(tmp);
             end            
             
         case 'GAL'
@@ -151,16 +151,13 @@ for loop = 1:tmArrayLen
         fprintf(2, 'Warning: SV health %g for the ephemeris No.%d\n', eph.health(I), I);
     end
     
-    % from this point on we need the following indices:
-    % loop  - index of satellite / epoch to propagate 1:N
-    % I     - index of ephemeris struct item to use for propagation
-    % iLastUpload - index of ephemeris struct of last upload
+    % save the important indices for this satellite
     iEph(loop) = I;
-    iLastU(loop) = iLastUpload;
+    iLastU(loop) = K;
     
 end
 
-% the remaining calculations can be done vectorized
+% the remaining calculations can be done vectorized!
 
 % time since ephemeris for each SV
 tsE = tmArray - eph.GPS_week_num(iEph) * 604800 - eph.Toe(iEph);
