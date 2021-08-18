@@ -53,23 +53,23 @@ pos = struct('x', NaN(tmArrayLen, 1), 'y', NaN(tmArrayLen, 1), 'z', NaN(tmArrayL
     'AoD',NaN(tmArrayLen,1),...
     'Fit_interval', NaN(tmArrayLen, 1),'TGD',NaN(tmArrayLen,1),'t_m_toc',NaN(tmArrayLen,1));
 
-if strcmp(constellation,'GAL')
-   %  Parsing data source
-   binData = repmat(' ',length(eph.codes_on_L2),22);
-   binData(:,2:2:end) = dec2bin(eph.codes_on_L2,11);
-   binData = str2num(binData);
+% if strcmp(constellation,'GAL')
+%    %  Parsing data source
+%    binData = repmat(' ',length(eph.codes_on_L2),22);
+%    binData(:,2:2:end) = dec2bin(eph.codes_on_L2,11);
+%    binData = str2num(binData);
    
    % very naive. does not check for duplicates in fields!
-   galEphSource = zeros(length(eph.codes_on_L2),1);
-   galEphSource(find(binData(:,end)))   = 1; % I/NAV E1-B
-   galEphSource(find(binData(:,end-1))) = 2; % F/NAV E5a-I
-   galEphSource(find(binData(:,end-2))) = 3; % I/NAV E5b-I
+%    galEphSource = zeros(length(eph.codes_on_L2),1);
+%    galEphSource(find(binData(:,end)))   = 1; % I/NAV E1-B
+%    galEphSource(find(binData(:,end-1))) = 2; % F/NAV E5a-I
+%    galEphSource(find(binData(:,end-2))) = 3; % I/NAV E5b-I
    
-   galClkRef = zeros(length(eph.codes_on_L2),1);
-   galClkRef(find(binData(:,end-8)))   = 1; % af0-af2, Toc are for E5a,E1
-   galClkRef(find(binData(:,end-9)))   = 2; % af0-af2, Toc are for E5b,E1
+%    galClkRef = zeros(length(eph.codes_on_L2),1);
+%    galClkRef(find(binData(:,end-8)))   = 1; % af0-af2, Toc are for E5a,E1
+%    galClkRef(find(binData(:,end-9)))   = 2; % af0-af2, Toc are for E5b,E1
 
-end
+% end
 
 [iEph, iLastU] = deal(zeros(tmArrayLen, 1));
 
