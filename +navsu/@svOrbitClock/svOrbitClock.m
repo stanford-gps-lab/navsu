@@ -164,7 +164,7 @@ classdef svOrbitClock < handle
         
         %% The rest of the functions mostly help with the above functions. 
         % Helps with precise clock interpolation
-        cbias = clockInterp(obj,prns,constInds,epochs,Clck);
+        cbias = clockInterp(obj,prns,constInds,epochs);
         % Helps with precise clock interpolation
         cbias = clockBiasFromProd(obj,prns,constInds,epochs)
         

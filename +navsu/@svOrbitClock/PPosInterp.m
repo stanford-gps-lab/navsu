@@ -127,11 +127,11 @@ for idx = 1:length(PRNs)
     end
     switch settings.orbitInterpMethod
         case 'poly'
-            ind1 = max(find(Pepochsi <= epochi))-n/2+1;
-            ind2 = min(find(Pepochsi > epochi))+n/2-1;
+            ind1 = find(Pepochsi <= epochi, 1, 'last') - n/2 + 1;
+            ind2 = find(Pepochsi > epochi, 1, 'first') + n/2 - 1;
         case 'lagrange'
-            ind1 = max(find(Pepochsi <= epochi))-floor(n/2);
-            ind2 = min(find(Pepochsi > epochi))+floor(n/2)-1;
+            ind1 = find(Pepochsi <= epochi, 1, 'last') - floor(n/2);
+            ind2 = find(Pepochsi > epochi, 1, 'first') + floor(n/2) - 1;
     end
     if (isempty(ind1) && isempty(ind2)) || (sum(isnan(Pposi(ind1:ind2))) == (ind2-ind1+1)) 
         continue
