@@ -74,14 +74,15 @@ if length(dayList) > 1
 else
     ionoData = [];
     dcbData = [];
-    
-    destDir      = settings.dcbDir;
-    destPath   = [int2str(yearList) '\' num2str(dayList,'%03d') '\'];
+        
+    target_dir = fullfile(settings.dcbDir, ...
+                          int2str(yearList), ...
+                          num2str(dayList,'%03d'));
     
     filenamei = [center 'g' num2str(dayList,'%03d') '0.' num2str(mod(yearList,100),'%02d') 'i'];
-    target_dir = [destDir destPath];
-    
-    filenameFulli = [target_dir filenamei];
+
+
+    filenameFulli = fullfile(target_dir, filenamei);
     
     IFileName = {filenamei};
     IFileNameFull = {filenameFulli};
