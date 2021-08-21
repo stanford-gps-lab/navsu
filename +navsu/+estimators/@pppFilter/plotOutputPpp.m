@@ -342,7 +342,7 @@ row = dataTipTextRow('const',double(indsUnPh(:,2)));
 s.DataTipTemplate.DataTipRows(end+1) = row;
 row = dataTipTextRow('sig',double(indsUnPh(:,3)));
 s.DataTipTemplate.DataTipRows(end+1) = row;
-ylabel('Code resids [m]')
+ylabel('Carrier residuals [m]')
 
 
 axes(ha(3))
@@ -358,7 +358,8 @@ row = dataTipTextRow('const',double(indsUnDopp(:,2)));
 s.DataTipTemplate.DataTipRows(end+1) = row;
 row = dataTipTextRow('sig',double(indsUnDopp(:,3)));
 s.DataTipTemplate.DataTipRows(end+1) = row;
-ylabel('Code resids [m]')
+ylabel('Doppler residuals [m]')
+xlabel('Minutes into run')
 
 
 %% plot measurements that were removed?
@@ -526,6 +527,7 @@ for idx = 1:length(s)
     s(idx).DataTipTemplate.DataTipRows(4) = row;
     s(idx).Color = colors(idx,:);
 end
+ylabel('Integer ambiguities')
 % 
 % % Add standard dev lol
 % s = plot(ambStatePlot'+ambStdPlot');
@@ -565,6 +567,8 @@ dop(dop == 0) = nan;
 figure;
 plot(epochsDop,dop(1:3,:))
 legend('E','N','U')
+xlabel('epochs')
+ylabel('DOP')
 
 end
 
