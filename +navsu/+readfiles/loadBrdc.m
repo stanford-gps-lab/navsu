@@ -1,4 +1,7 @@
 function [eph,BFileName,BFileNameFull] = loadBrdc(Year, dayNum, settings,varargin)
+%% File is deprecated, use not recommended!!!
+
+
 %% Load broadcast navigation message
 
 % Adjust in case day number is 0
