@@ -11,7 +11,10 @@ if ~exist(localDir,'dir')
     mkdir(localDir);
 end
 
-[~,output] = system(['curl -c "' cookieFile '" --silent -n --netrc-file "' netrcFile ' " -L -o "' fullfile(localDir, filename) '" "' remoteDir '/' filename '" ']);
+[~,output] = system(['curl --silent -c "' cookieFile ...
+                     '" -n --netrc-file "' netrcFile ...
+                     ' " -L -o "' fullfile(localDir, filename) ...
+                     '" "' remoteDir '/' filename '" ']);
 
 
 end

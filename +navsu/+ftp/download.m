@@ -185,7 +185,7 @@ switch inChoice
         ftpStruc.destDir      = settings.dcbDir;
         ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
         ftpStruc.sourceFormat = '[''/archive/gnss/products/ionex/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
-        ftpStruc.destFormat   = '[int2str(Year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+        ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''codg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;
             '[''casg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;};
         ftpStruc.unzipFlag    = 1;
@@ -244,7 +244,7 @@ switch inChoice
         ftpStruc3.destDir      = settings.mgxObsDir;
         ftpStruc3.ftpSite      = 'https://cddis.nasa.gov';
         ftpStruc3.sourceFormat = '[''/archive/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''d/'' ]';
-        ftpStruc3.destFormat   = '[int2str(Year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+        ftpStruc3.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         
         if isempty(statCodes)
             ftpStruc3.fileFormat   =  {'[''*_30S_MO.crx.gz'']'};
@@ -259,7 +259,7 @@ switch inChoice
         ftpStruc.destDir      = settings.mgxObsDir;
         ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
         ftpStruc.sourceFormat = '[''/archive/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''d/'' ]';
-        ftpStruc.destFormat   = '[int2str(Year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+        ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         
         if isempty(statCodes)
             ftpStruc.fileFormat   =  {'[''*d.Z'']'};
@@ -374,7 +374,7 @@ switch inChoice
         ftpStruc.destDir      = settings.dcbDir;
         ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
         ftpStruc.sourceFormat = '[''/archive/gnss/products/ionex/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
-        ftpStruc.destFormat   = '[int2str(Year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+        ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''codg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;
             '[''casg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;
             '[''igsg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;};
@@ -386,7 +386,7 @@ switch inChoice
         ftpStruc.destDir      = settings.dcbDir;
         ftpStruc.ftpSite      = 'ftp.aiub.unibe.ch';
         ftpStruc.sourceFormat = '[''/CODE/'' num2str(Year) ''/'' ]';
-        ftpStruc.destFormat   = '[int2str(Year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+%         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''CGIM'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''N.*'']' ;};
         ftpStruc.unzipFlag    = 1;
         
@@ -415,7 +415,7 @@ switch inChoice
         ftpStruc.destDir      = settings.rinexObsDir;
         ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
         ftpStruc.sourceFormat = '[''/archive/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''o/'' ]';
-        ftpStruc.destFormat   = '[int2str(Year) ''\'' num2str(dayNum,''%03d'') ''/'']';
+        ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         
         if isempty(statCodes)
             ftpStruc.fileFormat   =  {'[''*o.Z'']'};
