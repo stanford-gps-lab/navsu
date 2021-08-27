@@ -108,7 +108,6 @@ if isempty(obsDes) || 1
     end
     
     % Just setting a default
-    %           1                               2                               3                               4                                5
 %     obsDes  = {{'C1C'} {'L1C'} {'S1C'}  {'D1C'} {'C2S'} {'L2S'} {'S2S'} {'D2S'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
 %         {'C1C'} {'L1C'} {'S1C'} {'D1C'} {'C2C'} {'L2C'} {'S2C'} {'D2C'} {'C2P'} {'L2P'} {'S2P'} {'D2P'}
 %         {'C1B'} {'L1B'} {'S1B'} {'D1B'} {'C7I'} {'L7I'} {'S7I'} {'D7I'} {'C2W'} {'L2W'} {'S2W'} {'D2W'}
@@ -200,7 +199,8 @@ dcbType = dcbData.type;
 dcbType = 2;
 
 
-%% Correct L1C-L1P for ISC (using GPS and Galileo MGEX precise products, this should be the only necessary change)
+%% Correct L1C-L1P for ISC (using GPS and Galileo MGEX precise products, 
+%% this should be the only necessary change)
 
 % Edit Fabian Rothmaier 08/2021: not sure this section is doing anything at
 % all, not working with example. dcbType descriptions don't match other
@@ -218,17 +218,19 @@ if dcbType == 4 && ~isempty(corrData.dcb)
             consti = constInds(jdx);
             obsi = prphType(idx,jdx);
             
-            if  consti == 1
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData);
-                
-                dcbCorr(idx,jdx) = biasi;
+            if consti == 1
+                % GPS
+                statCode = [];
+            elseif consti == 2
+                % GLONASS
+                statCode = {'AJAC'};
+            else
+                % other consts currently not supported
+                continue
             end
             
-            if consti == 2
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,{'AJAC'});
-                
-                dcbCorr(idx,jdx) = biasi;
-            end
+            dcbCorr(idx,jdx) = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
+            
             
             % GLONASS adjustments for IGS stations (if using CODE IFB/DCB)
             if strcmp(obsi{1},'C1P') && consti == 2 && ~isempty(statCode)
@@ -378,29 +380,15 @@ elseif dcbType == 5 && ~isempty(corrData.dcb)
             consti = constInds(jdx);
             obsi = prphType(idx,jdx);
             
-            if strcmp(obsi{1},'C1C') && consti == 1
-                %                     biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'C1W'},epochDcb,dcbData);
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData);
-                
-                dcbCorr(idx,jdx) = biasi;
-            end
-            
-            if strcmp(obsi{1},'C2S') && consti == 1
-                %                     biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'C1W'},epochDcb,dcbData);
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData);
-                
-                dcbCorr(idx,jdx) = biasi;
+            if consti == 1 && any(strcmp(obsi{1}, {'C1C', 'C2S'}))
+                dcbCorr(idx,jdx) = navsu.readfiles.findDcbElement( ...
+                    prni, consti, obsi, {'ABS'}, epochDcb, dcbData);
             end
             
             % GLONASS adjustments for IGS stations (if using CODE IFB/DCB)
-            if strcmp(obsi{1},'C1P') && consti == 2 && ~isempty(statCode)
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
-                dcbCorr(idx,jdx) = dcbCorr(idx,jdx)+biasi;
-            end
-            
-            if strcmp(obsi{1},'C2P') && consti == 2 && ~isempty(statCode)
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
-                dcbCorr(idx,jdx) = dcbCorr(idx,jdx)+biasi;
+            if consti == 2 && any(strcmp(obsi{1}, {'C1P', 'C2P'})) && ~isempty(statCode)
+                dcbCorr(idx,jdx) = navsu.readfiles.findDcbElement( ...
+                    prni, consti, obsi, {'ABS'}, epochDcb, dcbData, statCode);
             end
         end
     end
@@ -487,15 +475,11 @@ elseif dcbType == 6 && ~isempty(corrData.dcb)
             end
             
             % GLONASS adjustments for IGS stations (if using CODE IFB/DCB)
-            if strcmp(obsi{1},'C1P') && consti == 2 && ~isempty(statCode)
+            if any(strcmp(obsi{1}, {'C1P', 'C2P'})) && consti == 2 && ~isempty(statCode)
                 biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
                 dcbCorr(idx,jdx) = dcbCorr(idx,jdx) + biasi;
             end
             
-            if strcmp(obsi{1},'C2P') && consti == 2 && ~isempty(statCode)
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
-                dcbCorr(idx,jdx) = dcbCorr(idx,jdx) + biasi;
-            end
         end
     end
     
@@ -516,7 +500,7 @@ end
 
 % signal pairs to include as iono-free combinations
 ifPairs = [1 3;
-    1 2];
+           1 2];
 
 for idx = 1:size(ifPairs,1)
     freq1 = freqs(:,prphSig == ifPairs(idx,1) & prphInd == 1)';
