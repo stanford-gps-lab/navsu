@@ -23,7 +23,7 @@ if nargin < 7
 end
 
 if nargin < 8
-    noNan = 0;
+    noNan = false;
 end
 
 if noNan
@@ -42,26 +42,25 @@ for idx = 1:length(PRNs)
     epochi = epochs(idx);
     
     if isnan(epochi)
-        epoch1 = Inf;
-        epoch2 = -Inf;
-    else
-        epoch1 = epochi;
-        epoch2 = epochi;
+        epochi = inf;
+    end
+    epoch1 = epochi;
+    epoch2 = epochi;
+    
+    inds = dcbData.PRNs == prni ...
+         & dcbData.constInd == consti ...
+         & navsu.internal.strFindCell(dcbData.obs1,obs1i,1,1) ...
+         & navsu.internal.strFindCell(dcbData.obs2,obs2i,1,1) ...
+         & epoch1 >= dcbData.startEpoch ...
+         & epoch2 <= dcbData.endEpoch;
+
+    if ~isempty(statCode)
+        inds = inds ...
+             & navsu.internal.strFindCell(dcbData.sites,statCode,1,1);
     end
     
-    if isempty(statCode)
-        inds = find(dcbData.PRNs == prni & dcbData.constInd == consti & navsu.internal.strFindCell(dcbData.obs1,obs1i,1,1) & ...
-            navsu.internal.strFindCell(dcbData.obs2,obs2i,1,1) & epoch1 >= dcbData.startEpoch & epoch2 <= dcbData.endEpoch);
-    else
-        inds = find(dcbData.PRNs == prni & dcbData.constInd == consti & navsu.internal.strFindCell(dcbData.obs1,obs1i,1,1) & ...
-            navsu.internal.strFindCell(dcbData.obs2,obs2i,1,1) & epoch1 >= dcbData.startEpoch & epoch2 <= dcbData.endEpoch & ...
-            navsu.internal.strFindCell(dcbData.sites,statCode,1,1));
-    end
-    
-    if ~isempty(inds)
-        inds = inds(1);
-        
-        biasOut(idx) = dcbData.bias(inds)*1e-9;
+    if any(inds)
+        biasOut(idx) = dcbData.bias(find(inds, 1))*1e-9;
     end
     
 end
