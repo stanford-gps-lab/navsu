@@ -162,7 +162,12 @@ end
 % the remaining calculations can be done vectorized!
 
 % time since ephemeris for each SV
-tsE = tmArray - eph.GPS_week_num(iEph) * 604800 - eph.Toe(iEph);
+% only work with prns I have an ephemeris for
+haveEph = iEph > 0;
+iEph = iEph(haveEph);
+tsE = tmArray(haveEph) ...
+      - eph.GPS_week_num(iEph) * 604800 ...
+      - eph.Toe(iEph);
 if strcmp(constellation,'BDS')
     tsE = tsE - 14; % need to adjust for Beidou timescale leapseconds
 end
@@ -208,27 +213,29 @@ OMEGA = eph.OMEGA(iEph) ...
       - OMEGA_DOTe * eph.Toe(iEph);
 
 if strcmp(constellation, 'BDS')
-    b2c = prn <= 5;
+    b2c = prn(haveEph) <= 5;
     OMEGA(b2c) = OMEGA(b2c) - eph.OMEGA_DOT(iEph(b2c)).*tsE(b2c);
 end
 
 % compute SV position in ECEF
-pos.x = xo .* cos(OMEGA) - yo .* cos(uri(:, 3)) .* sin(OMEGA);
-pos.y = xo .* sin(OMEGA) + yo .* cos(uri(:, 3)) .* cos(OMEGA);
-pos.z = yo .* sin(uri(:, 3));
+pos.x(haveEph) = xo .* cos(OMEGA) - yo .* cos(uri(:, 3)) .* sin(OMEGA);
+pos.y(haveEph) = xo .* sin(OMEGA) + yo .* cos(uri(:, 3)) .* cos(OMEGA);
+pos.z(haveEph) = yo .* sin(uri(:, 3));
 
 if strcmp(constellation, 'BDS') && any(b2c)
     % need to further rotate Beidou GEOs
     phiTemp = -5*pi/180;
     RxTemp = [1 0 0; 0 cos(phiTemp) sin(phiTemp); 0 -sin(phiTemp) cos(phiTemp)];
+    haveEphInt = find(haveEph);
     for i2c = find(b2c)'
         phiTemp = OMEGA_DOTe*tsE(i2c);
         RzTemp = [cos(phiTemp) sin(phiTemp) 0; -sin(phiTemp) cos(phiTemp) 0; 0 0 1];
-
-        posTemp = RzTemp*RxTemp*[pos.x(i2c) pos.y(i2c) pos.z(i2c)]';
-        pos.x(i2c) = posTemp(1);
-        pos.y(i2c) = posTemp(2);
-        pos.z(i2c) = posTemp(3);
+        
+        i2cE = haveEphInt(i2c);
+        posTemp = RzTemp*RxTemp*[pos.x(i2cE) pos.y(i2cE) pos.z(i2cE)]';
+        pos.x(i2cE) = posTemp(1);
+        pos.y(i2cE) = posTemp(2);
+        pos.z(i2cE) = posTemp(3);
     end
 end
 
@@ -254,21 +261,23 @@ yo_dot = uri_dot(:, 2) .* sin(uri(:, 1)) + uri(:, 2) .* cos(uri(:, 1)) .* uri_do
 OMEGA_dot = eph.OMEGA_DOT(iEph) - OMEGA_DOTe;   
 
 % compute SV velocity in ECEF
-pos.x_dot = xo_dot .* cos(OMEGA) - xo .* sin(OMEGA) .* OMEGA_dot ...
-          - yo_dot .* cos(uri(:, 3)) .* sin(OMEGA) ...
-          + yo .* sin(uri(:, 3)) .* sin(OMEGA) .* uri_dot(:, 3) ...
-          - yo .* cos(uri(:, 3)) .* cos(OMEGA) .* OMEGA_dot;
-pos.y_dot = xo_dot .* sin(OMEGA) + xo .* cos(OMEGA) .* OMEGA_dot ...
-          + yo_dot .* cos(uri(:, 3)) .* cos(OMEGA) ...
-          - yo .* sin(uri(:, 3)) .* cos(OMEGA) .* uri_dot(:, 3) ...
-          - yo .* cos(uri(:, 3)) .* sin(OMEGA) .* OMEGA_dot;                      
-pos.z_dot = yo_dot .* sin(uri(:, 3)) + yo .* cos(uri(:, 3)) .* uri_dot(:, 3);    
+pos.x_dot(haveEph) = xo_dot .* cos(OMEGA) - xo .* sin(OMEGA) .* OMEGA_dot ...
+                     - yo_dot .* cos(uri(:, 3)) .* sin(OMEGA) ...
+                     + yo .* sin(uri(:, 3)) .* sin(OMEGA) .* uri_dot(:, 3) ...
+                     - yo .* cos(uri(:, 3)) .* cos(OMEGA) .* OMEGA_dot;
+pos.y_dot(haveEph) = xo_dot .* sin(OMEGA) + xo .* cos(OMEGA) .* OMEGA_dot ...
+                     + yo_dot .* cos(uri(:, 3)) .* cos(OMEGA) ...
+                     - yo .* sin(uri(:, 3)) .* cos(OMEGA) .* uri_dot(:, 3) ...
+                     - yo .* cos(uri(:, 3)) .* sin(OMEGA) .* OMEGA_dot;                      
+pos.z_dot(haveEph) = yo_dot .* sin(uri(:, 3)) + yo .* cos(uri(:, 3)) .* uri_dot(:, 3);    
 
 %% compute SV clock bias and drift
-toC = tmArray - eph.GPS_week_num(iEph) * 604800 - eph.Toc(iEph); % time from clock reference epoch
-pos.clock_drift = eph.clock_drift(iEph) + eph.clock_drift_rate(iEph) .* toC;
+toC = tmArray(haveEph) ...
+      - eph.GPS_week_num(iEph) * 604800 ...
+      - eph.Toc(iEph); % time from clock reference epoch
+pos.clock_drift(haveEph) = eph.clock_drift(iEph) + eph.clock_drift_rate(iEph) .* toC;
 
-pos.clock_bias = eph.clock_bias(iEph) + pos.clock_drift .* toC;
+pos.clock_bias(haveEph) = eph.clock_bias(iEph) + pos.clock_drift(haveEph) .* toC;
 
 if dualFreq 
     % Beidou dual frequency TGD offsets
@@ -278,28 +287,32 @@ if dualFreq
 end
 
 %% Relativisitic effect, other elements
-pos.clock_rel = -4.442807633e-10 * e .* eph.sqrtA(iEph) .* sin(E);
+pos.clock_rel(haveEph) = -4.442807633e-10 * e .* eph.sqrtA(iEph) .* sin(E);
 if dualFreq
-    pos.TGD = tgdOffset;
+    pos.TGD(haveEph) = tgdOffset;
 else
-    pos.TGD = eph.TGD(iEph);
+    pos.TGD(haveEph) = eph.TGD(iEph);
 end
-pos.t_m_toc     = toC;
-pos.accuracy    = eph.accuracy(iEph);
-pos.health      = eph.health(iEph);
-pos.IODC        = eph.IODC(iEph);
-pos.t_m_toe     = tsE;
-pos.AoD         = tmArray - eph.GPS_week_num(iEph) * 604800 - eph.Toe(iEph); % what is this??
+pos.t_m_toc(haveEph)     = toC;
+pos.accuracy(haveEph)    = eph.accuracy(iEph);
+pos.health(haveEph)      = eph.health(iEph);
+pos.IODC(haveEph)        = eph.IODC(iEph);
+pos.t_m_toe(haveEph)     = tsE;
+pos.AoD(haveEph)         = tmArray(haveEph) ...
+                           - eph.GPS_week_num(iEph) * 604800 ...
+                           - eph.Toe(iEph); % what is this??
 
 switch constellation 
     case 'GPS'
-        pos.tslu = tmArray - eph.GPS_week_num(iLastU) * 604800 - eph.TTOM(iLastU);
+        pos.tslu(haveEph) = tmArray(haveEph) ...
+                            - eph.GPS_week_num(iLastU(haveEph)) * 604800 ...
+                            - eph.TTOM(iLastU(haveEph));
 
     case 'BDS'
-        pos.tslu = aodi;
+        pos.tslu(haveEph) = aodi;
 end
-pos.toe_m_ttom  = eph.Toe(iEph) - eph.TTOM(iEph);
-pos.Fit_interval = eph.Fit_interval(iEph);
+pos.toe_m_ttom(haveEph)  = eph.Toe(iEph) - eph.TTOM(iEph);
+pos.Fit_interval(haveEph) = eph.Fit_interval(iEph);
     
 end
 
