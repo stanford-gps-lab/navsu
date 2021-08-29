@@ -11,9 +11,9 @@ largeResids  = true;
 mediumResids = true;
 
 % Build exclusion factor vector
-threshLarge = zeros(size(measId,1),1);
-threshMedium = zeros(size(measId,1),1);
-measTypeList = cat(1,measId.TypeID);
+threshLarge = zeros(size(measId, 1), 1);
+threshMedium = zeros(size(measId, 1), 1);
+measTypeList = cat(1, measId.TypeID);
 types = unique(measTypeList);
 
 for idx = 1:length(types)
@@ -48,68 +48,46 @@ while largeResids || mediumResids
     K = (cov_propagated * H') /(H *cov_propagated * H' + R);
     
     % 8. Measurement innovations
-    fullMeas = meas;
-    delta_z  = fullMeas-predMeas;
+    delta_z  = meas - predMeas;
     
-    residsPost = delta_z-H*K*delta_z;
+    residsPost = delta_z - H*K*delta_z;
     
     % Set the thresholds- remove large errors first
-    excludeThreshLarge = threshLarge;
-    excludeThreshMedium = threshMedium;
-%     
-    indsLargeResids  = find(abs(residsPost)>excludeThreshLarge);
-    indsMediumResids = find(abs(residsPost)>excludeThreshMedium);
+     
+    indsLargeResids  = find(abs(residsPost) > threshLarge);
+    indsMediumResids = find(abs(residsPost) > threshMedium);
     
     % Check where we are currently- are there large or small residuals?
-    if isempty(indsLargeResids)
-        largeResids = false;
-    end
-    
-    if isempty(indsMediumResids)
-        % If we have no residuals exceeding our smaller threshold, just move
-        % forward with what we have- these are clean
-        mediumResids = false;
-    end
+    largeResids = ~isempty(indsLargeResids);
+    mediumResids = ~isempty(indsMediumResids);
     
     % can only remove using EITHER large or small thresholds, not one then
     % the other
-    if ~isempty(indsLargeResids)
+    if largeResids
         % Remove large residuals
-        % save what we're removing
+        indsRemove = indsLargeResids;
         
-        measIdRemoved = [measIdRemoved; measId(indsLargeResids)];
-        
-        % remove from H,R,measMat,pred_meas
-        H(indsLargeResids,:) = [];
-        R(indsLargeResids,:) = [];
-        R(:,indsLargeResids) = [];
-        predMeas(indsLargeResids,:) = [];
-        
-        meas(indsLargeResids) = [];
-        measId(indsLargeResids) = [];
-        threshLarge(indsLargeResids) = [];
-        threshMedium(indsLargeResids) = [];
-        
-        
-    elseif ~isempty(indsMediumResids) && largeResids == false
+    elseif mediumResids
         % Only if we have found that there are no large residuals can we
         % remove using the small threshold.
-         
-        % save what we're removing
-        measIdRemoved = [measIdRemoved; measId(indsMediumResids)];
+        indsRemove = indsMediumResids;
         
-        % remove from H,R,measMat,pred_meas
-        H(indsMediumResids,:) = [];
-        R(indsMediumResids,:) = [];
-        R(:,indsMediumResids) = [];
-        predMeas(indsMediumResids,:) = [];
-        
-        meas(indsMediumResids) = [];
-        measId(indsMediumResids) = [];
-        
-        threshLarge(indsMediumResids) = [];
-        threshMedium(indsMediumResids) = [];
+    else
+        indsRemove = [];
     end
+    % save what we're removing
+    measIdRemoved = [measIdRemoved; measId(indsRemove)];
+        
+    % remove from H, R, measMat, pred_meas
+    H(indsRemove, :) = [];
+    R(indsRemove, :) = [];
+    R(:, indsRemove) = [];
+    predMeas(indsRemove, :) = [];
+
+    meas(indsRemove) = [];
+    measId(indsRemove) = [];
+    threshLarge(indsRemove) = [];
+    threshMedium(indsRemove) = [];    
     
     idx = idx+1;
     
