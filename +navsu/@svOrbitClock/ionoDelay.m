@@ -61,8 +61,9 @@ for sdx = 1:length(el)
                   find(obj.iono.epochs > epoch(sdx), 1)];
     
     tecs(sdx) = -interpn(obj.iono.latVec,...
-        obj.iono.lonVec, obj.iono.epochs(indsEpochs),...
-        tecMap(:,:,indsEpochs), latPpi, lonPpi, epoch(sdx));
+                         obj.iono.lonVec, ...
+                         obj.iono.epochs(indsEpochs),...
+                         tecMap(:,:,indsEpochs), latPpi, lonPpi, epoch(sdx));
     
 end
 
@@ -72,10 +73,8 @@ if nargout > 1 % only do this if requested
     % slant TEC
     tecSlant = obliq .* tecs;
 
-    if ~isempty(freqs)
-        % Compute the delay
-        delays = tecSlant*40.3*10^15./freqs.^2;
-    end
+    % Compute the delay
+    delays = tecSlant*40.3*10^15./freqs.^2;
 end
     
 
