@@ -1,5 +1,7 @@
 function [state,dstate,resids,measMat,covState,covdState,satsUsed] = lsSolGnss(obs,corrData,PARAMS,varargin)
 
+%% WARNING function not used throughout PPP filters, could be faulty.
+
 % Parse optional inputs
 p = inputParser;
 p.addParameter('pos0', [0 0 0]); % whe
