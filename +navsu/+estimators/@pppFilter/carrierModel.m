@@ -21,7 +21,7 @@ elseif sigi < 100 && strcmp(obj.PARAMS.states.ionoMode,'L1DELAYSTATE')
     hi = (1575.42e6).^2./freqi.^2;
     H(1,indIono) = hi;
     
-    ionoCorri = hi*delayL1i+ionoCorrModel;
+    ionoCorri = hi*delayL1i + ionoCorrModel;
 else
     ionoCorri = 0;
 end

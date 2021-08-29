@@ -64,6 +64,7 @@ if ~strcmp(obj.orbMode,'PREDICT')
         pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
 else
     [svPos,svVel,iod] = obj.predictOrbit(prns,constInds,epochs,latency);
+    sigma = NaN;
 end
 
 
