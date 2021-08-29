@@ -14,7 +14,7 @@ p.addParameter('az', []);     % azimuth from each satellite [rad]
 p.addParameter('el', []);     % elevation angle from each satellite [rad]
 p.addParameter('satPos', []); % ECEF satellite position from each satellite
 %                               - must have this if az/el unavailable
-p.addParameter('freqs', []);  % frequency of each signal- required to output 
+p.addParameter('freqs', NaN);  % frequency of each signal- required to output 
 %                               actual delay rather than just TEC
 
 
@@ -75,8 +75,6 @@ if nargout > 1 % only do this if requested
     if ~isempty(freqs)
         % Compute the delay
         delays = tecSlant*40.3*10^15./freqs.^2;
-    else
-        error('Signal frequency required for iono delay to be computed')
     end
 end
     
