@@ -37,19 +37,19 @@ if isempty(obsDes) || 1
             case 1
                 % GPS
                 sigRankings = {{'1C' '1W' '1Y'};...  % L1
-                    {'2W' '2Y' '2P' '2X' '2S' '2L' '5X' '5I' '5Q'}};  % L2/5
+                               {'2W' '2Y' '2P' '2X' '2S' '2L' '5X' '5I' '5Q'}};  % L2/5
             case 2
                 % GLONASS
                 sigRankings = {{'1C' '1P'};...
-                    {'2C' '2P'}};
+                               {'2C' '2P'}};
             case 3
                 % GALILEO
                 sigRankings = {{'1B' '1C' '1X' '1Z'};...
-                    {'5X' '8X' '6X' '7I' '7X' '7Q'}};
+                               {'5X' '8X' '6X' '7I' '7X' '7Q'}};
             case 4
                 % BDS
                 sigRankings = {{'1I' '1Q' '1X' '2I' '2Q' '2X' };...
-                    {'7I' '6I' '7Q' '6Q' '7X' '6X'}};
+                               {'7I' '6I' '7Q' '6Q' '7X' '6X'}};
                 
             otherwise
                 continue

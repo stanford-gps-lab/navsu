@@ -19,7 +19,6 @@ nState = length(state);
 % Initialize
 obj.resids      = [];
 obj.measRemoved = [];
-gnssMeas = [];
 
 gnssMeasMaskCode = obj.PARAMS.measMask;
 gnssMeasMaskCode({'pr'},:) = repelem({1},1,size(gnssMeasMaskCode,2));
@@ -42,9 +41,7 @@ while convMetric > convThresh
     R = [];
     measId  = [];       % MeasID
     meas    = [];       % actual measurements
-    prnConstInds = [];
-    el = [];
-    az = [];
+    
     for idx = 1:length(obs)
         obsi = obs{idx};
         
@@ -56,7 +53,6 @@ while convMetric > convThresh
                     handleGnssMeas(obj,epoch,obsi,corrData,'SimpleModel',true,...
                     'extraInputs',extraInputs0);
                 
-                gnssMeas = obsi;
             case navsu.internal.MeasEnum.Position
                 [predMeasi,Hi,Ri,measIdi,measi] = handlePositionMeas(obj,obsi);
                 
