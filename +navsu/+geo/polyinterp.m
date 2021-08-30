@@ -1,4 +1,4 @@
-function [yy, yy_dot, chi2, p] = polyinterp(obj,x, y, m_order, xx, flag, var,polyIn,nearestAdjust)
+function [yy, yy_dot, chi2, p] = polyinterp(x, y, m_order, xx, flag, var, polyIn, nearestAdjust)
 
 
 if nargin < 7
@@ -54,7 +54,7 @@ xx0 = xx;
 xx = [xx; x];
 
 if isempty(polyIn)
-    p = utility.geo.polyfit2(xp, yp, m_order);
+    p = navsu.geo.polyfit2(xp, yp, m_order);
 else
     p = polyIn;
 end
