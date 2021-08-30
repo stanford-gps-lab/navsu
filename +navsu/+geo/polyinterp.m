@@ -1,32 +1,32 @@
 function [yy, yy_dot, chi2, p] = polyinterp(x, y, m_order, xx, flag, var, polyIn, nearestAdjust)
 
 
-if nargin < 7
+if nargin < 6
     var = ones(size(y));
-elseif var == 0 | isempty(var)
+elseif var == 0 || isempty(var)
     var = ones(size(y));
 end
 
-if nargin > 5
+idx  = ~isnan(x) & ~any(isnan(y), 2);
+if nargin > 4
     %remove flagged data and NaN
-    idx  = ~flag & ~isnan(x) & ~isnan(y);
-else
-    idx  = ~isnan(x) & ~isnan(y);    
+    idx  = idx & ~flag;
 end
-if nargin < 8
+
+if nargin < 7
    polyIn = []; 
 end
 
-if nargin < 9
+if nargin < 8
     nearestAdjust = 1;
 end
 
 x = x(idx);
-y = y(idx);
+y = y(idx, :);
 var = var(idx);
 
 % make sure enough points remain to fit
-if length(y) < m_order + 1
+if size(y, 1) < m_order + 1
 %     warning('Warning bad fit in polyinterp\n');
     yy     = NaN(size(xx));
     yy_dot = NaN(size(xx));
@@ -37,14 +37,14 @@ end
 
 
 
-xscale = (max(x) - min(x))/2;
+xscale = range(x) / 2;
 xbias  = mean(x);
 xp = (x-xbias)/xscale;
 
-yscale = (max(y) - min(y))/2;
-ybias  = mean(y);
+yscale = range(y, 1) / 2;
+ybias  = mean(y, 1);
 if yscale ~= 0
-    yp = (y-ybias)/yscale;
+    yp = (y-ybias) ./ yscale;
 else
     yp = y*0;
 end
@@ -58,21 +58,24 @@ if isempty(polyIn)
 else
     p = polyIn;
 end
-z = yscale*polyval(p, (xx - xbias)/xscale) + ybias;
-yy = z(1:n);
+z = yscale .* (((xx - xbias)/xscale).^(m_order:-1:0) * p') + ybias; % vectorized version polyval
+yy = z(1:n, :);
 
 if nearestAdjust
-    [temp,indNearest] = min(abs(xx0-x));
+    [~, indNearest] = min(abs(xx0-x));
     
-    yAdjust = z(n+indNearest)-y(indNearest);
-    yy = yy-yAdjust;
+    yAdjust = z(n+indNearest, :) - y(indNearest, :);
+    yy = yy - yAdjust;
 end
 
 if nargout > 1
-    pdot = p(1:end-1).*(m_order:-1:1);
-    yy_dot = yscale*polyval(pdot, (xx(1:n) - xbias)/xscale)/xscale;
+    pdot = p(:, 1:end-1).*(m_order:-1:1);
+    
+    yy_dot = yscale .* (((xx(1:n) - xbias)/xscale).^(m_order-1:-1:0) * pdot') / xscale;
+%     yy_dot = yscale*polyval(pdot, (xx(1:n) - xbias)/xscale)/xscale;
+    
     if nargout > 2
-        chi2 = (y - z((n+1):end))'*((y - z((n+1):end))./var);
+        chi2 = dot(y - z((n+1):end, :), (y - z((n+1):end, :))./var);
     end
 end
 
