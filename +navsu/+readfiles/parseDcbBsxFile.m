@@ -38,8 +38,8 @@ while ~feof(fid)
        while ~strcmp('-BIAS/DESCRIPTION',linetxt(1:17))
            % Check for bias mode
            
-           if ~isempty(strfind(linetxt,'BIAS_MODE'))
-               if ~isempty(strfind(linetxt,'ABSOLUTE'))
+           if contains(linetxt,'BIAS_MODE')
+               if contains(linetxt,'ABSOLUTE')
                   biasMode = 'ABS'; 
                end
            end
@@ -53,7 +53,7 @@ while ~feof(fid)
         % Header line
         linetxt = fgetl(fid);
         
-        areDomes = ~isempty(strfind(linetxt,'DOMES____'));
+        areDomes = contains(linetxt,'DOMES____');
         
         if strcmp(linetxt(1),'*')
             % this is just another header line- get the next line to begin
@@ -118,25 +118,24 @@ while ~feof(fid)
                 rxIndOffset = 0;
             elseif strcmp(linetxt(21:29),'         ') || ~areDomes && ~skipRx
                
+                satFlagi = 0;
+                domesi = NaN;
+                
                 if strcmp(linetxt(8:10),'   ')
                     temp = textscan(linetxt,['%3s %1s %1s %4s %3s ' obs2Format ' %f %1s %f %1s %f %f %1s %f %1s %f %2s %f %f']);
                     
-                    satFlagi = 0;
                     svni    = NaN;
                     prni    = NaN;
                     
                     sitesi = temp{4}{1};
-                    domesi = NaN;
                     rxIndOffset = -1;
                 else
                     temp = textscan(linetxt,['%3s %1s %f %1s %f %4s %3s ' obs2Format ' %f %1s %f %1s %f %f %1s %f %1s %f %2s %f %f']);
                     
-                    satFlagi = 0;
                     svni    = temp{3};
                     prni    = temp{5};
                     
                     sitesi = temp{6}{1};
-                    domesi = NaN;
                     rxIndOffset = 1;
                     
                 end

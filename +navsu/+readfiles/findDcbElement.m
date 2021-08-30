@@ -8,7 +8,7 @@ function biasOut = findDcbElement(PRNs,consts,obs1,obs2,epochs,dcbData,statCode,
 %   consts  - vector list of corresponding constellations- this is
 %             constellation index (GPS = G = 1, GRECS = 12345)
 %   obs1    - cell array of strings of RINEX 3 observation codes 
-%   obs2    - cell array of stirngs of RINEX 3 observation codes (or 'ABS')
+%   obs2    - cell array of strings of RINEX 3 observation codes (or 'ABS')
 %   epochs  - reference times for each of the desired outputs- GPS epoch
 %   dcbData - parsed DCB stucture from navsu.readfiles.loadDcb
 %   statCode- optional input for receiver station code i.e. 'STFU'

@@ -64,7 +64,7 @@ for ddx = 1:length(yearList)
             DFileName = sprintf(DfileNameFormat, year, dayNum,year, dayNum);
             
             % Load the file
-            dcbDatai = parseDcbBsxFile([DpathName DFileName]);
+            dcbDatai = navsu.readfiles.parseDcbBsxFile([DpathName DFileName]);
         case 2
             if dayNum >= 364
                 dayNum = 363;
@@ -144,7 +144,7 @@ for ddx = 1:length(yearList)
             filenamei = filenamei(1:end-2);
             
             if exist(filenamei,'file')
-                dcbDatai = parseDcbBsxFile(filenamei,0);
+                dcbDatai = navsu.readfiles.parseDcbBsxFile(filenamei,0);
             else
                 % Need to check for RINEX3 naming convention!
                 ftpStruc.destDir      = settings.dcbDir;

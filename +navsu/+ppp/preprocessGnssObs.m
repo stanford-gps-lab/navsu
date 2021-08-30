@@ -196,7 +196,7 @@ epochDcb = navsu.time.jd2epochs(navsu.time.doy2jd(YearListDcb,dayListDcb))+100;
 
 dcbData = corrData.dcb;
 dcbType = dcbData.type;
-dcbType = 2;
+% dcbType = 2;
 
 
 %% Correct L1C-L1P for ISC (using GPS and Galileo MGEX precise products, 
@@ -209,7 +209,7 @@ dcbType = 2;
 %     dcbData2 = [];
 dcbCorr = zeros(size(prphType));
 
-if dcbType == 4 && ~isempty(corrData.dcb)
+if dcbType == 1 && ~isempty(corrData.dcb)
     % CODE
     
     for idx = 1:size(prphType,1)
@@ -231,33 +231,19 @@ if dcbType == 4 && ~isempty(corrData.dcb)
             
             dcbCorr(idx,jdx) = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
             
-            
             % GLONASS adjustments for IGS stations (if using CODE IFB/DCB)
-            if strcmp(obsi{1},'C1P') && consti == 2 && ~isempty(statCode)
+            if consti == 2 && ~isempty(statCode) && any(strcmp(obsi{1}, {'C1P', 'C2P'}))
                 biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
-                dcbCorr(idx,jdx) = dcbCorr(idx,jdx)+biasi;
+                dcbCorr(idx,jdx) = dcbCorr(idx,jdx) + biasi;
             end
             
-            if strcmp(obsi{1},'C2P') && consti == 2 && ~isempty(statCode)
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,statCode);
-                dcbCorr(idx,jdx) = dcbCorr(idx,jdx)+biasi;
-            end
         end
     end
     
-    dcbCorr = settings.dcbUse*dcbCorr*c;
-    
-    dcbCorr(isnan(dcbCorr)) = 0;
-    % Apply the corrections to the observations
-    prph12i = prph12-permute(repmat(dcbCorr,1,1,size(prph12,2)),[1 3 2]);
-    prph12i(prph12 == 0) = 0;
-    prph12i(isnan(prph12i)) = 0;
-    
-elseif dcbType == 2 && ~isempty(corrData.dcb)
+elseif dcbType == 3 && ~isempty(corrData.dcb)
     % DLR
     % these are relative corrections that need to be further referenced to
     % the L1P-L2P combination (need the TGD term)
-    dcbCorr = zeros(size(prphType));
     
     for idx = 1:size(prphType,1)
         for jdx = 1:size(prphType,2)
@@ -268,7 +254,6 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
             if isempty(obsi{1}) || ~strcmp(obsi{1}(1),'C')
                 continue;
             end
-%             freqi = str2num(obsi{1}(2));
             
             if  consti == 1
                 % Pull tgd term
@@ -362,17 +347,7 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
     end
     
     
-    dcbCorr = dcbCorr*c;
-    
-    dcbCorr(isnan(dcbCorr)) = 0;
-    
-    % Apply the corrections to the observations
-    prph12i = prph12-permute(repmat(dcbCorr,1,1,size(prph12,2)),[1 3 2]);
-    prph12i(prph12 == 0) = 0;
-    prph12i(isnan(prph12i)) = 0;
-    
 elseif dcbType == 5 && ~isempty(corrData.dcb)
-    dcbCorr = zeros(size(prphType));
     
     for idx = 1:size(prphType,1)
         for jdx = 1:size(prphType,2)
@@ -394,15 +369,8 @@ elseif dcbType == 5 && ~isempty(corrData.dcb)
     end
     
     
-    dcbCorr(isnan(dcbCorr)) = 0;
-    % Apply the corrections to the observations
-    prph12i = prph12-c*permute(repmat(dcbUse*dcbCorr,1,1,size(prph12,2)),[1 3 2]);
-    prph12i(prph12 == 0) = 0;
-    prph12i(isnan(prph12i)) = 0;
-    
 elseif dcbType == 2 && ~isempty(corrData.dcb)
     % STANFORD
-    dcbCorr = zeros(size(prphType));
     
     for idx = 1:size(prphType,1)
         for jdx = 1:size(prphType,2)
@@ -418,20 +386,13 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
                 if consti == 2
                     'fdafad';
                 end
-                
-                biasi = c*navsu.readfiles.findDcbElement(prni,consti,obsi(1),{'ABS'},epochDcb,dcbData);
-                
-                dcbCorr(idx,jdx) = biasi;
+                                
+                dcbCorr(idx,jdx) = navsu.readfiles.findDcbElement(prni,consti,obsi(1),{'ABS'},epochDcb,dcbData);
             end
         end
     end
     
-    dcbCorr(isnan(dcbCorr)) = 0;
-    fullCorr = dcbCorr;
     
-    prph12i = prph12-permute(repmat(fullCorr,1,1,size(prph12,2)),[1 3 2]);
-    prph12i(prph12 == 0) = 0;
-    prph12i(isnan(prph12i)) = 0;
 elseif dcbType == 6 && ~isempty(corrData.dcb)
     epochDcb = NaN;
     
@@ -483,18 +444,18 @@ elseif dcbType == 6 && ~isempty(corrData.dcb)
         end
     end
     
-    dcbCorr = dcbCorr*c;
-    
-    dcbCorr(isnan(dcbCorr)) = 0;
-    % Apply the corrections to the observations
-    prph12i = prph12-permute(repmat(dcbCorr,1,1,size(prph12,2)),[1 3 2]);
-    prph12i(prph12 == 0) = 0;
-    prph12i(isnan(prph12i)) = 0;
     
 else
     disp('No DCB''s available :(')
-    prph12i = prph12;
 end
+
+    
+dcbCorr(isnan(dcbCorr)) = 0;
+% Apply the corrections to the observations
+prph12i = prph12 - permute(dcbCorr*c, [1 3 2]);
+prph12i(prph12 == 0) = 0;
+prph12i(isnan(prph12i)) = 0;
+
 
 %% Add dual frequency measurements
 
