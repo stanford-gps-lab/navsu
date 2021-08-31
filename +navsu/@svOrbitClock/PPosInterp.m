@@ -49,53 +49,47 @@ PconstInds = obj.PEph.constellation;
 n     = settings.polyfit.nPolyFit; % number of nominal points to use for polynominal fit
 pfit  = settings.polyfit.pfit;     % order of fit for position interpolation
 
-if nargin < 7 || isempty(Pvel)
-    velCalc = 0;
-else
-    velCalc = 1;
+% flags for velocity computation
+velCalc = nargout > 1;
+noVelData = nargin < 5 || isempty(Pvel) || all(isnan(Pvel), 'all');
+
+if nargin < 6 || isempty(pPosInds)
+    pPosInds = zeros(length(epochs), 2);
 end
 
-if nargin < 8 || isempty(pPosInds)
-    pPosInds = zeros(length(epochs),2);
+if nargin < 7 || isempty(pPosPoly)
+    pPosPoly = NaN(length(epochs), 6, pfit+1);
 end
 
-if nargin < 9 || isempty(pPosPoly)
-    %     pPosPoly
-end
-
-if nargin < 10
+if nargin < 8
     multiConst = 0;
 else
     multiConst = 1;
 end
 
-if nargin < 12
+if nargin < 9
     FLAG_APC_OFFSET = 0;
 end
 
-if nargin < 14 || isempty(sunPos)
+if nargin < 11 || isempty(sunPos)
     computeSunPosFlag = 1;
 else
     computeSunPosFlag = 0;
 end
 
-if nargin < 15 || isempty(dttx)
+if nargin < 12 || isempty(dttx)
     dttx = zeros(length(epochs),1);
 end
 
 % dt to use when there is no velocity data available
 dt = 0.1;
-if sum(sum(isnan(Pvel))) == size(Pvel,1)*size(Pvel,2)
-    noVelData = 1;
-else
-    noVelData = 0;
-end
+
 
 % Initialize
 posP = nan(size(PRNs,1),3);
 velP = nan(size(PRNs,1),3);
 ROut = nan(size(PRNs,1),3,3);
-constLast = 0;
+
 for idx = 1:length(PRNs)
     prn = PRNs(idx);
     epochi = epochs(idx);
@@ -105,25 +99,23 @@ for idx = 1:length(PRNs)
         continue;
     end
     
+    % retrieve orbit positions across which to interpolate
     if multiConst
-        if ndims(Ppos) == 3
-            indi = Pprns == prn & PconstInds == constInds(idx);
-            Pposi = squeeze(Ppos(:,:,indi));
-            Pepochsi = Pepochs;
-        else
-            if constInds(idx) ~= constLast
-                Pposc =  Ppos( PconstInds == constInds(idx),:);
-                Pepochsc = Pepochs(PconstInds == constInds(idx));
-                Pprnsc  = Pprns(PconstInds == constInds(idx));
-            end
-            constLast = constInds(idx);
-            Pposi = Pposc(Pprnsc == prn,:);
-            Pepochsi = Pepochsc(Pprnsc == prn);
-        end
-    elseif ~multiConst
-        Pposi    = Ppos(Pprns == prn,:);
-        Pepochsi = Pepochs(Pprns == prn);
+        indi = Pprns == prn & PconstInds == constInds(idx);
+    else
+        indi = Pprns == prn;
     end
+    
+    if ndims(Ppos) == 3
+        Pposi = squeeze(Ppos(:, :, indi));
+        Pepochsi = Pepochs;
+    else
+        Pposi = Ppos(indi, :);
+        Pepochsi = Pepochs(indi);
+    end
+    
+    
+    % get indices of interpolation start/end
     switch settings.orbitInterpMethod
         case 'poly'
             ind1 = find(Pepochsi <= epochi, 1, 'last') - n/2 + 1;
@@ -132,67 +124,40 @@ for idx = 1:length(PRNs)
             ind1 = find(Pepochsi <= epochi, 1, 'last') - floor(n/2);
             ind2 = find(Pepochsi > epochi, 1, 'first') + floor(n/2) - 1;
     end
-    if (isempty(ind1) && isempty(ind2)) || (sum(isnan(Pposi(ind1:ind2))) == (ind2-ind1+1)) 
+    if (isempty(ind1) && isempty(ind2)) || any(isnan(Pposi(ind1:ind2, :)), 'all') 
         continue
     end
     
     %% now interpolate orbit position and velocity
-    % Check if we already have this polynomial computed
-    if multiConst || pPosInds(prn,1) ~= ind1 && pPosInds(prn,2) ~= ind2
-        switch settings.orbitInterpMethod
-            case 'poly'
-                [posP(idx, :), ~, ~, pPosPoly(prn, 1:3, :)] = navsu.geo.polyinterp(Pepochsi(ind1:ind2), Pposi(ind1:ind2,:), pfit, epochi);
-            case 'lagrange'
-                posP(idx, :) = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi, Pposi(ind1:ind2,:)', dti)';
-        end
-        
-        if velCalc
-            if noVelData
-                % No precise velocity data available... interpolate
-                % position and just use velocity based on that :(
-                switch settings.orbitInterpMethod
-                    case 'poly'
-                        posPP = navsu.geo.polyinterp(Pepochsi(ind1:ind2), Pposi(ind1:ind2,:), pfit, epochi+dt);
-                    case 'lagrange'
-                        posPP = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)', Pposi(ind1:ind2,:)', epochi+dt)';
-                end
-                
-                velP(idx, :) = (posPP - posP(idx, :)) / dt;
-            else
-                Pveli =  Pvel(Pprns == prn,:);
-                
-                [velP(idx, :),~,~,pPosPoly(prn,4:6,:)] = navsu.geo.polyinterp(Pepochsi(ind1:ind2), Pveli(ind1:ind2,:), pfit, epochi);
-                
+    switch settings.orbitInterpMethod
+        case 'poly'
+            [posP(idx, :), ~, ~, pPosPoly(prn, 1:3, :)] = navsu.geo.polyinterp(Pepochsi(ind1:ind2) - epochi, Pposi(ind1:ind2,:), pfit, dti);
+        case 'lagrange'
+            posP(idx, :) = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi, Pposi(ind1:ind2,:)', dti)';
+    end
+
+    if velCalc
+        if noVelData
+            % No precise velocity data available... interpolate
+            % position and just use velocity based on that :(
+            switch settings.orbitInterpMethod
+                case 'poly'
+                    posPP = navsu.geo.polyinterp(Pepochsi(ind1:ind2)-epochi, Pposi(ind1:ind2,:), pfit, dt+dti);
+                case 'lagrange'
+                    posPP = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi, Pposi(ind1:ind2,:)', dt+dti)';
             end
-            
-        end
-        
-        pPosInds(prn,1) = ind1;
-        pPosInds(prn,2) = ind2;
-        
-    else
-        switch settings.orbitInterpMethod
-            case 'poly'
-                posP(idx,:) = navsu.geo.polyinterp(Pepochsi(ind1:ind2), Pposi(ind1:ind2,:), pfit, epochi, 0, 0, squeeze(pPosPoly(prn,1:3,:)));
-            case 'lagrange'
-                posP(idx, :) = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)', Pposi(ind1:ind2,:)', epochi)';
-        end
-        if velCalc
-            if noVelData
-                % No precise velocity data available... interpolate
-                % position and just use velocity based on that :(
-                
-                posPoly = navsu.geo.polyinterp(Pepochsi(ind1:ind2), Pposi(ind1:ind2, :), pfit, epochi+dt);
-                
-                velP(idx, :) = (posPoly - posP(idx, :)) / dt;
-                
-            else
-                Pveli =  Pvel(Pprns == prn,:);
-                
-                velP(idx, :) = navsu.geo.polyinterp(Pepochsi(ind1:ind2), Pveli(ind1:ind2,:), pfit, epochi, 0, 0, squeeze(pPosPoly(prn,:,:)));
-            end
+
+            velP(idx, :) = (posPP - posP(idx, :)) / dt;
+        else
+            Pveli = Pvel(indi, :);
+
+            [velP(idx, :),~,~,pPosPoly(prn,4:6,:)] = navsu.geo.polyinterp(Pepochsi(ind1:ind2)-epochi, Pveli(ind1:ind2,:), pfit, epochi);
+
         end
     end
+
+    pPosInds(prn,1) = ind1;
+    pPosInds(prn,2) = ind2;
 end
 
 
