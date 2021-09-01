@@ -17,13 +17,13 @@ end
 
 % Load the data!
 
-if sum(obj.settings.constUse) > 1
+% if sum(obj.settings.constUse) > 1
     % multi-const
     fileEnding = 'p';
-else
-    % GPS only
-    fileEnding = 'n';
-end
+% else
+%     % GPS only
+%     fileEnding = 'n';
+% end
 
 for dayi = 1:length(doys)
     yr = years(dayi);
@@ -34,8 +34,14 @@ for dayi = 1:length(doys)
                         num2str(doy, '%03d'));
     folderDir = dir(filePath);
     files = arrayfun(@(x) x.name, folderDir, 'UniformOutput', false);
-    fileName = files{cellfun(@(fName) endsWith(lower(fName), ...
-        ['.', num2str(mod(yr, 100)), fileEnding]), files)};
+    fileId = cellfun(@(fName) endsWith(lower(fName), ...
+                     ['.', num2str(mod(yr, 100)), fileEnding]), files);
+    if ~any(fileId)
+        % try GPS only file
+        fileId = cellfun(@(fName) endsWith(lower(fName), ...
+                     ['.', num2str(mod(yr, 100)), 'n']), files);
+    end
+    fileName = files{fileId};
         
     % now parse the file
     constCell = num2cell(obj.settings.constUse);
