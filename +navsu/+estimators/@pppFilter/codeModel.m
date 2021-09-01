@@ -84,7 +84,7 @@ predMeasi = gRange+satBias+rxBias+trop+dtrop+...
     dcbGloi+dcbGpsi+ephErri;
 
 Hii(1,obj.INDS_STATE.POS)        = A;
-Hii(1,obj.INDS_STATE.CLOCK_BIAS(constIndi)) = 1;
+Hii(1,obj.INDS_STATE.CLOCK_BIAS(obj.INDS_STATE.CLOCK_BIAS_CONSTS == constIndi)) = 1;
 
 
 % Also include lever arm sensitivity lol
