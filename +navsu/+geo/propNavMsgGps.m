@@ -58,17 +58,17 @@ pos = struct('x', NaN(tmArrayLen, 1), 'y', NaN(tmArrayLen, 1), 'z', NaN(tmArrayL
 %    binData = repmat(' ',length(eph.codes_on_L2),22);
 %    binData(:,2:2:end) = dec2bin(eph.codes_on_L2,11);
 %    binData = str2num(binData);
-   
-   % very naive. does not check for duplicates in fields!
+%    
+% %    very naive. does not check for duplicates in fields!
 %    galEphSource = zeros(length(eph.codes_on_L2),1);
 %    galEphSource(find(binData(:,end)))   = 1; % I/NAV E1-B
 %    galEphSource(find(binData(:,end-1))) = 2; % F/NAV E5a-I
 %    galEphSource(find(binData(:,end-2))) = 3; % I/NAV E5b-I
-   
+%    
 %    galClkRef = zeros(length(eph.codes_on_L2),1);
 %    galClkRef(find(binData(:,end-8)))   = 1; % af0-af2, Toc are for E5a,E1
 %    galClkRef(find(binData(:,end-9)))   = 2; % af0-af2, Toc are for E5b,E1
-
+% 
 % end
 
 [iEph, iLastU] = deal(zeros(tmArrayLen, 1));
@@ -92,9 +92,15 @@ for loop = 1:tmArrayLen
         continue
     end
     
-    t = tmArray(loop) - eph.GPS_week_num(idx) * 604800 - eph.TTOM(idx);
-    t(t < 0) = Inf;
-    [~,tdx] = min(t);
+    if all(isfinite(eph.TTOM(idx)))
+        % use latest message received
+        t = tmArray(loop) - eph.GPS_week_num(idx) * 604800 - eph.TTOM(idx);
+        t(t < 0) = Inf;
+    else
+        % use eph closest to current time
+        t = tmArray(loop) - eph.GPS_week_num(idx) * 604800 - eph.Toe(idx);
+    end
+    [~, tdx] = min(abs(t));
     I = idx(tdx);
     
     % look for new uploads (or check secondary health set)
