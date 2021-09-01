@@ -37,14 +37,21 @@ for loop = 1:tmArrayLen
     [~,tdx] = min(t);
     I = idx(tdx);
     
+    % which ephemeris day is it (can have multiple)
+    Iday = unique(eph.GPS_weekday(isfinite(eph.GPS_weekday))) == eph.GPS_weekday(I);
+    if sum(Iday) ~= 1
+        % couldn't find a day
+        Iday = 1;
+    end
+    
     %% Compute position and velocity at desired time
     % Propagate ECEF position and velocity to time of interest
     posi = eph.P(I,:)'/1000;
     vel = eph.V(I,:)'/1000;
     acc = eph.A(I,:)'/1000;
     acc(abs(acc) > 1e-5) = acc(abs(acc) > 1e-5)*1e-10;
-    toe = mod(eph.ToE(I),7*86400);
-    tfinal = tmArray(loop) - eph.ToE(I) - eph.leapSecond;
+%     toe = mod(eph.ToE(I),7*86400);
+    tfinal = tmArray(loop) - eph.ToE(I) - eph.leapSecond(Iday);
     
     
     ho = sign(tfinal)*60;
