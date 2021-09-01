@@ -1,5 +1,5 @@
-function [svPos,svVel,iod,sigOrbit] = svPosFromProd(obj,prns, epochs,settings,...
-    pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx)
+function [svPos,svVel,iod,sigOrbit] = svPosFromProd(obj, prns, epochs, settings, ...
+    pPosInds, pPosPoly, constInds, FLAG_APC_OFFSET, atxData, sunPos, dttx)
 
 if nargin < 8
     FLAG_APC_OFFSET = 0;
@@ -19,12 +19,10 @@ end
 
 iod = [];
 
-orbClockData = obj;
-
-if strcmp(orbClockData.orbMode,'PRECISE')
+if strcmp(obj.orbMode,'PRECISE')
     % this should be adjusted to allow for all of the inputs
     [svPos, svVel] = obj.PPosInterp(prns, epochs, ...
-        settings, NaN, [], [], constInds, FLAG_APC_OFFSET, ...
+        settings, NaN, pPosInds, pPosPoly, constInds, FLAG_APC_OFFSET, ...
         atxData, sunPos, dttx);
     
     % Just setting a standard orbit sigma here :)

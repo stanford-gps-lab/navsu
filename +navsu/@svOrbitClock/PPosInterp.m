@@ -55,6 +55,8 @@ noVelData = nargin < 5 || isempty(Pvel) || all(isnan(Pvel), 'all');
 
 if nargin < 6 || isempty(pPosInds)
     pPosInds = zeros(length(epochs), 2);
+else
+    warning('Specified propagation indices currently not used in PposInterp')
 end
 
 if nargin < 7 || isempty(pPosPoly)
