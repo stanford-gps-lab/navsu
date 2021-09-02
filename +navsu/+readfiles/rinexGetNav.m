@@ -469,7 +469,7 @@ constData(8).enabled = constellations.GLONASS.enabled;
 firstChars = cellfun(@(x) x(1), allData((header_end+1):end), 'un', 0);
 
 % check GNSS identifiers (first character of each data block)
-if ~any(cellfun(@(x) ismember(x,[constData(1:end-1).constLetter]), firstChars)) 
+if ~contains([constData(1:end-1).constLetter], firstChars)
     if floor(rinexVersion) == 2  % RINEX 2.x
         if DEBUG, warning('No constellation identifiers in first column of input. (This is LEGAL in RINEX 2.x)'); end
         if rinexType == 'N'      % GPS

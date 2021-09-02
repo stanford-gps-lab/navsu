@@ -19,6 +19,8 @@ pos = struct('x', NaN(tmArrayLen, 1), 'y', NaN(tmArrayLen, 1), ...
              'tslu', NaN(tmArrayLen, 1), 'toe_m_ttom', NaN(tmArrayLen, 1), ...
              'Fit_interval', NaN(tmArrayLen, 1), 'TGD', NaN(tmArrayLen,1), ...
              't_m_toc',NaN(tmArrayLen,1), 'freqNum',NaN(tmArrayLen,1));
+% get all involved weekdays
+weekDays = unique(eph.GPS_weekday(isfinite(eph.GPS_weekday)));
 
 for loop = 1:tmArrayLen
     % find the most recent prior ephemeris
@@ -38,9 +40,9 @@ for loop = 1:tmArrayLen
     I = idx(tdx);
     
     % which ephemeris day is it (can have multiple)
-    Iday = unique(eph.GPS_weekday(isfinite(eph.GPS_weekday))) == eph.GPS_weekday(I);
-    if sum(Iday) ~= 1
-        % couldn't find a day
+    Iday = weekDays == eph.GPS_weekday(I);
+    if sum(Iday) ~= 1 || length(Iday) > length(eph.leapSecond)
+        % couldn't find a day or doesn't match number of leap seconds
         Iday = 1;
     end
     
