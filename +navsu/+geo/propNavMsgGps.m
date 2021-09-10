@@ -170,6 +170,10 @@ end
 % time since ephemeris for each SV
 % only work with prns I have an ephemeris for
 haveEph = iEph > 0;
+if ~any(haveEph)
+    % don't have any ephemeris for any of the satellites!
+    return
+end
 iEph = iEph(haveEph);
 tsE = tmArray(haveEph) ...
       - eph.GPS_week_num(iEph) * 604800 ...
