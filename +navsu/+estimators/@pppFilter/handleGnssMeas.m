@@ -178,7 +178,7 @@ if nMeas > 0
         phWind = [];
         if all(ib)
             phWind = navsu.ppp.models.carrierPhaseWindupGGM( ...
-                epoch(1), repmat(pos',size(svPosRot,1)), svPosRot, obj.phWind.phaseOffset(ib));
+                epoch(1), pos', svPosRot, obj.phWind.phaseOffset(ib));
             obj.phWind.phaseOffset(ib) = phWind; % need to update the phase windup object
         end
         

@@ -205,7 +205,7 @@ constIndAll = gnssMeas.constInds(:);
 
 if ~isempty(prnAll) && isempty(obj.phWind.phaseOffset)
     nSv = size(prnAll,1);
-    obj.phWind.phaseOffset = zeros(size(prnAll,1));
+    obj.phWind.phaseOffset = zeros(size(prnAll,1), 1);
     obj.phWind.PrnConstInd = [prnAll constIndAll];
 end
 

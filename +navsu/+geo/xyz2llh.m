@@ -23,7 +23,7 @@ CONST_FLAT_E       = 1.0/298.257223563;     % Earth flattening constant
 CONST_R_E          = 6378137;               % Earth's semimajor axis, m 
 
 [n,m]=size(xyz);
-if (m < 3)
+if (m ~= 3)
   error('You must supply an xyz 3 vector');
 end
 
