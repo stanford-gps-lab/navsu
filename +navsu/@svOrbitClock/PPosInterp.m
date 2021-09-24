@@ -176,43 +176,26 @@ if FLAG_APC_OFFSET  && ~isempty(atxData)
     % get offset vector for each satellite
     offset = navsu.ppp.getAPCoffset(atxData, PRNs, constInds, epochs);
     
-    
+    % Compute rotation matrix per satellite
+    if computeSunPosFlag
+        % will need to compute sun position
+        R = navsu.geo.svLocalFrame(posP, epochs);
+    else
+        % already have sun pos
+        R = navsu.geo.svLocalFrame(posP, epochs, sunPos);
+    end
+    % save output
+    ROut = permute(R, [3, 1, 2]);
+
+    % now update sat positions
     offsetECEF = zeros(3,length(PRNs));
     for pdx = 1:length(PRNs)
-        
-        % Compute sun position
-        if computeSunPosFlag
-            if pdx == 1
-                lastEpoch = 0;
-            end
-            if lastEpoch ~= round(epochs(pdx))
-                jd = navsu.time.epochs2jd(epochs(pdx));
-                sunpos = navsu.geo.sunVecEcef(jd)';
-                lastEpoch = round(epochs(pdx));
-            end
-            
-        else
-            sunpos = sunPos(:,pdx);
-        end
-        
-        svPosi = posP(pdx,:)';
-        
-        e = (sunpos-svPosi)./norm(sunpos-svPosi);
-        k = -svPosi./norm(svPosi);
-        % yhat = cross(e,k)./norm(cross(e,k));
-        j = cross(k,e)/norm(cross(k,e));
-        i = cross(j,k)/norm(cross(j,k));
-        
-        R = [i j k];
-        offsetECEF(:,pdx) = R*offset(:, pdx);
-        ROut(pdx,:,:) = R;
-        
+        offsetECEF(:, pdx) = R(:, :, pdx) * offset(:, pdx);        
     end
-    
+    % update satellite positions
     posP = posP + offsetECEF';
     
 end
-
 
 end
 

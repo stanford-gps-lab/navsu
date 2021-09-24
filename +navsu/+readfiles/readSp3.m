@@ -260,47 +260,30 @@ pvt.Event(any(pvt.position == 0, 2)) = true;
 
 %% Correct APC
 if cmToApcFlag && ~isempty(atxData)
-    % Pull sun position for each time in SP3 file
-    jd = navsu.time.epochs2jd(dataEpochs)';
-    % ECEF sun position
-    sunpos = navsu.geo.sunVecEcef(jd)';
-    
     
     PRNs = unique(array(:,1));
     
+    % get offset vector for each satellite
+    offset = navsu.ppp.getAPCoffset(atxData, PRNs, constellationOut, dataEpochs);
+    
+    % now offset each sat pos into correct direction
     for pdx = 1:NumSV
-        prn = PRNs(pdx);
-        % Use the IGS antenna phase center file
-        svni = navsu.svprn.prn2svn(prn, jd(1), constellationOut);
-        if isnan(svni)
-            offset = nan(3,1);
-        else
-            adx = find( [atxData.type] == constellationOut ...
-                      & [atxData.svn] == svni ...
-                      & [atxData.epochStart] <= dataEpochs(pdx) ...
-                      & [atxData.epochEnd] > dataEpochs(pdx));
+        
+        inds = find(array(:,1) == PRNs(pdx));
+        
+        if any(~isnan(pvt.position(inds,:)), 'all')
             
-            if ~isempty(adx)
-                offset = (atxData(adx).apc(1,:)')*1e-3;
-            else
-                offset = nan(3,1);
+            % get rotation matrix
+            R = navsu.geo.svLocalFrame(pvt.position(inds, :), dataEpochs);
+            
+            % do the rotation
+            offsetECEF = NaN(size(offset));
+            for tdx = 1:NumEpochs                
+                offsetECEF(:, tdx) = R(:, :, tdx) * offset(:, pdx);
             end
-        end
-        
-        inds = find(array(:,1) == prn);
-        
-        if any(any(~isnan(pvt.position(inds,:))))
-            for tdx = 1:NumEpochs
-                svPosi  = pvt.position(inds(tdx),:)';
-                
-                R = navsu.geo.svLocalFrame(svPosi', ...
-                                           dataEpochs(tdx), ...
-                                           sunpos(:,tdx));
-                
-                offsetECEF = R*offset;
-                
-                pvt.position(inds(tdx),:) = svPosi+offsetECEF;
-            end
+            
+            pvt.position(inds, :) = pvt.position(inds, :) + offsetECEF';
+            
         end
     end
 end
