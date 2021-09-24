@@ -23,35 +23,31 @@ if numel(constInds) == 1
     constInds = constInds * ones(size(PRN));
 end
 
-% retrieve atx data, collect in vectors
-typeVec = [atxData.type];
-svnVec  = [atxData.svn];
-epochStartVec = [atxData.epochStart];
-epochEndVec   = [atxData.epochEnd];
+% convert PRN to SV number
+SVN = navsu.svprn.prn2svn(PRN, navsu.time.epochs2jd(epochs), constInds);
+
+% get logical matrix of atx data matching the PRNs
+logMat = ([atxData.type] == constInds ...
+        & [atxData.svn] == SVN ...
+        & [atxData.epochStart] <= epochs ...
+        & [atxData.epochEnd] >= epochs)';
+
+% get indices within atxData
+nATX = length(atxData);
+adx = mod(find(logMat), nATX);
+% fix 0 behavior of mod function
+adx(adx == 0) = nATX;
+
+% get indices within satellites
+sdx = find(any(logMat, 1));
 
 % preallocate result vec
 offset = NaN(3, length(PRN));
 
-for pdx = 1:length(PRN)
-    
-    
-    epochi = epochs(pdx);
-    
-    % convert PRN to SV number
-    svni = navsu.svprn.prn2svn(PRN(pdx), navsu.time.epochs2jd(epochi), constInds(pdx));
-    
-    adx = find( typeVec == constInds(pdx) ...
-              & svnVec == svni ...
-              & epochStartVec <= epochi ...
-              & epochEndVec >= epochi );
-    
-    if ~isempty(adx) && ~isempty(atxData(adx).apc)
-        offset(:, pdx) = (atxData(adx).apc(1,:))*1e-3;
-    else
-        continue
+for ii = 1:length(adx) 
+    if ~isempty(atxData(adx(ii)).apc)
+        offset(:, sdx(ii)) = atxData(adx(ii)).apc(1,:) * 1e-3;
     end
-    
-    
 end
 
 end
