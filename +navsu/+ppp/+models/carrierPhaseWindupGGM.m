@@ -5,10 +5,9 @@ function [phwindup] = carrierPhaseWindupGGM(epochi, XR, XS, phwindup)
 %
 % INPUT:
 %   time = GPS time
-%   XR   = receiver position  (X,Y,Z)
-%   XS   = satellite position (X,Y,Z)
-%   SP3  = structure containing precise ephemeris data
-%   phwindup = phase wind-up (previous value)
+%   XR   = XYZ receiver position: N by 3 matrix or 1 by 3 vector
+%   XS   = XYZ satellite position N by 3 matrix
+%   phwindup = phase wind-up (previous value) N by 1 vector
 %
 % OUTPUT:
 %   phwindup = phase wind-up (updated value)
@@ -46,45 +45,41 @@ function [phwindup] = carrierPhaseWindupGGM(epochi, XR, XS, phwindup)
 %--------------------------------------------------------------------------
 % 01100111 01101111 01000111 01010000 01010011
 %--------------------------------------------------------------------------
+%   
+%   Completely rewritten for vectorization by Fabian Rothmaier, 09/2021
 
-%east (a) and north (b) local unit vectors
-% phwindup = zeros(size(XS,1),1);
-for s = 1 : size(XS,1)
-    llh = navsu.geo.xyz2llh(XR(s,:));
-    phi = llh(1)*pi/180;
-    lam = llh(2)*pi/180;
-    a = [-sin(lam); cos(lam); 0];
-    b = [-sin(phi)*cos(lam); -sin(phi)*sin(lam); cos(phi)];
-    
-    
-    %satellite-fixed local unit vectors
-    %     [i, j, k] = satellite_fixed_frame(time, XS(s,:)', SP3);
-    if s == 1
-        [R,sunpos] = navsu.geo.svLocalFrame(XS(s,:),epochi);
-    else
-        R = navsu.geo.svLocalFrame(XS(s,:),epochi,sunpos);
-    end
-    i = R(:,1); j = R(:,2); k = R(:,3);
-    
-    %receiver and satellites effective dipole vectors
-    Dr = a - k*dot(k,a) + cross(k,b);
-    Ds = i - k*dot(k,i) - cross(k,j);
-    
-    %phase wind-up computation
-    psi = dot(k, cross(Ds, Dr));
-    arg = dot(Ds,Dr)/(norm(Ds)*norm(Dr));
-    if (arg < -1)
-        arg = -1;
-    elseif (arg > 1)
-        arg = 1;
-    end
-    dPhi = sign(psi)*acos(arg)/(2*pi);
-    if (isempty(phwindup) || phwindup(s,1) == 0)
-        N = 0;
-    else
-        N = round(phwindup(s,1) - dPhi);
-    end
-    phwindup(s,1) = dPhi + N;
-end
+% redo vectorized
+llh = navsu.geo.xyz2llh(XR);
+phi = llh(:, 1)'*pi/180;
+lam = llh(:, 2)'*pi/180;
 
+% east (a) and north (b) local unit vectors
+a = [-sin(lam); cos(lam); zeros(size(lam))];
+b = [-sin(phi).*cos(lam); -sin(phi).*sin(lam); cos(phi)];
+
+% satellite-fixed local unit vectors
+R = navsu.geo.svLocalFrame(XS, epochi);
+i = squeeze(R(:, 1, :));
+j = squeeze(R(:, 2, :));
+k = squeeze(R(:, 3, :));
+
+%receiver and satellites effective dipole vectors
+nSat = size(XS, 1);
+Dr = a - k.*dot(k, a.*ones(1, nSat)) + cross(k, b.*ones(1, nSat));
+Ds = i - k.*dot(k, i) - cross(k, j);
+
+%phase wind-up computation
+psi = dot(k, cross(Ds, Dr));
+arg = dot(Ds, Dr) ./ (vecnorm(Ds, 2, 1) .* vecnorm(Dr, 2, 1));
+% limit to [-1 1]
+arg = min(max(arg, -1), 1);
+dPhi = (sign(psi) .* acos(arg) / (2*pi))';
+
+% add up with previous values
+N = round(phwindup - dPhi);
+N(phwindup == 0) = 0;
+
+phwindup = dPhi + N;
 phwindup(isnan(phwindup)) = 0;
+
+end
