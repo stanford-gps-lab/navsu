@@ -216,12 +216,12 @@ uri = d_uri + [PHI, A .* (1 - e .* cos(E)), eph.i0(iEph) + eph.I_DOT(iEph).*tsE]
 xo = uri(:, 2) .* cos(uri(:, 1)); % SV x-position in orbital plane
 yo = uri(:, 2) .* sin(uri(:, 1)); % SV y-position in orbital plane
 
-% corrected longitude of ascending node for some BDS satellites
-
+% propagate longitude of ascending node
 OMEGA = eph.OMEGA(iEph) ...
-      + (eph.OMEGA_DOT(iEph) - OMEGA_DOTe) .* tsE...
+      + (eph.OMEGA_DOT(iEph) - OMEGA_DOTe) .* tsE ...
       - OMEGA_DOTe * eph.Toe(iEph);
 
+% corrected longitude of ascending node for some BDS satellites
 if strcmp(constellation, 'BDS')
     b2c = prn(haveEph) <= 5;
     OMEGA(b2c) = OMEGA(b2c) - eph.OMEGA_DOT(iEph(b2c)).*tsE(b2c);

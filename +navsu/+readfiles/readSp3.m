@@ -1,4 +1,5 @@
-function pvt = readSp3(filename, cmToApcFlag,strictConstNumFlag,constellationOut,atxData)
+function pvt = readSp3(filename, cmToApcFlag, strictConstNumFlag, ...
+                       constellationOut, atxData)
 % readSp3
 % DESCRIPTION:
 %   Parses .sp3 precise orbit and clock files!
@@ -233,10 +234,10 @@ if strictConstNumFlag
     end
 end
 
-epochs = ones(NumSV, 1) * (GPS_seconds + ...
-    GPS_week_num*7*24*3600 + ...
-    Epoch_interval .* (0:NumEpochs-1));
-epochs = epochs(:);
+dataEpochs = GPS_seconds ...
+           + GPS_week_num * 604800 ...
+           + Epoch_interval .* (0:NumEpochs-1)';
+epochs = repelem(dataEpochs, NumSV, 1);
 constInds = constellationOut*ones(size(epochs));
 
 pvt = struct('filename', filename, ...
@@ -258,46 +259,29 @@ pvt.Event(abs(pvt.clock_bias) >= 0.999999) = true;
 pvt.Event(any(pvt.position == 0, 2)) = true;
 
 %% Correct APC
-if cmToApcFlag
+if cmToApcFlag && ~isempty(atxData)
     % Pull sun position for each time in SP3 file
-    
-    %     if ~contains(path,'\mice\src\mic')
-    %         navsu.thirdparty.attachToMice();
-    %     end
-    t = GPS_seconds:Epoch_interval:(GPS_seconds+NumEpochs*Epoch_interval);
-    jd = navsu.time.gps2jd(GPS_week_num,t);
-    epochsSun = navsu.time.gps2epochs(GPS_week_num*ones(size(t)),t);
-    %     sunpos = zeros(3,length(t));
-    %     for i = 1:length(jd)
-    %         et          = cspice_str2et(['jd ' num2str(jd(1))]);
-    %         sunposi     = cspice_spkezr( 'sun',et , 'itrf93', 'none', 'earth');
-    %         sunpos(:,i) = sunposi(1:3)*1000;
-    %     end
+    jd = navsu.time.epochs2jd(dataEpochs)';
     % ECEF sun position
     sunpos = navsu.geo.sunVecEcef(jd)';
     
     
-    
-    
     PRNs = unique(array(:,1));
-    
-    if ~isempty(atxData)
-        constNum = constellationOut;
-        atxDatai= atxData([atxData.type] == constNum);
-        epochi = GPS_seconds+604800*GPS_week_num;
-    end
     
     for pdx = 1:NumSV
         prn = PRNs(pdx);
         % Use the IGS antenna phase center file
-        svni = navsu.svprn.prn2svn(prn,jd(1),constNum);
+        svni = navsu.svprn.prn2svn(prn, jd(1), constellationOut);
         if isnan(svni)
             offset = nan(3,1);
         else
-            adx = find([atxDatai.svn] == svni & [atxDatai.epochStart] <= epochi & [atxDatai.epochEnd] > epochi);
+            adx = find( [atxData.type] == constellationOut ...
+                      & [atxData.svn] == svni ...
+                      & [atxData.epochStart] <= dataEpochs(pdx) ...
+                      & [atxData.epochEnd] > dataEpochs(pdx));
             
             if ~isempty(adx)
-                offset = (atxDatai(adx).apc(1,:)')*1e-3;
+                offset = (atxData(adx).apc(1,:)')*1e-3;
             else
                 offset = nan(3,1);
             end
@@ -307,10 +291,11 @@ if cmToApcFlag
         
         if any(any(~isnan(pvt.position(inds,:))))
             for tdx = 1:NumEpochs
-                sunposi = sunpos(:,tdx);
                 svPosi  = pvt.position(inds(tdx),:)';
                 
-                R = navsu.geo.svLocalFrame(svPosi',epochsSun(tdx),sunposi);
+                R = navsu.geo.svLocalFrame(svPosi', ...
+                                           dataEpochs(tdx), ...
+                                           sunpos(:,tdx));
                 
                 offsetECEF = R*offset;
                 
