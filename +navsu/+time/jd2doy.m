@@ -1,6 +1,6 @@
 function [doy,yr]=jd2doy(jd)
 % JD2DOY  Converts Julian date to year and day of year.
-% . Non-vectorized version. See also CAL2JD, DOY2JD,
+%   See also CAL2JD, DOY2JD,
 %   GPS2JD, JD2CAL, JD2DOW, JD2GPS, JD2YR, YR2JD.
 % Version: 24 Apr 99
 % Usage:   [doy,yr]=jd2doy(jd)
@@ -22,4 +22,6 @@ if jd < 0
 end
 
 [yr,~,~] = navsu.time.jd2cal(jd);
-doy = jd - navsu.time.cal2jd(yr,1,0);
+doy = jd - navsu.time.cal2jd_vect(yr,1,0);
+
+end

@@ -1,4 +1,4 @@
-function jd=cal2jd_vect(yr,mn,dy)
+function jd = cal2jd_vect(yr, mn, dy)
 % CAL2JD  Converts calendar date to Julian date using algorithm
 %   from "Practical Ephemeris Calculations" by Oliver Montenbruck
 %   (Springer-Verlag, 1989). Uses astronomical year for B.C. dates
@@ -19,35 +19,54 @@ if nargin ~= 3
   warning('Incorrect number of input arguments');
   return;
 end
-if any(mn) < 1 || any(mn) > 12
+
+% make all inputs are row vectors of equal sizes
+nTimes = max([length(yr) length(mn) length(dy)]);
+
+dy = makeRowVec(dy, nTimes);
+mn = makeRowVec(mn, nTimes);
+yr = makeRowVec(yr, nTimes);
+
+if any(mn < 1) || any(mn > 12)
   warning('Invalid input month');
   return
 end
-if dy < 1
-  if any(mn == 2 & dy > 29) || any(any(mn == [3 5 9 11]) && dy > 30) || any(dy > 31)
+if any(mn == 2 & dy > 29) ...
+    || any(ismember(mn, [3 5 9 11]) & dy > 30) ...
+    || any(dy > 31)
     warning('Invalid input day');
     return
-  end
 end
 
-y = yr;
-m = mn;
-i = mn <= 2;
-y(i) = yr(i) - 1;
-m(i) = mn(i) + 12;
+date1 = 4.5 + 31*(10 + 12*1582);   % Last day of Julian calendar (1582.10.04 Noon)
+date2 = 15.5 + 31*(10 + 12*1582);  % First day of Gregorian calendar (1582.10.15 Noon)
+date = dy + 31*(mn + 12*yr);
 
-date1=4.5+31*(10+12*1582);   % Last day of Julian calendar (1582.10.04 Noon)
-date2=15.5+31*(10+12*1582);  % First day of Gregorian calendar (1582.10.15 Noon)
-date=dy+31*(mn+12*yr);
-b = NaN(size(yr));
+i = mn <= 2;
+yr(i) = yr(i) - 1;
+mn(i) = mn(i) + 12;
+
+% number of leap years?
+b = NaN(size(date));
 b(date <= date1) = -2;
 i = date >= date2; 
-b(i) = fix(y(i)/400) - fix(y(i)/100);
+b(i) = fix(yr(i)/400) - fix(yr(i)/100);
 % if any(isnan(b))
 %   warning('cal2jd_vect: Dates between October 5 & 15, 1582 do not exist');
 % %   return;
 % end
 
-jd = fix(365.25*y) + fix(30.6001*(m+1)) + b + 1720996.5 + dy;
-i = y <= 0;
-jd(i) = fix(365.25*y(i)-0.75) + fix(30.6001*(m(i)+1)) + b(i) + 1720996.5 + dy(i);
+jd = fix(365.25*yr) + fix(30.6001*(mn+1)) + b + 1720996.5 + dy;
+i = yr <= 0;
+jd(i) = fix(365.25*yr(i)-0.75) + fix(30.6001*(mn(i)+1)) + b(i) + 1720996.5 + dy(i);
+end
+
+function x = makeRowVec(x, n)
+% Turns input into row vector of length n.
+if numel(x) == 1
+    x = repmat(x, 1, n);
+elseif iscolumn(x)
+    x = x';
+end
+
+end
