@@ -17,7 +17,7 @@ function offset = getAPCoffset(atxData, PRN, constInds, epochs)
 %                        system
 
 if numel(epochs) == 1
-    epochs  = epochs * size(PRN);
+    epochs  = epochs * ones(size(PRN));
 end
 if numel(constInds) == 1
     constInds = constInds * ones(size(PRN));

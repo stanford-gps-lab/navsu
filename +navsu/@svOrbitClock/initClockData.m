@@ -47,8 +47,7 @@ if isempty(obj.PClock)
         end
         
     end
-    PClock = navsu.readfiles.loadCFst(years,doys,settings);
-    obj.PClock = PClock;
+    obj.PClock = navsu.readfiles.loadCFst(years,doys,settings);
 else
     % This will be added to the rest of it
     
