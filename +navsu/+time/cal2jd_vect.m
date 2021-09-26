@@ -22,21 +22,17 @@ end
 
 % make all inputs are row vectors of equal sizes
 nTimes = max([length(yr) length(mn) length(dy)]);
+colVec = any([size(yr, 1)>1, size(mn, 1)>1, size(dy,  1)>1]);
 
 dy = makeRowVec(dy, nTimes);
 mn = makeRowVec(mn, nTimes);
 yr = makeRowVec(yr, nTimes);
 
-if any(mn < 1) || any(mn > 12)
-  warning('Invalid input month');
-  return
-end
-if any(mn == 2 & dy > 29) ...
-    || any(ismember(mn, [3 5 9 11]) & dy > 30) ...
-    || any(dy > 31)
-    warning('Invalid input day');
-    return
-end
+invalidEpochs = mn < 1 ...
+              | mn > 12 ...
+              | (mn == 2 & dy > 29) ...
+              | (ismember(mn, [3 5 9 11]) & dy > 30) ...
+              | dy > 31;
 
 date1 = 4.5 + 31*(10 + 12*1582);   % Last day of Julian calendar (1582.10.04 Noon)
 date2 = 15.5 + 31*(10 + 12*1582);  % First day of Gregorian calendar (1582.10.15 Noon)
@@ -59,6 +55,14 @@ b(i) = fix(yr(i)/400) - fix(yr(i)/100);
 jd = fix(365.25*yr) + fix(30.6001*(mn+1)) + b + 1720996.5 + dy;
 i = yr <= 0;
 jd(i) = fix(365.25*yr(i)-0.75) + fix(30.6001*(mn(i)+1)) + b(i) + 1720996.5 + dy(i);
+
+% account for invalid inputs
+jd(invalidEpochs) = NaN;
+
+if colVec
+    % transform back
+    jd = jd';
+end
 end
 
 function x = makeRowVec(x, n)

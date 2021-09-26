@@ -66,10 +66,10 @@ for idx = 1:length(prn)
 
     %find start date in jd
     epStart = navsu.time.cal2jd_vect(svndata(:,3), svndata(:,4), ...
-        svndata(:,5) + (svndata(:,6) + svndata(:,7)/60)/24);
+        svndata(:,5)) + (svndata(:,6) + svndata(:,7)/60)/24;
     %find end date in jd
     epEnd = navsu.time.cal2jd_vect(svndata(:,8), svndata(:,9), ...
-        svndata(:,10) + (svndata(:,11) + svndata(:,12)/60)/24);
+        svndata(:,10)) + (svndata(:,11) + svndata(:,12)/60)/24;
     % fix infinities
     epEnd(svndata(:,8) == Inf) = Inf;
 
