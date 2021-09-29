@@ -108,6 +108,10 @@ for idx = 1:length(PRNs)
         indi = Pprns == prn;
     end
     
+    if ~any(indi)
+        continue
+    end
+    
     if ndims(Ppos) == 3
         Pposi = squeeze(Ppos(:, :, indi));
         Pepochsi = Pepochs;

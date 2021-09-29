@@ -17,9 +17,6 @@ extraInputs = res.extraInputs;
 % Run parameters
 PARAMS = obj.PARAMS;
 
-% Speed of light
-c = navsu.constants.c;
-
 % State- has been propagated in the time update
 statePropagated = obj.state;
 

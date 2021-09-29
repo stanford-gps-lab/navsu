@@ -47,28 +47,11 @@ end
 
 % Still need to pull SU estimates
 if dcbType == 0
-    [~,filenameDcb] =  loadDcb(year,doy,settings,1,5);
-    
-    if ~exist(filenameDcb{1},'file')
-        % generate a dcb file
-        
-        consts = settings.multiConst;
-        
-        dcbData = genDcbEstTECMap(doy,year,'STFU',consts,settings);
-    else
-        [dcbData,filenameDcb] =  navsu.readfiles.loadDcb(year,doy,settings,0,5);
-    end
     dcbType = 2;
-elseif dcbType == 1
-    % CODE
-   dcbData = navsu.readfiles.loadDcb(year,doy,settings,0,4);
-elseif dcbType == 3
-    % DLR
-    dcbData = navsu.readfiles.loadDcb(year,doy,settings,0,2);
 end
 
-
-obj.dcb = dcbData;
+% read the file
+obj.dcb = navsu.readfiles.loadDcb(year,doy,settings,0,type2);
 obj.dcb.type = dcbType;
 
 
