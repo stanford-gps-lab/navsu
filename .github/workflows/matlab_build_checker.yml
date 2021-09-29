@@ -48,8 +48,7 @@ jobs:
     
     - name: Execute Matlab Checkcode
       run: |
-        matlab -batch "addpath(genpath('.')); addpath('.github/workflows'); exit(matlab_checkcode_on_directory('auth'))"
-        matlab -batch "addpath(genpath('.')); addpath('.github/workflows'); exit(matlab_checkcode_on_directory('test'))"
+        matlab -batch "addpath(genpath('.')); addpath('.github/workflows'); exit(matlab_checkcode_on_directory('navsu-unit-testing'))"
 
   matlab_runtests:
     name: Matlab Runtests
