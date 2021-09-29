@@ -112,22 +112,23 @@ else
                 
             case 'jplu'
                 
-                PpathNameFormat =  [settings.preciseProdDir '%d/%03d/'];
+                PpathNameFormat = '/%d/%03d/';
                 % filename is just year-mn-dy.pos
                 PfileNameFormat1 = '%04d-%02d-%02d.tdp';
                 
-                tmp = sprintf(PpathNameFormat, yr,dayNum);
+                tmp = fullfile(settings.preciseProdDir, ...
+                               sprintf(PpathNameFormat, yr,dayNum));
                 CFileName = sprintf(PfileNameFormat1, yr, mn,dy);
                 
                 % load jpl ultra rapids
-               [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readJplClock([tmp CFileName]);
+                [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readJplClock(fullfile(tmp, CFileName));
                
-               Clck.Cepochs  = Cepochs;
-               Clck.Cclk     = Cclk;
-               Clck.Cclk_sig = Cclk_sig;
+                Clck.Cepochs  = Cepochs;
+                Clck.Cclk     = Cclk;
+                Clck.Cclk_sig = Cclk_sig;
                
-               Clck.PRNs = (1:size(Clck.Cclk,1))';
-               Clck.constInds = 1*ones(size(Clck.PRNs));
+                Clck.PRNs = (1:size(Clck.Cclk,1))';
+                Clck.constInds = 1*ones(size(Clck.PRNs));
             otherwise
                 %precise clock file
                 clkCenter = settings.gpsClkCenter;
