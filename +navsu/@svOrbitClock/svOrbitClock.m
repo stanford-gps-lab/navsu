@@ -131,36 +131,40 @@ classdef svOrbitClock < handle
     
     % function signatures
     methods
+        %% Initialization methods
         % Load precise orbit and clock
-        initOrbitData(obj,varargin)
-        
-        % Interpolate precise orbit (and clock, but for precise, this is low rate clock)
-        [svPos,svVel,iod,svClock,sigma] = propagate(obj,prns,constInds,epochs,varargin)
+        initOrbitData(obj, varargin)
         
         % Load precise clock (higher rate than clock with orbits)
-        initClockData(obj,year,doy,varargin)
-        
-        % Interpolate high rate precise clock
-        cbias = clock(obj,prns,constInds,epochs);
+        initClockData(obj, year, doy, varargin)
         
         % Load IGS TEC map
-        initIonoData(obj,year,doy,varargin);
+        initIonoData(obj, year, doy, varargin);
         
         % Iono delay from TEC map
-        [tecs,delays,tecSlant] = ionoDelay(obj,epoch,llh,varargin)    
+        [tecs, delays, tecSlant] = ionoDelay(obj, epoch, llh, varargin)    
         
         % Load atx file
-        initAtxData(obj,filenameAtx);
+        initAtxData(obj, filenameAtx);
         
         % Load DCB data
-        initDcb(obj,year,doy)
+        initDcb(obj, year, doy)
         
         % Use the clock data from the .sp3 to populate the precise clock
         % field
         initPClockFromPEph(obj)
         
         % Load broadcast data
-        initBroadcastData(obj,years,doys,varargin)
+        initBroadcastData(obj, years, doys, varargin)
+        
+        %% Main propagation methods
+        % Interpolate precise orbit (and clock, but for precise, this is 
+        % low rate clock)
+        [svPos, svVel, iod, svClock, sigma] = propagate(obj, ...
+            prns, constInds, epochs,varargin)
+        
+        % Interpolate high rate precise clock
+        cbias = clock(obj, prns, constInds, epochs);
         
         %% The rest of the functions mostly help with the above functions. 
         % Helps with precise clock interpolation
@@ -169,16 +173,16 @@ classdef svOrbitClock < handle
         cbias = clockBiasFromProd(obj,prns,constInds,epochs)
         
         % Helps with precise orbit interpolation
-        [svPos,svVel,iod,sigOrbit] = svPosFromProd(obj,prns, epochs,settings,...
-            pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
-        % Helps with precise orbit interpolation
-        [posP, velP,pPosInds,pPosPoly,ROut] = PPosInterp(obj, PRNs, epochs,...
-            settings, Pvel, pPosInds, pPosPoly, constInds, FLAG_APC_OFFSET,...
-            atxData, sunPos, dttx)
+        [posP, velP,pPosInds,pPosPoly,ROut] = PPosInterp(obj, prns, ...
+            constInds, epochs, settings, Pvel, pPosInds, pPosPoly, ...
+            FLAG_APC_OFFSET, atxData, sunPos, dttx);
         
-        [svPos,svVel,iod,svClock] = predictOrbit(obj,prns,constInds,epochs,latency);
-        [yy, yy_dot, chi2, p] = polyinterp(obj,x, y, m_order, xx, flag, var,polyIn)
-        cbias = predictClock(obj,prns,constInds,epochs,latency);
+        [svPos, svVel, iod, svClock] = predictOrbit(obj, prns, ...
+            constInds, epochs, latency);
+        
+        cbias = predictClock(obj, prns, constInds, epochs, latency);
+        
+        [yy, yy_dot, chi2, p] = polyinterp(obj, x, y, m_order, xx, flag, var, polyIn)
         
     end
 

@@ -1,6 +1,5 @@
 function imuMeas = preprocessImuMeas(imuMeasRaw,varargin)
 
-% this is mostly a wrapper for svPosFromProd
 p = inputParser;
 
 p.addParameter('epochStart',-Inf);
@@ -12,7 +11,7 @@ parse(p, varargin{:});
 res = p.Results;
 epochStart       = res.epochStart;       % Minimum time of observations
 epochEnd         = res.epochEnd;         % Maximum time of observations
-downsampleFactor = res.downsampleFactor; % FActor by which to downsample
+downsampleFactor = res.downsampleFactor; % Factor by which to downsample
 
 if isempty(imuMeasRaw)
     imuMeas = [];

@@ -1,38 +1,39 @@
-function [posP, velP, pPosInds, pPosPoly,ROut] = PPosInterp(obj, PRNs, epochs,...
-    settings, Pvel, pPosInds, pPosPoly, constInds, FLAG_APC_OFFSET,...
-    atxData, sunPos, dttx)
+function [posP, velP, pPosInds, pPosPoly, ROut] = PPosInterp(obj, PRNs, ...
+    constInds, epochs, settings, Pvel, pPosInds, pPosPoly, ...
+    FLAG_APC_OFFSET, atxData, sunPos, dttx)
 
 %% PPosInterp
 % Given IGS precise orbit from IGS products, this function performs either
 % lagrange or polynomial interpolation of the orbit to the desired epochs
 %
 % Required Inputs:
-%  PRNs                - N-length vector of PRN per desired interpolation
-%  epochs              - N-length GPS epoch per desired interpolation
-%  settings            - settings structure that contains...
-%   .nPolyFit          - number of points to use for the polynomial fit
-%   .pfit              - order of fit for polynomial interpolation
-%   .orbitInterpMet    - 'poly' or 'lagrange' 
+%  PRNs               - N-length vector of PRN per desired interpolation
+%  constInds          - N-length vector of constellation index per desired
+%                       interpolation.
+%  epochs             - N-length GPS epoch per desired interpolation
+%  settings           - settings structure that contains...
+%   .nPolyFit         - number of points to use for the polynomial fit
+%   .pfit             - order of fit for polynomial interpolation
+%   .orbitInterpMet   - 'poly' or 'lagrange' 
 %
 % Optional Inputs:
-%  Pvel
-%  pPosInds
-%  pPosPoly
-%  constInds           - N-length vector of constellation index per desired
-%                        interpolation.  Defaults to all GPS
-%  FLAG_APC_OFFSET     - flag indicating whether or not to offset the
-%                        output position by the antenna phase center using 
-%                        a nominal attitude model
-%  atxData             - stucture containing data from IGS ATX file- can be
-%                        produced by navsu.readfiles.readAtx.m
-%  sunPos              - position of the sun in ECEF
-%  dttx                - additional fine time offset
+%  Pvel               - precise velocity data. Same format as
+%                       obj.PEph.position
+%  pPosInds           - currently not used
+%  pPosPoly           - currently not used
+%  FLAG_APC_OFFSET    - flag indicating whether or not to offset the
+%                       output position by the antenna phase center using 
+%                       a nominal attitude model
+%  atxData            - stucture containing data from IGS ATX file- can be
+%                       produced by navsu.readfiles.readAtx.m
+%  sunPos             - position of the sun in ECEF
+%  dttx               - additional fine time offset
 %
 % Outputs:
 %  posP               - interpolated satellite precise position
 %  velP               - interpolated satellite precise velocity
-%  pPosInds           - 
-%  pPosPoly           -
+%  pPosInds           - currently not used
+%  pPosPoly           - currently not used
 %  ROut               - rotation matrix from ECEF to SV body frame (or vice
 %                       versa)
 
@@ -51,36 +52,28 @@ pfit  = settings.polyfit.pfit;     % order of fit for position interpolation
 
 % flags for velocity computation
 velCalc = nargout > 1;
-noVelData = nargin < 5 || isempty(Pvel) || all(isnan(Pvel), 'all');
+noVelData = nargin < 6 || isempty(Pvel) || all(isnan(Pvel), 'all');
 
-if nargin < 6 || isempty(pPosInds)
+if nargin < 7 || isempty(pPosInds)
     pPosInds = zeros(length(epochs), 2);
 else
     warning('Specified propagation indices currently not used in PposInterp')
 end
 
-if nargin < 7 || isempty(pPosPoly)
+if nargin < 8 || isempty(pPosPoly)
     pPosPoly = NaN(length(epochs), 6, pfit+1);
 end
 
-if nargin < 8
-    multiConst = 0;
-else
-    multiConst = 1;
-end
-
 if nargin < 9
-    FLAG_APC_OFFSET = 0;
+    FLAG_APC_OFFSET = false;
 end
 
-if nargin < 11 || isempty(sunPos)
-    computeSunPosFlag = 1;
-else
-    computeSunPosFlag = 0;
+if nargin < 11
+    sunPos = [];
 end
 
 if nargin < 12 || isempty(dttx)
-    dttx = zeros(length(epochs),1);
+    dttx = zeros(length(epochs), 1);
 end
 
 % dt to use when there is no velocity data available
@@ -102,11 +95,7 @@ for idx = 1:length(PRNs)
     end
     
     % retrieve orbit positions across which to interpolate
-    if multiConst
-        indi = Pprns == prn & PconstInds == constInds(idx);
-    else
-        indi = Pprns == prn;
-    end
+    indi = Pprns == prn & PconstInds == constInds(idx);
     
     if ~any(indi)
         continue
@@ -142,7 +131,7 @@ for idx = 1:length(PRNs)
                                      Pposi(ind1:ind2,:), pfit, dti);
         case 'lagrange'
             posP(idx, :) = ...
-                navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi, ...
+                navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)' - epochi, ...
                                         Pposi(ind1:ind2,:)', dti)';
     end
 
@@ -152,10 +141,10 @@ for idx = 1:length(PRNs)
             % position and just use velocity based on that :(
             switch settings.orbitInterpMethod
                 case 'poly'
-                    posPP = navsu.geo.polyinterp(Pepochsi(ind1:ind2)-epochi, ...
+                    posPP = navsu.geo.polyinterp(Pepochsi(ind1:ind2) - epochi, ...
                                                  Pposi(ind1:ind2,:), pfit, dt+dti);
                 case 'lagrange'
-                    posPP = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)'-epochi, ...
+                    posPP = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)' - epochi, ...
                                                     Pposi(ind1:ind2,:)', dt+dti)';
             end
 
@@ -170,8 +159,8 @@ for idx = 1:length(PRNs)
         end
     end
 
-    pPosInds(prn,1) = ind1;
-    pPosInds(prn,2) = ind2;
+    pPosInds(prn, 1) = ind1;
+    pPosInds(prn, 2) = ind2;
 end
 
 
@@ -181,7 +170,7 @@ if FLAG_APC_OFFSET  && ~isempty(atxData)
     offset = navsu.ppp.getAPCoffset(atxData, PRNs, constInds, epochs);
     
     % Compute rotation matrix per satellite
-    if computeSunPosFlag
+    if isempty(sunPos)
         % will need to compute sun position
         R = navsu.geo.svLocalFrame(posP, epochs);
     else

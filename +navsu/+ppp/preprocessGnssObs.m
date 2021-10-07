@@ -1,6 +1,5 @@
 function [obsGnss, dcbCorr] = preprocessGnssObs(obsGnssRaw,corrData,varargin)
 
-% this is mostly a wrapper for svPosFromProd
 p = inputParser;
 
 p.addParameter('epochStart',-Inf);

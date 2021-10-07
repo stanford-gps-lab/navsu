@@ -1,6 +1,6 @@
-function wheels = preprocessWheels(wheelsRaw,varargin)
+function wheels = preprocessWheels(wheelsRaw, varargin)
 
-% this is mostly a wrapper for svPosFromProd
+% parse optional inputs
 p = inputParser;
 
 p.addParameter('epochStart',-Inf);

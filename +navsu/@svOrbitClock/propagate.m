@@ -1,5 +1,6 @@
-function [svPos,svVel,iod,sigma] = propagate(obj,prns,constInds,epochs,varargin)
-% Primary interpolation method for precise orbits
+function [svPos, svVel, iod, sigma] = propagate(obj, prns, constInds, ...
+    epochs, varargin)
+% Primary interpolation method for orbits
 % DESCRIPTION:
 %   Used to interpolate (typically lagrange interpolation) precise orbits
 %   that have been loaded into the svOrbitClock object using
@@ -35,36 +36,55 @@ function [svPos,svVel,iod,sigma] = propagate(obj,prns,constInds,epochs,varargin)
 % See also: navsu.svOrbitClock.initOrbitData, navsu.svOrbitClock.clock
 %           navsu.svOrbitClock.initClockData,
 
-% this is mostly a wrapper for svPosFromProd
+% this is mostly a wrapper for the orbit propagation
 p = inputParser;
 
-p.addParameter('sunPos',[]);
-p.addParameter('atxData',obj.atx);
-p.addParameter('FLAG_APC_OFFSET',true);
-p.addParameter('pPosInds',[]);
-p.addParameter('pPosPoly',[]);
-p.addParameter('dttx',[]);
-p.addParameter('latency',0);
+p.addParameter('sunPos',            []);
+p.addParameter('atxData',           obj.atx);
+p.addParameter('FLAG_APC_OFFSET',   true);
+p.addParameter('pPosInds',          []);
+p.addParameter('pPosPoly',          []);
+p.addParameter('dttx',              []);
+p.addParameter('latency',           0);
 
 % parse the results
 parse(p, varargin{:});
 res = p.Results;
-sunPos          = res.sunPos;          % ECEF position of the sun
-atxData         = res.atxData;         % IGS ANTEX data
-FLAG_APC_OFFSET = res.FLAG_APC_OFFSET; % whether or not to add the antenna phase center offset
+latency         = res.latency;
 pPosInds        = res.pPosInds;        
 pPosPoly        = res.pPosPoly;         
+FLAG_APC_OFFSET = res.FLAG_APC_OFFSET; % add the antenna phase center offset?
+atxData         = res.atxData;         % IGS ANTEX data
+sunPos          = res.sunPos;          % ECEF position of the sun
 dttx            = res.dttx;            
-latency         = res.latency;
 
-settings = obj.settings;
 
-if ~strcmp(obj.orbMode,'PREDICT')
-    [svPos,svVel,iod,sigma] = obj.svPosFromProd(prns, epochs,settings,...
-        pPosInds,pPosPoly,constInds,FLAG_APC_OFFSET,atxData,sunPos,dttx);
-else
-    [svPos,svVel,iod] = obj.predictOrbit(prns,constInds,epochs,latency);
+if strcmp(obj.orbMode, 'PREDICT')
+    [svPos, svVel, iod] = obj.predictOrbit(prns, constInds, epochs, latency);
     sigma = NaN;
+    
+elseif strcmp(obj.orbMode, 'PRECISE')
+    % Precise orbit interpolation
+    [svPos, svVel] = obj.PPosInterp(prns, constInds, epochs, ...
+        obj.settings, NaN, pPosInds, pPosPoly, FLAG_APC_OFFSET, ...
+        atxData, sunPos, dttx);
+    
+    iod = []; % not applicable for precise orbits
+    
+    % Just setting a standard orbit sigma here  - IGS is very precise
+    sigma = 0.03*ones(size(svPos,1),1);
+    
+else
+    % Use broadcast file
+    pos = navsu.geo.propNavMsg(obj.BEph, prns, constInds, epochs);
+    
+    svPos       = [pos.x pos.y pos.z];
+    svVel       = [pos.x_dot pos.y_dot pos.z_dot];
+    iod         = pos.IODC;
+    iod(constInds == 2) = NaN; % GLONASS IODC is not valid
+    sigma       = pos.accuracy;
+    sigma(constInds == 2) = 10; % GLONASS does not give accuracy
+
 end
 
 
