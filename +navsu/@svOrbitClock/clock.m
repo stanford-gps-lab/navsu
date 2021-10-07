@@ -1,5 +1,5 @@
-function cbias = clock(obj,prns,constInds,epochs,varargin)
-% Primary interpolation method for precise orbits
+function cbias = clock(obj, prns, constInds, epochs, varargin)
+% Primary interpolation method for clock products
 % DESCRIPTION:
 %   Used to interpolate (typically lagrange interpolation) precise orbits
 %   that have been loaded into the svOrbitClock object using
@@ -22,20 +22,25 @@ function cbias = clock(obj,prns,constInds,epochs,varargin)
 % See also: navsu.svOrbitClock.initClockData, navsu.svOrbitClock.propagate
 %           navsu.svOrbitClock.initClockData,
 
-% this is mostly a wrapper for clockBiasFromProd
+% parse optional inputs
 p = inputParser;
-p.addParameter('latency',0);
+p.addParameter('latency', 0);
 
 % parse the results
 parse(p, varargin{:});
 res = p.Results;
 latency = res.latency;     
 
-if ~strcmp(obj.clkMode,'PREDICT')
-    cbias =  obj.clockBiasFromProd(prns,constInds,epochs);
+if strcmp(obj.clkMode, 'PREDICT')
+    cbias = obj.predictClock(prns, constInds, epochs, latency);
+    
+elseif strcmp(obj.clkMode, 'PRECISE')
+    cbias = obj.clockInterp(prns, constInds, epochs);
+    
 else
-    cbias = obj.predictClock(prns,constInds,epochs,latency); 
+    % propagate navigation broadcast
+    pos = navsu.geo.propNavMsg(obj.BEph, prns, constInds, epochs);
+    cbias = pos.clock_bias;
 end
-
 
 end

@@ -168,14 +168,12 @@ classdef svOrbitClock < handle
         
         %% The rest of the functions mostly help with the above functions. 
         % Helps with precise clock interpolation
-        cbias = clockInterp(obj,prns,constInds,epochs);
-        % Helps with precise clock interpolation
-        cbias = clockBiasFromProd(obj,prns,constInds,epochs)
+        cbias = clockInterp(obj, prns, constInds, epochs);
         
         % Helps with precise orbit interpolation
         [posP, velP, pPosInds, pPosPoly, ROut] = PPosInterp(obj, prns, ...
-            constInds, epochs, pPosInds, pPosPoly, ...
-            FLAG_APC_OFFSET, sunPos, dttx);
+            constInds, epochs, pPosInds, pPosPoly, FLAG_APC_OFFSET, ...
+            sunPos, dttx);
         
         [svPos, svVel, iod, svClock] = predictOrbit(obj, prns, ...
             constInds, epochs, latency);
