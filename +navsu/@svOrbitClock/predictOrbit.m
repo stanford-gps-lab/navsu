@@ -37,11 +37,11 @@ for idx = 1:nProp
     % Build polynomial over the interval excluding times with events
     posi = nan(1,3);
     for ddx = 1:3
-%         posi(ddx) = obj.polyinterp(epochsi,posBase(:,ddx),orderFitOrbit,epochi);
+%         posi(ddx) = navsu.geo.polyinterp(epochsi,posBase(:,ddx),orderFitOrbit,epochi);
     end
     
     svPos(idx,:)= posi;
-    svClock(idx) = obj.polyinterp(epochsi,clockBase,orderFitClock,epochi);
+    svClock(idx) = navsu.geo.polyinterp(epochsi,clockBase,orderFitClock,epochi);
 end
 
 

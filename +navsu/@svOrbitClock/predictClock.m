@@ -31,7 +31,7 @@ for idx = 1:nProp
     epochsi = obj.PClock.Cepochs(indsFit);
     clockBase = obj.PClock.Cclk(indPrn,indsFit)';
     
-    cbias(idx) = obj.polyinterp(epochsi,clockBase,orderFitClock,epochi);
+    cbias(idx) = navsu.geo.polyinterp(epochsi,clockBase,orderFitClock,epochi);
 end
 
  

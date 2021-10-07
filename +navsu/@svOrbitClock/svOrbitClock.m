@@ -181,9 +181,7 @@ classdef svOrbitClock < handle
             constInds, epochs, latency);
         
         cbias = predictClock(obj, prns, constInds, epochs, latency);
-        
-        [yy, yy_dot, chi2, p] = polyinterp(obj, x, y, m_order, xx, flag, var, polyIn)
-        
+                
     end
 
 

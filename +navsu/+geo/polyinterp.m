@@ -39,7 +39,7 @@ end
 
 xscale = range(x) / 2;
 xbias  = mean(x);
-xp = (x-xbias)/xscale;
+xp = (x-xbias) / xscale;
 
 yscale = range(y, 1) / 2;
 ybias  = mean(y, 1);
@@ -49,7 +49,7 @@ else
     yp = y*0;
 end
 
-n = size(xx,1);
+n = size(xx, 1);
 xx0 = xx;
 xx = [xx; x];
 
@@ -62,7 +62,7 @@ z = yscale .* (((xx - xbias)/xscale).^(m_order:-1:0) * p') + ybias; % vectorized
 yy = z(1:n, :);
 
 if nearestAdjust
-    [~, indNearest] = min(abs(xx0-x));
+    [~, indNearest] = min(abs(xx0 - x));
     
     yAdjust = z(n+indNearest, :) - y(indNearest, :);
     yy = yy - yAdjust;
