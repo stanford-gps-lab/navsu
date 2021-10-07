@@ -40,7 +40,6 @@ function [svPos, svVel, iod, sigma] = propagate(obj, prns, constInds, ...
 p = inputParser;
 
 p.addParameter('sunPos',            []);
-p.addParameter('atxData',           obj.atx);
 p.addParameter('FLAG_APC_OFFSET',   true);
 p.addParameter('pPosInds',          []);
 p.addParameter('pPosPoly',          []);
@@ -54,7 +53,6 @@ latency         = res.latency;
 pPosInds        = res.pPosInds;        
 pPosPoly        = res.pPosPoly;         
 FLAG_APC_OFFSET = res.FLAG_APC_OFFSET; % add the antenna phase center offset?
-atxData         = res.atxData;         % IGS ANTEX data
 sunPos          = res.sunPos;          % ECEF position of the sun
 dttx            = res.dttx;            
 
@@ -66,8 +64,7 @@ if strcmp(obj.orbMode, 'PREDICT')
 elseif strcmp(obj.orbMode, 'PRECISE')
     % Precise orbit interpolation
     [svPos, svVel] = obj.PPosInterp(prns, constInds, epochs, ...
-        obj.settings, NaN, pPosInds, pPosPoly, FLAG_APC_OFFSET, ...
-        atxData, sunPos, dttx);
+        pPosInds, pPosPoly, FLAG_APC_OFFSET, sunPos, dttx);
     
     iod = []; % not applicable for precise orbits
     
