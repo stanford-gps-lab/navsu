@@ -7,12 +7,18 @@ classdef NavsuTests <  matlab.unittest.TestCase
             % directory.
 
             if ~ispc
-                fileName = 'ftp://gdc.cddis.eosdis.nasa.gov/gnss/data/campaign/mgex/daily/rinex3/2020/brdm/';
-                fileList = navsu.ftp.curlGetDirectoryContents(fileName);
-                % should have exactly 176 files
-                testCase.verifyEqual(numel(fileList), 176);
-                % test the name of the last
-                testCase.verifyTrue(strcmp(fileList{end}, 'brdm1900.20p.Z'));
+                % check if curl exists
+                [a, ~] = system('curl');
+                if a  == 2
+                    fileName = 'ftp://gdc.cddis.eosdis.nasa.gov/gnss/data/campaign/mgex/daily/rinex3/2020/brdm/';
+                    fileList = navsu.ftp.curlGetDirectoryContents(fileName);
+                    % should have exactly 176 files
+                    testCase.verifyEqual(numel(fileList), 176);
+                    % test the name of the last
+                    testCase.verifyTrue(strcmp(fileList{end}, 'brdm1900.20p.Z'));
+                else
+                    warning('No curl distribution found. Cannot run this test.')
+                end
             else
                 warning('Could not test cURL function. Missing netrc file.');
             end
