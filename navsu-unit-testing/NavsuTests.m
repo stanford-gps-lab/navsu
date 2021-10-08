@@ -2,6 +2,23 @@ classdef NavsuTests <  matlab.unittest.TestCase
 
     methods (Test)
 
+        function curlDirContentTest(testCase)
+            % Test the function retrieving the list of files in a cddis 
+            % directory.
+            
+            if ~ispc
+                fileList = navsu.ftp.curlGetDirectoryContents( ...
+                    'ftp://gdc.cddis.eosdis.nasa.gov/gnss/data/campaign/mgex/daily/rinex3/2020/brdm/');
+                % should have exactly 176 files
+                testCase.verifyEqual(numel(fileList), 176);
+                % test the name of the last
+                testCast.verifyTrue(strcmp(fileList{end}, 'brdm1900.20p.Z'));
+            else
+                warning('Could not test cURL function. Missing netrc file.')
+            end
+            
+        end
+        
         function orbitParserTest(testCase)
             % Test RINEX 2 navigation message parsing
             %             fileRinex2 = fullfile(fileparts( mfilename('fullpath')), 'data', 'thti0500.19n');
