@@ -9,10 +9,9 @@ parse(p, varargin{:});
 res = p.Results;
 DOWNLOAD        = res.DOWNLOAD;        % indicator to check for downloads and download
 
-settings = obj.settings;
 
 if DOWNLOAD   
-    navsu.ftp.download(16,years,doys,settings);
+    navsu.ftp.download(16, years, doys, obj.settings);
 end
 
 % Load the data!

@@ -237,10 +237,10 @@ while ~feof(fid)
             if contains(linetxt,'LAT/LON1/LON2/DLON/H')
                 if ~firstLine
                    % add this entry to the map 
-                   latInd   = find(latVec == lati);
-                   hgtInd   = find(hgtVec == hgti);
+                   latInd   = latVec == lati;
+                   hgtInd   = hgtVec == hgti;
                    
-                   tecMapi(latInd,:,hgtInd) = mapEntryi;
+                   tecMapi(latInd, :, hgtInd) = mapEntryi;
                 end
                 
                 % Initialize 
@@ -261,9 +261,9 @@ while ~feof(fid)
             linetxt = fgetl(fid);
         end
         % Need to do thte last entry
-        latInd   = find(latVec == lati);
-        hgtInd   = find(hgtVec == hgti);
-        tecMapi(latInd,:,hgtInd) = mapEntryi;
+        latInd   = latVec == lati;
+        hgtInd   = hgtVec == hgti;
+        tecMapi(latInd, :, hgtInd) = mapEntryi;
         
         % Put it all in the big map!
         tecMap(:,:,:,mapi) = tecMapi;
