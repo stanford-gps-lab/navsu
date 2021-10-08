@@ -111,16 +111,16 @@ switch inChoice
         else
             % RINEX 3 proper naming format
             ftpStruc3.destDir      = settings.preciseProdDir;
-            ftpStruc3.ftpSite      = 'https://cddis.nasa.gov';
-            ftpStruc3.sourceFormat = '[''/archive/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
+            ftpStruc3.ftpSite      = 'https://cddis.nasa.gov/archive';
+            ftpStruc3.sourceFormat = '[''/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
             ftpStruc3.destFormat   = '[ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']';
             ftpStruc3.fileFormat   =  {'[val1 ''0MGXFIN_'' num2str(Year,''%04d'') ''*'' num2str(dayNum,''%03d'') ''*'' val2 ''*'']'};
             ftpStruc3.unzipFlag    = 1;
             
             % Old naming convention
             ftpStruc.destDir      = settings.preciseProdDir;
-            ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-            ftpStruc.sourceFormat = '[''/archive/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
+            ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+            ftpStruc.sourceFormat = '[''/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
             ftpStruc.destFormat   = '[ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']';
             ftpStruc.fileFormat   =  {'[val1 num2str(gpsWeek)  num2str(gpsDow) val2 ''.Z'']'};
             ftpStruc.unzipFlag    = 1;
@@ -158,8 +158,8 @@ switch inChoice
     case 4 % IGS station position solutions
         % settings.igsStatPos = fslash([baseDir 'Raw Data\IGS_Stations_Final\']);
         ftpStruc.destDir      = settings.preciseProdDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gps/products/'' num2str(gpsWeek) ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gps/products/'' num2str(gpsWeek) ''/'']';
         ftpStruc.destFormat   = '[ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']';
 %         ftpStruc.fileFormat   =  {'[''IGS'' num2str(mod(Year,100),''%02i'') ''P'' num2str(woy,''%02i'') ''_all.ssc.Z'']'};
         ftpStruc.fileFormat   =  {'[''IGS'' num2str(mod(Year,100),''%02i'') ''P'' num2str(woy,''%02i'') ''_all.ssc.Z'']' ...
@@ -183,8 +183,8 @@ switch inChoice
         
     case 6 % IGS differential code bias data
         ftpStruc.destDir      = settings.dcbDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/products/ionex/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/products/ionex/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''codg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;
                                   '[''casg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;};
@@ -194,8 +194,8 @@ switch inChoice
         
         % MGEX also
         ftpStruc.destDir      = settings.dcbDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/products/bias/'' num2str(Year) ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/products/bias/'' num2str(Year) ''/'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'']';
         ftpStruc.fileFormat   =  {'[''DLR0MGXFIN_'' num2str(Year,''%04d'') num2str(max([floor(floor(dayNum/91)*91/10)]),''%02d'') ''*0000_03L_01D_DCB.BSX*'']' };
         ftpStruc.unzipFlag    = 1;
@@ -204,8 +204,8 @@ switch inChoice
         
         % .bia files
         ftpStruc.destDir      = settings.dcbDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''com'' num2str(gpsWeek,''%04d'') num2str(gpsDow) ''.bia.Z'']' };
         ftpStruc.unzipFlag    = 1;
@@ -214,8 +214,8 @@ switch inChoice
         
         % RINEX 3 naming convention...
         ftpStruc.destDir      = settings.dcbDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gps/products/mgex/'' num2str(gpsWeek) ''/'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''COD0MGXFIN_'' int2str(Year) num2str(dayNum , ''%03i'') ''0000_01D_01D_OSB.BIA.gz'']' };
         ftpStruc.unzipFlag    = 1;
@@ -224,8 +224,8 @@ switch inChoice
         
     case 7 % IGS Earth Rotation Parameters
         ftpStruc.destDir      = settings.erpMgexDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/products/'' num2str(gpsWeek) ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/products/'' num2str(gpsWeek) ''/'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'']';
         ftpStruc.fileFormat   =  {'[''igs'' num2str(gpsWeek,''%04d'') ''7.erp'']'};
         ftpStruc.unzipFlag    = 1;
@@ -242,8 +242,8 @@ switch inChoice
       
         % New RINEX 3 naming convention EOSDIS
         ftpStruc3.destDir      = settings.mgxObsDir;
-        ftpStruc3.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc3.sourceFormat = '[''/archive/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''d/'' ]';
+        ftpStruc3.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc3.sourceFormat = '[''/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''d/'' ]';
         ftpStruc3.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         
         if isempty(statCodes)
@@ -257,8 +257,8 @@ switch inChoice
         
         % Old RINEX naming convention EOSDIS
         ftpStruc.destDir      = settings.mgxObsDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''d/'' ]';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''d/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         
         if isempty(statCodes)
@@ -274,8 +274,8 @@ switch inChoice
     case 9 % GPS Broadcast Nav Message File
         
         ftpStruc.destDir      = settings.navGpsDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''n/'' ]';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''n/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''*'']'};
         ftpStruc.unzipFlag    = 0;
@@ -317,8 +317,8 @@ switch inChoice
         
     case 11 % MGEX Mixed Navigation Files
         ftpStruc.destDir      = settings.navMgxDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''p/'' ]';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''p/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''*MN.rnx*'']'};
         ftpStruc.fileFormat   = {'[''*'']'};
@@ -332,8 +332,8 @@ switch inChoice
         
     case 12 % GLONASS Broadcast Nav Message File
         ftpStruc.destDir      = settings.navMgxDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''g/'' ]';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gps/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''g/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''*g.Z*'']' '[''*RN.rnx.gz*'']'};
         ftpStruc.fileFormat   =  {'[''*'']'};
@@ -344,8 +344,8 @@ switch inChoice
         
     case 13 % CODE 5 Second GPS Clock Data
         ftpStruc.destDir      = settings.preciseProdDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/products/'' num2str(gpsWeek) ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/products/'' num2str(gpsWeek) ''/'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         if nargin >= 5
             statCodes = varargin{1};
@@ -361,8 +361,8 @@ switch inChoice
         
     case 14 % CNAV data
         ftpStruc.destDir      = settings.navMgxDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/data/campaign/mgex/daily/rinex3/'' num2str(Year) ''/cnav'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/data/campaign/mgex/daily/rinex3/'' num2str(Year) ''/cnav'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'']';
         ftpStruc.fileFormat   =  {'[''brdx'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''x.Z'']'};
         ftpStruc.unzipFlag    = 1;
@@ -372,8 +372,8 @@ switch inChoice
     case 15 % Iono data
         % IONEX iono map data
         ftpStruc.destDir      = settings.dcbDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/products/ionex/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/products/ionex/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''codg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;
                                   '[''casg'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''i*'']' ;
@@ -394,8 +394,8 @@ switch inChoice
         
     case 16 % BRDM combined nav files
         ftpStruc.destDir      = settings.navMgxDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gnss/data/campaign/mgex/daily/rinex3/'' num2str(Year) ''/brdm/''  ]';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gnss/data/campaign/mgex/daily/rinex3/'' num2str(Year) ''/brdm/''  ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''brdm'' num2str(dayNum,''%03d'') ''0.'' num2str(mod(Year,100),''%02d'') ''p.Z'']'};
         ftpStruc.unzipFlag    = 1;
@@ -473,8 +473,8 @@ switch inChoice
     case 19
         % IGS real time products
         ftpStruc.destDir      = settings.preciseProdDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
-        ftpStruc.sourceFormat = '[''/archive/gps/products/rtpp/'' num2str(gpsWeek) ''/'']';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
+        ftpStruc.sourceFormat = '[''/gps/products/rtpp/'' num2str(gpsWeek) ''/'']';
         ftpStruc.destFormat   = '[ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']';
         ftpStruc.fileFormat   =  {'[''igc'' num2str(gpsWeek)  num2str(gpsDow) ''.sp3.Z'']'};
         ftpStruc.unzipFlag    = 1;
@@ -503,7 +503,7 @@ switch inChoice
         
         % 
         ftpStruc.destDir      = settings.dcbDir;
-        ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
+        ftpStruc.ftpSite      = 'https://cddis.nasa.gov/archive';
         ftpStruc.sourceFormat = '[''/gnss/products/bias/'']';
         ftpStruc.destFormat   = '[]';
         ftpStruc.fileFormat   =  {'[''code.bia'']' };

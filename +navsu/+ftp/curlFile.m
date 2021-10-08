@@ -18,7 +18,12 @@ function [yearChange,dayChange] = curlFile(yearList,dayList,ftpStruc,netrcFile,c
 %
 % See also: navsu.ftp.download, navsu.ftp.ftpFileHr
 
-ftpSite      = ['' ftpStruc.ftpSite];
+if ispc
+    ftpSite  = ftpStruc.ftpSite;
+else
+    % at least on Mac we have to use the ftp protocol
+    ftpSite  = 'ftp://gdc.cddis.eosdis.nasa.gov';
+end
 sourceFormat = ftpStruc.sourceFormat;
 destDir      = ftpStruc.destDir;
 destFormat   = ftpStruc.destFormat;
@@ -81,14 +86,14 @@ for ddx = 1:length(dayList)
             if isempty(lname)
                 have = 0;
             else
-                [have, idx] = ismember(serverName,lname);
+                [have, ~] = ismember(serverName,lname);
             end
             
             % Check if this is one of the files we want
             desired = 0;
             
             for fdx = 1:length(fileFormat)
-                desiredName = regexptranslate('wildcard',eval(fileFormat{fdx}));
+                desiredName = regexptranslate('wildcard', eval(fileFormat{fdx}));
                 
                 desired = desired || ~isempty(regexp(serverName, desiredName,'once'));
                 
@@ -100,7 +105,7 @@ for ddx = 1:length(dayList)
             if ~have && desired
                 %                 mget(mw, serverName, target_dir);
                 
-                navsu.ftp.curlDownloadSingleFile([sourcePath serverName],target_dir,netrcFile,cookieFile);
+                navsu.ftp.curlDownloadSingleFile([sourcePath serverName], target_dir, netrcFile, cookieFile);
                 change = 1;
                 
                 if unzipFlag
