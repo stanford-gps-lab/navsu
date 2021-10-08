@@ -34,7 +34,7 @@ constUse = [1 1 1 0 0];  % GPS | GLO | GAL | BDS | QZSS
 
 disp('Reading observation file')
 [obsStruc, constellations, epochs, date, pos, interval, antoff, antmod,...
-    rxmod] = navsu.readfiles.loadRinexObs(filenameGnss,'constellations',...
+    rxmod] = navsu.readfiles.loadRinexObs(filenameGnss, 'constellations',...
     navsu.readfiles.initConstellation(constUse(1),constUse(2),constUse(3),constUse(4),constUse(5)));
 
 obsGnssRaw.meas      = obsStruc;
@@ -69,34 +69,28 @@ corrData.settings.galEphCenter = igsAc;
 corrData.settings.galClkCenter = igsAc;
 
 % load MGEX precise ephemeris data into our correction object
-corrData.initOrbitData(yearProd,doyProd);
+corrData.initOrbitData(yearProd, doyProd);
 
 % load MGEX clock data into our correction object
-corrData.initClockData(yearProd,doyProd);
+corrData.initClockData(yearProd, doyProd);
 
 % Load broadcast data
-corrData.initBroadcastData(yearProd,doyProd);
+corrData.initBroadcastData(yearProd, doyProd);
 
 % load antenna phase center data for satellites
 filenameAtx = 'igs14_sats_only.atx';
 corrData.initAtxData(filenameAtx);
 
 % dcb products
-corrData.initDcb(yearProd,doyProd);
+corrData.initDcb(yearProd, doyProd);
 
 % ionospheric data
-corrData.initIonoData(yearProd,doyProd);
+corrData.initIonoData(yearProd, doyProd);
 
 %% preprocess observations
-[gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw,...
-     corrData,'downsampleFac',downsampleFac,'epochStart',epochStart,...
-     'epochEnd',epochStart+30*60);
- 
- % Build position measurement
-% posMeas = navsu.ppp.buildPosMeas(gnssMeas.epochs,truePosEcef',0.1,1);
-
-% velMeas = navsu.ppp.buildVelMeas(gnssMeas.epochs,[0 0 0]',0.01,1);
-
+[gnssMeas, dcbCorr0] = navsu.ppp.preprocessGnssObs(obsGnssRaw, ...
+     corrData, 'downsampleFac', downsampleFac, 'epochStart', epochStart, ...
+     'epochEnd', epochStart+30*60);
 
 %% Estimate!
 % Initialize the filter
@@ -113,7 +107,6 @@ filter.PARAMS.measMask.f3 = [0 0 0]';
 
 filter.PARAMS.measUse.noVertVel = 0;
 
-
 % choose precise or broadcast orbits (PRECISE is default)
 % corrData.orbMode = 'BROADCAST';
 % corrData.clkMode = 'BROADCAST';
@@ -121,11 +114,11 @@ filter.PARAMS.measUse.noVertVel = 0;
 corrData.orbMode = 'PRECISE';
 corrData.clkMode = 'PRECISE';
 
-outData = navsu.ppp.runPpp(filter,{gnssMeas },corrData);
+outData = navsu.ppp.runPpp(filter, {gnssMeas}, corrData);
 
 %% Plot the results
 
-filter.plotOutput(outData,'truthFile',truePosEcef);
+filter.plotOutput(outData, 'truthFile', truePosEcef);
 
 
 
