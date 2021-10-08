@@ -16,6 +16,9 @@ function g = gravityEcef(r_eb_e)
 % Copyright 2012, Paul Groves
 % License: BSD; see license.txt for details
 
+%2021Oct08 modified by Fabian Rothmaier for vecorization and simplification
+%and to set dummy output for position [0;0;0] to NaN.
+
 %Parameters
 R_0 = 6378137; %WGS84 Equatorial radius in meters
 mu = 3.986004418E14; %WGS84 Earth gravitational constant (m^3 s^-2)
@@ -25,23 +28,15 @@ omega_ie = 7.292115E-5;  % Earth rotation rate (rad/s)
 % Begins
 
 % Calculate distance from center of the Earth
-mag_r = sqrt(r_eb_e' * r_eb_e);
+mag_r = sqrt(sum(r_eb_e.^2, 1));
 
-% If the input position is 0,0,0, produce a dummy output
-if mag_r==0
-    g = [0;0;0];
-    
 % Calculate gravitational acceleration using (2.142)
-else
-    z_scale = 5 * (r_eb_e(3) / mag_r)^2;
-    gamma = -mu / mag_r^3 *(r_eb_e + 1.5 * J_2 * (R_0 / mag_r)^2 *...
-        [(1 - z_scale) * r_eb_e(1); (1 - z_scale) * r_eb_e(2);...
-        (3 - z_scale) * r_eb_e(3)]);
+z_scale = 5 * (r_eb_e(3, :) ./ mag_r).^2;
+g = -mu ./ mag_r.^3 .* ...
+    (r_eb_e + 1.5 * J_2 * (R_0 ./ mag_r).^2 .* ...
+    ([1; 1; 3] - z_scale) .* r_eb_e);
 
-    % Add centripetal acceleration using (2.133)
-    g(1:2,1) = gamma(1:2) + omega_ie^2 * r_eb_e(1:2);
-    g(3) = gamma(3);
+% Add centripetal acceleration using (2.133)
+g(1:2, :) = g(1:2, :) + omega_ie^2 * r_eb_e(1:2, :);
     
-end % if
-
-% Ends
+end

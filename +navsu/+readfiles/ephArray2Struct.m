@@ -5,7 +5,7 @@ function eph = ephArray2Struct(array, filename, leapSecond, constellation)
 %   structure.
 % INPUT:
 %   array      - parsed navigation message data from
-%                navsu.readfiles.loadRinexObs
+%                navsu.readfiles.loadRinexNav
 %   filename   - name of the RINEX file that the data came from
 %   leapSecond - number of leap seconds read from the header of the RINEX
 %                file

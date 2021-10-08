@@ -1,16 +1,16 @@
-function [el,az] = pos2elaz(usrPos,satPos)
+function [el,az] = pos2elaz(usrPos, satPos)
 
 llh = navsu.geo.xyz2llh(usrPos);
 
-RxyzEnu = navsu.geo.findXyz2enu(llh(1)*pi/180,llh(2)*pi/180);
-usr_ehat = RxyzEnu(:,1);
-usr_nhat = RxyzEnu(:,2);
-usr_uhat = RxyzEnu(:,3);
+RxyzEnu = navsu.geo.findXyz2enu(llh(1)*pi/180, llh(2)*pi/180);
+usr_ehat = RxyzEnu(:, 1);
+usr_nhat = RxyzEnu(:, 2);
+usr_uhat = RxyzEnu(:, 3);
 
 
-losxyzb = navsu.geo.findLosXyzb(usrPos,satPos);
+losxyzb = navsu.geo.findLosXyzb(usrPos, satPos);
 
-los_enub = navsu.geo.calcLosEnub(losxyzb,usr_ehat',usr_nhat',usr_uhat');
+los_enub = navsu.geo.calcLosEnub(losxyzb, usr_ehat', usr_nhat', usr_uhat');
 [el, az] = findElaz(los_enub);
 
 

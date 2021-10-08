@@ -4,7 +4,7 @@ function eph = ephArray2StructGlonass(array, filename, leapSecond)
 %   Converts navigation message arrays from GLONASS to a structure. 
 % INPUT:
 %   array      - parsed navigation message data from
-%                navsu.readfiles.loadRinexObs
+%                navsu.readfiles.loadRinexNav
 %   filename   - name of the RINEX file that the data came from
 %   leapSecond - number of leap seconds read from the header of the RINEX
 %                file
@@ -49,7 +49,7 @@ end
 % eph.AOI              = array(:, 22);
 
 ToE = datenum(array(:, 2:7));
-nd = mode(floor(ToE)) - datenum([1980 1 6]);
+% nd = mode(floor(ToE)) - datenum([1980 1 6]);
 nd2 = floor(ToE)- datenum([1980 1 6]);
 eph.GPS_week_num     = floor(nd2 / 7);
 eph.GPS_weekday      = mod(nd2, 7);

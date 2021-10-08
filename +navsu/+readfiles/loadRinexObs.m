@@ -171,7 +171,7 @@ else
     
     %parse RINEX header
     [obs_type, pos(:,1), basic_info, interval(1,1), sysId, antoff(:,1), ...
-        antmod{1,1}, ~,rxmod{1,1},rinexVer] = navsu.readfiles.rinexParseHeader(fid);
+        antmod{1,1}, ~, rxmod{1,1}, ~] = navsu.readfiles.rinexParseHeader(fid);
     
     %check the availability of basic data to parse the RINEX file
     if (basic_info == 0)
@@ -179,7 +179,7 @@ else
     end
     
     % Pull each signal name out
-    [obsColumns,nObsTypes,obsTypes ] = navsu.readfiles.rinexFindObsType(obs_type,sysId);
+    [obsColumns, nObsTypes, obsTypes] = navsu.readfiles.rinexFindObsType(obs_type, sysId);
     
     % Add the LLI field for each carrier-phase frequency if this is RINEX 2
     if any(find(contains(obsTypes,'L1'))) &&  isempty(sysId)
@@ -252,7 +252,7 @@ else
     for odx = 1:length(obsTypes)
         obsStruc.(obsTypes{odx}) = NaN(nSatTot,nEpochs);
     end
-    obsOut = nan(nSatTot,nEpochs,length(obsTypes));
+    obsOut = nan(nSatTot, nEpochs, length(obsTypes));
     
     if headerOnly
         % if we only want the header, ignore the rest of the file
@@ -265,37 +265,37 @@ else
             [time(k,1), date(k,:), num_sat, sat, sat_types, tow(k,1)] = navsu.readfiles.rinexGetEpoch(fid);
             
             if (k > nEpochs)
-                obsOutTemp = nan(size(obsOut,1),nEpochs+nEpochsAdd,size(obsOut,3),size(obsOut,4));
-                obsOutTemp(:,1:size(obsOut,2),:,:) = obsOut;
+                obsOutTemp = NaN(size(obsOut, 1), ...
+                                 nEpochs + nEpochsAdd, ...
+                                 size(obsOut, 3), ...
+                                 size(obsOut, 4));
+                obsOutTemp(:, 1:size(obsOut, 2), :, :) = obsOut;
                 obsOut = obsOutTemp;
-                obsOutTemp = [];
                 
-                dateTemp = nan(nEpochs+nEpochsAdd,size(date,2),size(date,3));
-                dateTemp(1:size(date,1),:,:) = date;
+                dateTemp = NaN(nEpochs + nEpochsAdd, ...
+                               size(date, 2), ...
+                               size(date, 3));
+                dateTemp(1:size(date, 1), :, :) = date;
                 date = dateTemp;
-                dateTemp = [];
                 
-                towTemp = nan(nEpochs+nEpochsAdd,size(tow,2),size(tow,3));
-                towTemp(1:size(tow,1),:) = tow;
+                towTemp = NaN(nEpochs+nEpochsAdd,size(tow,2),size(tow,3));
+                towTemp(1:size(tow, 1), :) = tow;
                 tow = towTemp;
-                towTemp = [];
                 
-                timeTemp = nan(nEpochs+nEpochsAdd,size(time,2),size(time,3));
-                timeTemp(1:size(time,1),:) = time;
+                timeTemp = NaN(nEpochs+nEpochsAdd,size(time,2),size(time,3));
+                timeTemp(1:size(time, 1), :) = time;
                 time = timeTemp;
-                timeTemp = [];
                 
                 weekTemp = zeros(nEpochs+nEpochsAdd,size(week,2),size(week,3));
-                weekTemp(1:size(week,1),:) = week;
+                weekTemp(1:size(week, 1), :) = week;
                 week = weekTemp;
-                weekTemp = [];
                 
                 nEpochs = nEpochs  + nEpochsAdd;
             end
             
             %read ROVER observations
             [~,obsMati] = navsu.readfiles.rinexGetObs(fid, num_sat, sat, sat_types, obsColumns, ...
-                nObsTypes, constellations,obsColumnsMat,obsTypes);
+                nObsTypes, constellations, obsColumnsMat, obsTypes);
             
             obsOut(:,k,:) = obsMati;
             
@@ -330,7 +330,7 @@ end
 obsFields = fieldnames(obsStruc);
 idxObsTypesCarrier = ... % LLI applies to carrier observations only (obs codes 'Lxx')
     find(strcmp(cellfun(@(x) x(1), obsFields, 'UniformOutput', false),'L'));
-for idxLLI = 1:length(idxObsTypesCarrier),
+for idxLLI = 1:length(idxObsTypesCarrier)
     dummy = obsStruc.(obsFields{idxObsTypesCarrier(idxLLI)});
     idxBlankFlag = (dummy>0 & dummy<10); % handle blank lines (which parse as zeros) with non-zero LLI flags
     dummy(idxBlankFlag) = dummy(idxBlankFlag)/10000; % shift flag into .0001's digit position

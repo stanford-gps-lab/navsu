@@ -26,54 +26,34 @@ function los_xyzb=findLosXyzb(xyz_usr, xyz_sat, losmask,flagPairs)
 %2001Mar26 Created by Todd Walter
 %2001Apr26 Modified by Wyant Chan   -   Added losmask feature
 %2009Nov23 Modified by Todd Walter - Changed sign convention
+%2021Oct08 Modified by Fabian Rothmaier - Simplifications and speedup
 
 if nargin < 4
-    flagPairs = 0;
+    flagPairs = false;
 end
 
 if ~flagPairs
-    [n_usr tmp]=size(xyz_usr);
-    [n_sat tmp]=size(xyz_sat);
-    n_los=n_usr*n_sat;
+    n_usr = size(xyz_usr, 1);
+    n_sat = size(xyz_sat, 1);
     if (nargin==2) || isempty(losmask)
-        losmask = [1:n_los]';
+        losmask = true(n_usr * n_sat, 1);
     end
-    n_mask = size(losmask,1);
     
-    %initialize 4th column of the line of sight vector
-    los_xyzb = ones(n_mask,4);
+    % bring user and satellite positions to the right dimensions
+    xyz_usr = repelem(xyz_usr, n_sat, 1);
+    xyz_sat = repmat(xyz_sat, n_usr, 1);
     
-    %build the line of sight vector
-    [t1 t2]=meshgrid(xyz_usr(:,1),xyz_sat(:,1));
-    t1 = reshape(t1,n_los,1);
-    t2 = reshape(t2,n_los,1);
-    los_xyzb(:,1) = t2(losmask) - t1(losmask);
-    
-    [t1 t2]=meshgrid(xyz_usr(:,2),xyz_sat(:,2));
-    t1 = reshape(t1,n_los,1);
-    t2 = reshape(t2,n_los,1);
-    los_xyzb(:,2) = t2(losmask) - t1(losmask);
-    
-    [t1 t2]=meshgrid(xyz_usr(:,3),xyz_sat(:,3));
-    t1 = reshape(t1,n_los,1);
-    t2 = reshape(t2,n_los,1);
-    los_xyzb(:,3) = t2(losmask) - t1(losmask);
-    
-    %normalize first three columns
-    mag=sqrt(sum(los_xyzb(:,1:3)'.^2))';
-    los_xyzb(:,1)=los_xyzb(:,1)./mag;
-    los_xyzb(:,2)=los_xyzb(:,2)./mag;
-    los_xyzb(:,3)=los_xyzb(:,3)./mag;
-    
-else
-    
-    los_xyzb = [xyz_sat-xyz_usr ones(size(xyz_usr,1),1)];
-    
-    %normalize first three columns
-    mag=sqrt(sum(los_xyzb(:,1:3)'.^2))';
-    los_xyzb(:,1)=los_xyzb(:,1)./mag;
-    los_xyzb(:,2)=los_xyzb(:,2)./mag;
-    los_xyzb(:,3)=los_xyzb(:,3)./mag;
+    % limit to desired lines of sight
+    xyz_usr = xyz_usr(losmask, :);
+    xyz_sat = xyz_sat(losmask, :);
     
 end
+
+% compute xyz lines of sight
+los_xyzb = [xyz_sat-xyz_usr ones(size(xyz_usr,1),1)];
+
+%normalize first three columns
+mag = sqrt(sum(los_xyzb(:, 1:3).^2, 2));
+los_xyzb(:, 1:3) = los_xyzb(:, 1:3) ./ mag;
+
 end

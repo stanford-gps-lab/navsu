@@ -25,24 +25,19 @@ function los_enub = calcLosEnub(los_xyzb, e_hat, n_hat, u_hat)
 
 %2001Mar26 Created by Todd Walter
 %2009Nov23 Modified by Todd Walter - Changed sign convention
+%2021Oct08 Modified by Fabian Rothmaier - Simplified notation
 
-% Check if e,n,u_hat are correct size and repmat if not
-if size(e_hat,1) == 1 && size(los_xyzb,1) ~= 1
-    e_hat = repmat(e_hat,size(los_xyzb,1),1);
-    n_hat = repmat(n_hat,size(los_xyzb,1),1);
-    u_hat = repmat(u_hat,size(los_xyzb,1),1);
-end
 
 %initialize 4th column of the line of sight vector
-los_enub(:,4)=los_xyzb(:,4);
+los_enub(:, 4) = los_xyzb(:, 4);
 
 %dot the east unit vector with the los vector to determine -cos(elev)*sin(azim)
-los_enub(:,1)=sum((-e_hat.*los_xyzb(:,1:3))')';
+los_enub(:, 1) = sum(-e_hat.*los_xyzb(:, 1:3), 2);
 
 %dot the north unit vector with the los vector to determine -cos(elev)cos(azim)
-los_enub(:,2)=sum((-n_hat.*los_xyzb(:,1:3))')';
+los_enub(:, 2) = sum(-n_hat.*los_xyzb(:, 1:3), 2);
 
 %dot the up unit vector with the los vector to determine -sin(elevation)
-los_enub(:,3)=sum((-u_hat.*los_xyzb(:,1:3))')';
+los_enub(:, 3) = sum(-u_hat.*los_xyzb(:, 1:3), 2);
 
 end
