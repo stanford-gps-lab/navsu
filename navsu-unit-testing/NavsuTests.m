@@ -7,7 +7,8 @@ classdef NavsuTests <  matlab.unittest.TestCase
             % directory.
 
             if ~ispc
-                fileList = navsu.ftp.curlGetDirectoryContents('ftp://gdc.cddis.eosdis.nasa.gov/gnss/data/campaign/mgex/daily/rinex3/2020/brdm/');
+                fileName = 'ftp://gdc.cddis.eosdis.nasa.gov/gnss/data/campaign/mgex/daily/rinex3/2020/brdm/';
+                fileList = navsu.ftp.curlGetDirectoryContents(fileName);
                 % should have exactly 176 files
                 testCase.verifyEqual(numel(fileList), 176);
                 % test the name of the last
