@@ -1,20 +1,20 @@
 function measRemovedSlip = manageStatesMulti(obj,epoch,obs)
 
-if length(obj) > 1
+multiFilter = length(obj) > 1;
+
+if multiFilter
     objList = obj;
     obj = objList(1);
-    multiFilter = true;
     nFilter = length(objList);
 else
     objList = [];
-    multiFilter = false;
 end
 
 PARAMS = obj.PARAMS;
 
-gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+gnssMeas = navsu.ppp.pullMeasFromList(obs, navsu.internal.MeasEnum.GNSS);
 
-gnssMeas = navsu.ppp.measMask(gnssMeas,PARAMS.measMask);
+gnssMeas = navsu.ppp.measMask(gnssMeas, PARAMS.measMask);
 
 
 if isempty(gnssMeas)
@@ -24,7 +24,7 @@ if isempty(gnssMeas)
 end
 
 % Check for cycle slips so that these can be removed and reset
-measRemovedSlip = obj.checkCycleSlips(epoch,gnssMeas,PARAMS);
+measRemovedSlip = obj.checkCycleSlips(epoch, gnssMeas, PARAMS);
 
 if multiFilter && ~isempty(measRemovedSlip)
     for fdx = 2:nFilter
@@ -53,8 +53,8 @@ stateTypes = {'cp'; ... % 1
     'EPH'};             % 6
   
 stateUse   = [true; ...
-    PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'L1DELAYSTATE'); ...
-    PARAMS.states.iono && strcmp(PARAMS.states.ionoMode,'TECSTATE'); ...
+    PARAMS.states.iono && strcmp(PARAMS.states.ionoMode, 'L1DELAYSTATE'); ...
+    PARAMS.states.iono && strcmp(PARAMS.states.ionoMode, 'TECSTATE'); ...
     PARAMS.states.RX_DCB_GLO;...
     PARAMS.states.RX_DCB_GPS;...
     PARAMS.states.MP_CODE; ...
@@ -79,7 +79,7 @@ for sdx = 1:length(stateTypes)
         obj.cov(:,obj.INDS_STATE.FLEX_STATES(stateNotNeeded),:) = [];
         obj.INDS_STATE.FLEX_STATES_INFO(stateNotNeeded,:) = [];
         obj.INDS_STATE.FLEX_STATES = obj.INDS_STATE.FLEX_STATE_MIN-1+...
-            [1:size(obj.INDS_STATE.FLEX_STATES_INFO,1)]';
+            (1:size(obj.INDS_STATE.FLEX_STATES_INFO,1))';
         
         if multiFilter
             for fdx = 2:nFilter
@@ -88,7 +88,7 @@ for sdx = 1:length(stateTypes)
                 objList(fdx).cov(:,objList(fdx).INDS_STATE.FLEX_STATES(stateNotNeeded),:) = [];
                 objList(fdx).INDS_STATE.FLEX_STATES_INFO(stateNotNeeded,:) = [];
                 objList(fdx).INDS_STATE.FLEX_STATES = objList(fdx).INDS_STATE.FLEX_STATE_MIN-1+...
-                    [1:size(objList(fdx).INDS_STATE.FLEX_STATES_INFO,1)]';
+                    (1:size(objList(fdx).INDS_STATE.FLEX_STATES_INFO,1))';
             end
         end
     end    
@@ -98,7 +98,7 @@ for sdx = 1:length(stateTypes)
         infoAdd = measInfoAvail(idx,:);
 
         % Pull initial values for the state and covariance
-        [stateAdd,covAdd] = navsu.ppp.initStateCov(stateTypes{sdx},infoAdd,PARAMS,gnssMeas);
+        [stateAdd,covAdd] = navsu.ppp.initStateCov(stateTypes{sdx}, infoAdd, PARAMS, gnssMeas);
         
         indStateAdd = obj.INDS_STATE.FLEX_STATE_MIN+length(obj.INDS_STATE.FLEX_STATES);
         
@@ -136,10 +136,6 @@ for sdx = 1:length(stateTypes)
         end
     end
 end
-
-
-
-
 
 
 end

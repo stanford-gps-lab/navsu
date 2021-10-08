@@ -94,7 +94,7 @@ end
 %% Do the measurement update
 if nMeas > 0
     % Measurement were available- do the update.
-    [H,delta_z,residsPost,K,~,measMatRemoved,R,measIdRemoved,measId] = ...
+    [H,delta_z,residsPost,K,~,~,~,measIdRemoved,measId] = ...
         navsu.ppp.measUpdateExclude(H,covPropagated,R,predMeas,PARAMS,meas,measId);
     
     % 9. Update state estimates
@@ -112,7 +112,6 @@ else
     
     cov = covPropagated;
     
-    measMatRemoved = zeros(0,6);
     residsPost = [];
     measIdRemoved= [];
     
@@ -150,7 +149,7 @@ if ~isempty(measIdRemovedFull)
 end
 
 %% Save things for output
-if ~isempty(gnssMeas) & nMeas > 0
+if ~isempty(gnssMeas) && nMeas > 0
     measGnss = measId([measId.TypeID] == navsu.internal.MeasEnum.GNSS);
     if ~isempty(measGnss)
         obj.allSatsSeen = sortrows(unique([[[measGnss.prn]' [measGnss.const]']; obj.allSatsSeen],'rows'),2);
@@ -193,7 +192,7 @@ end
 end
 
 
-function [predMeas,H,R,measId,meas] = catMeas(predMeas,predMeasi,H,Hi,R,Ri,measId,measIdi,meas,measi);
+function [predMeas,H,R,measId,meas] = catMeas(predMeas,predMeasi,H,Hi,R,Ri,measId,measIdi,meas,measi)
 
 
 % concatenate the measurement information!

@@ -77,7 +77,8 @@ classdef pppFilter < navsu.estimators.AbstractNavFilter
         % the time AND measurement update :O
         [measId,extraInputs] = update(obj,epoch,obs,corrData,varargin)
         
-        manageStates(obj,epoch,gnssMeas,PARAMS,outStruc);
+        measRemovedSlip = manageStates(obj,epoch,gnssMeas,PARAMS,outStruc)
+        measRemovedSlip = manageStatesMulti(obj,epoch,obs);
         measRemoved = checkCycleSlips(obj,epoch,gnssMeas,PARAMS);
         removeFlexState(obj,measInfoRemove);
         
