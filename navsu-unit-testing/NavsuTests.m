@@ -12,7 +12,7 @@ classdef NavsuTests <  matlab.unittest.TestCase
                 % should have exactly 176 files
                 testCase.verifyEqual(numel(fileList), 176);
                 % test the name of the last
-                testCast.verifyTrue(strcmp(fileList{end}, 'brdm1900.20p.Z'));
+                testCase.verifyTrue(strcmp(fileList{end}, 'brdm1900.20p.Z'));
             else
                 warning('Could not test cURL function. Missing netrc file.');
             end
