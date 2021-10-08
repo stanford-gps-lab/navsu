@@ -59,12 +59,18 @@ datai.initClockData(year, doy);
 datai.initIonoData(year, doy);
 
 % Initialize DCB data
+% (corrections used only when processing actual measurements. See
+% run_ppp_multiconst.m example.
 datai.initDcb(year, doy);
 
 % Initialize antenna phase center data
+% (Accounts for offset between satellite COM and actual antenna phase
+% center when propagating precise orbits.)
 datai.initAtxData('igs14_sats_only.atx');
 
 % Also initialize broadcast orbit data
+% (In case we want to compute satellite positions using the broadcast nav
+% files.)
 datai.initBroadcastData(year, doy);
 
 
