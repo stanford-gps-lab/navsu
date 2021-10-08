@@ -17,7 +17,7 @@ classdef NavsuTests <  matlab.unittest.TestCase
                     % test the name of the last
                     testCase.verifyTrue(strcmp(fileList{end}, 'brdm1900.20p.Z'));
                 else
-                    warning('No curl distribution found. Cannot run this test.')
+                    warning('No curl distribution found. Cannot run this test.');
                 end
             else
                 warning('Could not test cURL function. Missing netrc file.');
