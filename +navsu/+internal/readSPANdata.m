@@ -1,4 +1,4 @@
-function outData = readSPANdata(filename,varargin)
+function outData = readSPANdata(filename, varargin)
 
 % file extension
 [~,~,fileExt] = fileparts(filename);
@@ -25,7 +25,7 @@ textdata = importdata(filename);
 
 % Vehicle data log :)
 if VEHICLEDATASA && ~isempty(find(contains(textdata,'%VEHICLEDATASA'), 1))
-    indsi  = find(contains(textdata,'%VEHICLEDATASA'));
+    indsi  = contains(textdata,'%VEHICLEDATASA');
     
     formati = '%f%f%f%f%f%f%f%f%s%s%s%f%f%f%f%f%f%s';
 
@@ -63,7 +63,7 @@ end
 
 if RAWIMUSXA && ~isempty(find(contains(textdata,'%RAWIMUSXA'), 1))
     % find imudata
-    indsi  = find(contains(textdata,'%RAWIMUSXA'));
+    indsi  = contains(textdata,'%RAWIMUSXA');
     formati = '%f,%f;%f,%f,%f,%f,%8s,%f,%f,%f,%f,%f,%f';
     
     tempi = textdata(indsi);
@@ -195,7 +195,6 @@ if RANGEA && ~isempty(find(contains(textdata,'#RANGEA'), 1))
     % Pull off extra data
     dataFull = dataFull(1:(indData-1),:);
     epochsFull = navsu.time.gps2epochs(dataFull(:,2),dataFull(:,3));
-    epochs = unique(epochsFull);
     epochs = epochsi;
     
     prnConstSig = unique(dataFull(:,[4 19 21]),'rows');
@@ -218,7 +217,9 @@ if RANGEA && ~isempty(find(contains(textdata,'#RANGEA'), 1))
     constInds = constellations.constInds;
     sInds     = constellations.indexes;
     
-    outData.RANGEA.obsData = [];
+    outData.RANGEA.meas = [];
+    outData.RANGEA.PRN = prns;
+    outData.RANGEA.constInds = constInds;
     outData.RANGEA.epochs = epochs;
     % go through each one and add it
     for idx = 1:nPrnConstSig
@@ -228,13 +229,13 @@ if RANGEA && ~isempty(find(contains(textdata,'#RANGEA'), 1))
         
         switch consti
             case 1 % GPS
-                sigInds = [0 5 9 14 17 16]';
-                sigMap = {'C1C','L1C','D1C','S1C'; % 0 L1CA
-                    'C1L','L1L','D1L','S1L'; % 5 L1C(P)
-                    'C2S','L2S','D2S','S2S'; % 9 L2C(M)
-                    'C2P','L2P','D2P','S2P'; % 14 L2P
-                    'C2W','L2W','D2W','S2W'; % 16 L2P(Y)
-                    'C5Q','L5Q','D5Q','S5Q'}; % 17 L5(Q)
+%                 sigInds = [0 5 9 14 17 16]';
+%                 sigMap = {'C1C','L1C','D1C','S1C'; % 0 L1CA
+%                     'C1L','L1L','D1L','S1L'; % 5 L1C(P)
+%                     'C2S','L2S','D2S','S2S'; % 9 L2C(M)
+%                     'C2P','L2P','D2P','S2P'; % 14 L2P
+%                     'C2W','L2W','D2W','S2W'; % 16 L2P(Y)
+%                     'C5Q','L5Q','D5Q','S5Q'}; % 17 L5(Q)
                 
                 sigInds = [0 5 17 14 9 16]';
                 sigMap = {'C1C','L1C','D1C','S1C'; % 0 L1CA
@@ -268,47 +269,46 @@ if RANGEA && ~isempty(find(contains(textdata,'#RANGEA'), 1))
         
         sigNamesi = sigMap(sigInds == sigNovi,:);
         
-        if ~isfield(outData.RANGEA.obsData,sigNamesi{1})
+        if ~isfield(outData.RANGEA.meas,sigNamesi{1})
             % make all of them
             for jdx = 1:length(sigNamesi)
-                outData.RANGEA.obsData.(sigNamesi{jdx}) = nan(length(prns),nEpochs);
-                outData.RANGEA.tLock.(sigNamesi{jdx})   = nan(length(prns),nEpochs);
-                outData.RANGEA.carrPhaseHalfCycle.(sigNamesi{jdx})   = zeros(length(prns),nEpochs);
+                outData.RANGEA.meas.(sigNamesi{jdx})  = nan(length(prns), nEpochs);
+                outData.RANGEA.tLock.(sigNamesi{jdx}) = nan(length(prns), nEpochs);
+                outData.RANGEA.carrPhaseHalfCycle.(sigNamesi{jdx})   = zeros(length(prns), nEpochs);
             end
         end
         
         % map to the right things - code, carrier, snr measurements
-        indsi = find(dataFull(:,4) == prnConstSig(idx,1) &  ...
-            dataFull(:,19) == prnConstSig(idx,2) & ...
-            dataFull(:,21) == prnConstSig(idx,3));
-        datai = dataFull(indsi ,:);
+        indsi = all(dataFull(:, [4 19 21]) == prnConstSig(idx, :), 2);
+        
+        datai = dataFull(indsi, :);
         epochsi = epochsFull(indsi);
         
         % Everything in its right place
-        [~,indsLeft] =ismember(epochsi,epochs);
+        [~,indsLeft] =ismember(epochsi, epochs);
         
         % code phase
-        outData.RANGEA.obsData.(sigNamesi{1})(sIndi,indsLeft) = datai(:,6);
+        outData.RANGEA.meas.(sigNamesi{1})(sIndi,indsLeft) = datai(:,6);
         % carrier phase
-        outData.RANGEA.obsData.(sigNamesi{2})(sIndi,indsLeft) = -datai(:,8);
+        outData.RANGEA.meas.(sigNamesi{2})(sIndi,indsLeft) = -datai(:,8);
         % doppler
-        outData.RANGEA.obsData.(sigNamesi{3})(sIndi,indsLeft) = datai(:,10);
+        outData.RANGEA.meas.(sigNamesi{3})(sIndi,indsLeft) = datai(:,10);
         % SNR
-        outData.RANGEA.obsData.(sigNamesi{4})(sIndi,indsLeft) = datai(:,11);
+        outData.RANGEA.meas.(sigNamesi{4})(sIndi,indsLeft) = datai(:,11);
         % Save carrier lock time as well
-        outData.RANGEA.tLock.(sigNamesi{2})(sIndi,indsLeft)   = datai(:,12);
+        outData.RANGEA.tLock.(sigNamesi{2})(sIndi,indsLeft)= datai(:,12);
         % Tracking status
-        outData.RANGEA.carrPhaseHalfCycle.(sigNamesi{2})(sIndi,indsLeft)   = datai(:,23);
+        outData.RANGEA.carrPhaseHalfCycle.(sigNamesi{2})(sIndi,indsLeft) = datai(:,23);
     end
     
     
     if correctHalfCycle
         % Adjust all ranges for the half cycle offset applied by the
         % receiver for when it incorrectly initialized the phase
-        fields = fieldnames(outData.RANGEA.obsData);
+        fields = fieldnames(outData.RANGEA.meas);
         
         for idx = 1:length(fields)
-            outData.RANGEA.obsData.(fields{idx}) =  outData.RANGEA.obsData.(fields{idx})+...
+            outData.RANGEA.meas.(fields{idx}) =  outData.RANGEA.meas.(fields{idx})+...
                 outData.RANGEA.carrPhaseHalfCycle.(fields{idx})*0.5;
         end
         

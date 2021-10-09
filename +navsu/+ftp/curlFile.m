@@ -108,9 +108,11 @@ for ddx = 1:length(dayList)
                 navsu.ftp.curlDownloadSingleFile([sourcePath serverName], target_dir, netrcFile, cookieFile);
                 change = 1;
                 
-                if unzipFlag
-                    navsu.readfiles.unzipFile(fullfile(target_dir,  serverName));
-                end
+            end
+            
+            if desired && unzipFlag
+                % the zip should now exist locally
+                navsu.readfiles.unzipFile(fullfile(target_dir, serverName));
             end
             
         end

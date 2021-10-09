@@ -30,7 +30,7 @@ imuMeas.tow         = imuMeasRaw.tow(indsMeas,:);
 imuMeas.imuStatus   = imuMeasRaw.imuStatus(indsMeas,:);
 imuMeas.acc         = imuMeasRaw.acc(indsMeas,:);
 imuMeas.gyro        = imuMeasRaw.gyro(indsMeas,:);
-imuMeas.type        = imuMeasRaw.type;
+imuMeas.type        = navsu.internal.MeasEnum.IMU;
 
 
 

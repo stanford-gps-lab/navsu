@@ -138,8 +138,9 @@ else
                 else
                     center3 = upper(clkCenter);
                 end
-                PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-                pathStr = sprintf(PpathNameFormat, yr, dayNum);
+                PpathNameFormat = '/%d/%03d/';
+                pathStr = fullfile(settings.preciseProdDir, ...
+                                   sprintf(PpathNameFormat, yr, dayNum));
                 
                 fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  num2str(dayNum,'%03d')];
                 % check the directory for a file from that day
@@ -185,29 +186,31 @@ else
     elseif all(settings.constUse ==  [0 1 0 0 0])
         GloPclkSource = 'MGEX';
         switch GloPclkSource
-            case 'IGS'
-                %precise clock file
-                station = 'emx'; % emx/grm
-                CfileNameFormat = [station '%04d%01d.clk'];
-                CpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-                
-                % get 30 second clock data from prior and current days
-                CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
-                tmp = sprintf(CpathNameFormat, yr);
-                if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = readRinexClock([tmp CFileName],24);
-                    Cepochs = Cepochs + 86400*(gps_day);
-                    
-                    Clck.Cepochs  = Cepochs;
-                    Clck.Cclk     = Cclk;
-                    Clck.Cclk_sig = Cclk_sig;
-
-                end
+%             case 'IGS'
+%                 %precise clock file
+%                 station = 'emx'; % emx/grm
+%                 CfileNameFormat = [station '%04d%01d.clk'];
+%                 CpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
+%                 
+%                 % get 30 second clock data from prior and current days
+%                 CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
+%                 tmp = sprintf(CpathNameFormat, yr);
+%                 if ~FLAG_NO_LOAD
+%                     [Cepochs, Cclk, Cclk_sig] = readRinexClock([tmp CFileName],24);
+%                     Cepochs = Cepochs + 86400*(gps_day);
+%                     
+%                     Clck.Cepochs  = Cepochs;
+%                     Clck.Cclk     = Cclk;
+%                     Clck.Cclk_sig = Cclk_sig;
+% 
+%                 end
             case 'MGEX'
                 clkCenter = settings.gloClkCenter;
                 
-                PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-                pathStr = sprintf(PpathNameFormat, yr,dayNum);
+                PpathNameFormat = '/%d/%03d/';
+                pathStr = fullfile(settings.preciseProdDir, ...
+                                   sprintf(PpathNameFormat, yr, dayNum));
+                
                 if strcmp(clkCenter,'com')
                     center3 = 'COD';
                 else
@@ -257,8 +260,10 @@ else
     elseif all(settings.constUse ==  [0 0 1 0 0])
         clkCenter = settings.galClkCenter;
         
-        PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-        pathStr = sprintf(PpathNameFormat, yr,dayNum);
+        PpathNameFormat = '/%d/%03d/';
+        pathStr = fullfile(settings.preciseProdDir, ...
+                           sprintf(PpathNameFormat, yr, dayNum));
+        
         if strcmp(clkCenter,'com')
             center3 = 'COD';
         else
@@ -297,11 +302,14 @@ else
         end
         CFileNameFull = {[tmp CFileName]};
         CFileName = {CFileName};
+        
     elseif all(settings.constUse ==  [0 0 0 1 0])
         clkCenter = settings.bdsClkCenter;
         
-        PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-        pathStr = sprintf(PpathNameFormat, yr,dayNum);
+        PpathNameFormat = '/%d/%03d/';
+        pathStr = fullfile(settings.preciseProdDir, ...
+                           sprintf(PpathNameFormat, yr, dayNum));
+                       
         if strcmp(clkCenter,'com')
             center3 = 'COD';
         else
@@ -310,8 +318,9 @@ else
         fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  num2str(dayNum,'%03d')];
         % check the directory for a file from that day
         diri = dir(pathStr);
-        fileInd = find(~cellfun(@isempty,strfind({diri.name},fname1)) & cellfun(@isempty,strfind({diri.name},'.gz')) ...
-            & ~cellfun(@isempty,strfind({diri.name},'CLK'))   );
+        fileInd = find(contains({diri.name}, fname1) ...
+                     & ~contains({diri.name}, '.gz') ...
+                     & ~contains({diri.name}, 'CLK'));
         
         if ~isempty(fileInd)
             tmp = pathStr;
@@ -340,10 +349,8 @@ else
         CFileName = {CFileName};
         
     else
-        consts = {'GPS','GLO','GAL','BDS','SBAS'};
         settings2 = settings;
         
-        tmp = [];
         CFileName = {};
         
         PRNs = [];

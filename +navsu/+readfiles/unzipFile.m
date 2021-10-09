@@ -1,4 +1,4 @@
-function [status,result] = unzipFile(filename,outLocation)
+function [status,result] = unzipFile(filename, outLocation, overwrite)
 % unzipFile
 % DESCRIPTION:
 %   Unzip a given file using the portable version of 7zip included in the
@@ -8,6 +8,7 @@ function [status,result] = unzipFile(filename,outLocation)
 % OPTIONAL INPUTS:
 %   outLocation - If desired, you can specify a different output location
 %                 than the same folder as the input file
+%   overwrite   - Should local files be overwritten?
 %
 % OUTPUT:
 %   status      - status output by 7zip or other uncompression utility
@@ -18,6 +19,17 @@ function [status,result] = unzipFile(filename,outLocation)
 % No output location specified- unzip to same directory
 if nargin == 1 
    outLocation = fileparts(filename); 
+end
+if nargin < 3
+    overwrite = false;
+end
+
+% check if file already exists locally
+[path, fileName, ~] = fileparts(filename);
+if isfile(fullfile(path, fileName)) && ~overwrite
+    % unzipped file already exists!
+    result = []; status = 0;
+    return
 end
 
 if ispc
@@ -32,7 +44,7 @@ if ispc
     
 else
     
-    if endsWith(filename, '.zip', 'IgnoreCase', true), % {gunzip, uncompress}: these fail (tested on macOS 10.14)
+    if endsWith(filename, '.zip', 'IgnoreCase', true) % {gunzip, uncompress}: these fail (tested on macOS 10.14)
         
         try
             result = unzip(filename, outLocation); status = 0;            
@@ -40,7 +52,7 @@ else
             result = []; status = 1;
         end
         
-    elseif endsWith(filename, '.gz', 'IgnoreCase', true),  % {unzip, uncompress}: these fail (tested on macOS 10.14)
+    elseif endsWith(filename, '.gz', 'IgnoreCase', true)  % {unzip, uncompress}: these fail (tested on macOS 10.14)
         
         % MATLAB built-in gunzip introduced before R2006a)
         try
@@ -52,10 +64,10 @@ else
         %   [status,result] = system(['gunzip ' filename]);
         
                 
-    elseif endsWith(filename, '.Z'),
+    elseif endsWith(filename, '.Z')
         
         % host machine's native executable
-        [status,result] = system(['gunzip ' filename]);
+        [status,result] = system(['gunzip "' filename '"']);
         
         % (MAY ALSO WORK:) host machine's native uncompress executable, if available
         % [status,result] = system(['uncompress ' filename]);

@@ -131,7 +131,6 @@ switch inChoice
                 center3 = 'COD';
             end
             
-            jdChange = [];
             % try old format
             [YearChange1,dayChange1] = navsu.ftp.curlFile(YearList,dayList,ftpStruc,netrcFile,cookieFile,center,exts{1});
             % try new format!
