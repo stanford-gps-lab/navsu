@@ -120,6 +120,10 @@ for idx = 1:length(prns)
             ind1 = find(Pepochsi <= epochi, 1, 'last') - floor(n/2);
             ind2 = find(Pepochsi > epochi, 1, 'first') + floor(n/2) - 1;
     end
+    
+    % make sure ind1, ind2 are within legal limits
+    ind1 = max(ind1, 1);
+    ind2 = min(ind2, size(Pposi, 1));
     if isempty(ind1) || isempty(ind2) || any(isnan(Pposi(ind1:ind2, :)), 'all') 
         continue
     end

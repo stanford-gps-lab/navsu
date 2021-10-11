@@ -58,30 +58,40 @@ end
 
 svn = NaN(size(prn));
 
+% get constellation - source combinations to consider
+unCS = unique([const, source], 'rows');
 
-for idx = 1:length(prn)
-
-    % Pull svndata table
-    svndata = navsu.svprn.constSvnData(const(idx),source(idx));
-
-    %find start date in jd
+for csdx = 1:size(unCS, 1)
+    % retrieve constellation and source
+    consti = unCS(csdx, 1);
+    sourcei = unCS(csdx, 2);
+    
+    % Pull corresponding svndata table
+    svndata = navsu.svprn.constSvnData(consti, sourcei);
+    
+    % find start date in jd
     epStart = navsu.time.cal2jd_vect(svndata(:,3), svndata(:,4), ...
         svndata(:,5)) + (svndata(:,6) + svndata(:,7)/60)/24;
-    %find end date in jd
+    % find end date in jd
     epEnd = navsu.time.cal2jd_vect(svndata(:,8), svndata(:,9), ...
         svndata(:,10)) + (svndata(:,11) + svndata(:,12)/60)/24;
     % fix infinities
     epEnd(svndata(:,8) == Inf) = Inf;
-
-    prni = prn(idx);
-    epochi = epoch(idx);
+    
+    % save svn for satellites that are part of this case
+    
+    idx = find(const == consti & source == sourcei);
+    prni = prn(idx)';
+    epochi = epoch(idx)';
     sdx = prni == svndata(:,2) ...
         & epochi >= epStart ...
         & epochi < epEnd;
+    % which PRNs do I have data for?
+    haveData = any(sdx, 1);
+    % get indices in SVN table, store SVN numbers
+    sdxInd = find(sdx) - size(svndata, 1)*(find(haveData)'-1);
+    svn(idx(haveData)) = svndata(sdxInd, 1);
     
-    if any(sdx)
-        svn(idx) = svndata(sdx, 1);
-    end
 end
 
 end

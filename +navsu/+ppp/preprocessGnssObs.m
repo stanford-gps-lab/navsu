@@ -21,7 +21,7 @@ obsInds    = repmat([1 2 3 4],1,3); % 1 = code, 2 = carrier, 3 = snr, 4 = dopple
 signalInds = kron(1:3,ones(1,4));
 
 
-%%
+%% Extract which measurements should be used
 if isempty(obsDes) || 1
     % No specific observations were specified- check whats's available in
     % the input observations
@@ -161,7 +161,7 @@ freqDes2(haveObs) = cellfun(@(x) str2double(x(2)), obsTypes(haveObs));
 
 [freqs, freqInds] = navsu.svprn.mapSignalFreq(freqDes2(obsInds == 1 | obsInds == 2,:)',prns,constInds,jdu(1));
 
-[freqsDop, freqIndsDop] = navsu.svprn.mapSignalFreq(freqDes2(obsInds == 4,:)',prns,constInds,jdu(1));
+[freqsDop, ~] = navsu.svprn.mapSignalFreq(freqDes2(obsInds == 4,:)',prns,constInds,jdu(1));
 
 
 prph12   = squeeze(obsOut(obsInds == 1 | obsInds == 2,:,:));
@@ -177,15 +177,14 @@ dop12    = squeeze(obsOut(obsInds == 4,:,:));
 dopType  = squeeze(obsTypes(obsInds == 4,:));
 dopSig   = signalInds(obsInds == 4);
 
-c = navsu.constants.c;
 
 % convert carrier phase from cycles to meters
 prph12(prphInd == 2, :, :) = prph12(prphInd == 2, :, :) ...
                              ./ permute(freqs(:, prphInd == 2), [2 3 1]) ...
-                             * c;
+                             * navsu.constants.c;
 
 % convert doppler from cycles/second to meters/second
-dop12 = dop12 ./ permute(freqsDop, [2 3 1]) * c;
+dop12 = dop12 ./ permute(freqsDop, [2 3 1]) * navsu.constants.c;
 
 
 %% Load dcb data
@@ -425,14 +424,11 @@ elseif dcbType == 6 && ~isempty(corrData.dcb)
                         end
                 end
                 
-                dcbCorr(idx,jdx) = biasi;
+            elseif consti == 2
+                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,{'AJAC'});
             end
             
-            if consti == 2
-                biasi = navsu.readfiles.findDcbElement(prni,consti,obsi,{'ABS'},epochDcb,dcbData,{'AJAC'});
-                
-                dcbCorr(idx,jdx) = biasi;
-            end
+            dcbCorr(idx,jdx) = biasi;
             
             % GLONASS adjustments for IGS stations (if using CODE IFB/DCB)
             if any(strcmp(obsi{1}, {'C1P', 'C2P'})) && consti == 2 && ~isempty(statCode)
@@ -451,7 +447,7 @@ end
     
 dcbCorr(isnan(dcbCorr)) = 0;
 % Apply the corrections to the observations
-prph12i = prph12 - permute(dcbCorr*c, [1 3 2]);
+prph12i = prph12 - permute(dcbCorr*navsu.constants.c, [1 3 2]);
 prph12i(prph12 == 0) = 0;
 prph12i(isnan(prph12i)) = 0;
 
@@ -510,7 +506,7 @@ if ~isempty(obsGnssRaw.tLock)
     lockTime = nan(size(prph12i));
     % Loop through each satellite
     for pdx = 1:length(prns)
-        indSat = find(obsGnssRaw.PRN == prns(pdx) & obsGnssRaw.constInds == constInds(pdx));
+        indSat = obsGnssRaw.PRN == prns(pdx) & obsGnssRaw.constInds == constInds(pdx);
         % Loop through each signal
         for jdx = 1:size(prph12i,1)
             %             indSignal
@@ -523,11 +519,11 @@ if ~isempty(obsGnssRaw.tLock)
             
             if length(sigNamei) == 3
                 % single frequency
-                lockTimei = obsGnssRaw.tLock.(sigNamei)(indSat,:);
+                lockTimei = obsGnssRaw.tLock.(sigNamei)(indSat, :);
             else
                 % dual frequency- take the minimum of both
-                lockTimei = min([obsGnssRaw.tLock.(sigNamei(1:3))(indSat,:);
-                    obsGnssRaw.tLock.(sigNamei(4:6))(indSat,:)]);
+                lockTimei = min([obsGnssRaw.tLock.(sigNamei(1:3))(indSat, :);
+                                 obsGnssRaw.tLock.(sigNamei(4:6))(indSat, :)]);
             end
             
             lockTime(jdx,:,pdx) = lockTimei;
@@ -545,17 +541,17 @@ obsGnss.constInds = constInds;
 obsGnss.epochs    = epochs;
 obsGnss.freqs     = freqs';
 
-obsGnss.range.obs         = permute(prph12i,[1 3 2]);
+obsGnss.range.obs         = permute(prph12i, [1 3 2]);
 obsGnss.range.rnxCode     = prphType;
-obsGnss.range.ind         = repmat(prphInd',1,size(obsGnss.range.obs,2));
-obsGnss.range.sig         = repmat(prphSig',1,size(obsGnss.range.obs,2));
+obsGnss.range.ind         = repmat(prphInd', 1, size(obsGnss.range.obs,2));
+obsGnss.range.sig         = repmat(prphSig', 1, size(obsGnss.range.obs,2));
 obsGnss.range.freqs       = freqs';
-obsGnss.range.PRN         = repmat(prns,size(obsGnss.range.obs,1),1);
-obsGnss.range.constInds   = repmat(constInds,size(obsGnss.range.obs,1),1);
+obsGnss.range.PRN         = repmat(prns,      size(obsGnss.range.obs,1), 1);
+obsGnss.range.constInds   = repmat(constInds, size(obsGnss.range.obs,1), 1);
 obsGnss.range.lockTime    = permute(lockTime,[1 3 2]);
 
 
-temp = repelem(navsu.internal.MeasEnum.Code,size(obsGnss.range.ind,1),size(obsGnss.range.ind,2));
+temp = repelem(navsu.internal.MeasEnum.Code, size(obsGnss.range.ind,1), size(obsGnss.range.ind,2));
 temp(obsGnss.range.ind == 1) = navsu.internal.MeasEnum.Code;
 temp(obsGnss.range.ind == 2) = navsu.internal.MeasEnum.Carrier;
 obsGnss.range.subtype     = temp;
@@ -564,20 +560,20 @@ obsGnss.range.ID = navsu.internal.MeasIdGnss(obsGnss.range.PRN,obsGnss.range.con
 
 obsGnss.doppler.obs       = permute(dop12,[1 3 2]);
 obsGnss.doppler.rnxCode   = dopType;
-obsGnss.doppler.sig       = repmat(dopSig',1,size(obsGnss.doppler.obs,2));
+obsGnss.doppler.sig       = repmat(dopSig', 1, size(obsGnss.doppler.obs,2));
 obsGnss.doppler.freqs     = freqsDop';
-obsGnss.doppler.PRN       = repmat(prns,size(obsGnss.doppler.obs,1),1);
-obsGnss.doppler.constInds = repmat(constInds,size(obsGnss.doppler.obs,1),1);
-temp = repelem(navsu.internal.MeasEnum.Doppler,size(obsGnss.doppler.sig,1),size(obsGnss.doppler.sig,2));
+obsGnss.doppler.PRN       = repmat(prns,      size(obsGnss.doppler.obs,1), 1);
+obsGnss.doppler.constInds = repmat(constInds, size(obsGnss.doppler.obs,1), 1);
+temp = repelem(navsu.internal.MeasEnum.Doppler, size(obsGnss.doppler.sig,1), size(obsGnss.doppler.sig,2));
 obsGnss.doppler.subtype     = temp;
 
 obsGnss.doppler.ID = navsu.internal.MeasIdGnss(obsGnss.doppler.PRN,obsGnss.doppler.constInds,obsGnss.doppler.sig,temp);
 
 obsGnss.snr.obs           = permute(snr12,[1 3 2]);
-obsGnss.snr.rnxCode       = repmat(snrType',1,size(obsGnss.snr.obs,2));
-obsGnss.snr.sig           = repmat(snrSig',1,size(obsGnss.snr.obs,2));
-obsGnss.snr.PRN           = repmat(prns,size(obsGnss.snr.obs,1),1);
-obsGnss.snr.constInds     = repmat(constInds,size(obsGnss.snr.obs,1),1);
+obsGnss.snr.rnxCode       = repmat(snrType', 1, size(obsGnss.snr.obs,2));
+obsGnss.snr.sig           = repmat(snrSig', 1, size(obsGnss.snr.obs,2));
+obsGnss.snr.PRN           = repmat(prns, size(obsGnss.snr.obs,1), 1);
+obsGnss.snr.constInds     = repmat(constInds, size(obsGnss.snr.obs,1), 1);
 
 %% Pull off only the data we need
 %% Pull off data we need

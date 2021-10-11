@@ -1,4 +1,4 @@
-function [svndata, blockText] = constSvnData(const,source)
+function [svndata, blockText] = constSvnData(const, source)
 % constSvnData
 % DESCRIPTION:
 %   Contains tables of information about GNSS satellite mappings between
@@ -23,7 +23,7 @@ function [svndata, blockText] = constSvnData(const,source)
 % See also: navsu.svprn.prn2svn, navsu.svprn.svn2prn, navsu.svprn.svn2block
 constNames = {'GPS','GLO','GAL','BDS'};
 if ischar(const)
-    const = find(~cellfun(@isempty,strfind(constNames,const)));
+    const = find(contains(constNames, const));
     
     if isempty(const)
        error('Invalid constellation name') 

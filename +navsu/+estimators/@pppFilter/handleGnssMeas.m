@@ -250,15 +250,29 @@ if nMeas > 0
     predMeas = zeros(nMeas,1);
     H         = zeros(nMeas,nState);
     R         = zeros(nMeas,1);
+    
+    % get linear index of each range signal
+    satMatch = obs.PRN' == [idList.prn] ...
+             & obs.constInds' == [idList.const];
+    satIds = find(satMatch) - length(obs.PRN)*(0:1:nMeas-1)';
+    
+    sigMatch = obs.range.sig(:, 1) == [idList.freq] ...
+             & obs.range.subtype(:, 1) == [idList.subtype];
+    rangeSignals = ismember([idList.subtype], [navsu.internal.MeasEnum.Code, ...
+                                               navsu.internal.MeasEnum.Carrier]);
+    sigIds = find(sigMatch) - size(obs.range.sig, 1)*(find(rangeSignals)-1)';
+    
+    freqInds = sub2ind(size(obs.range.freqs), sigIds, satIds(rangeSignals));
+        
     for idx = 1:nMeas
-        measTypei = idList(idx).subtype;
-        prni      = idList(idx).prn;
         constIndi = idList(idx).const;
         sigi      = idList(idx).freq;
-        freqi = obs.range.freqs(obs.range.PRN == prni ...
-                              & obs.range.constInds == constIndi ...
-                              & obs.range.sig == sigi ...
-                              & obs.range.subtype == measTypei);
+        measTypei = idList(idx).subtype;
+        
+        % retrieve frequency if we're dealing with a range measurement
+        if rangeSignals(idx)
+            freqi = obs.range.freqs(freqInds(sum(rangeSignals(1:idx))));
+        end
         
         losInd = losInds(idx);
         weighti = 1 ./ (sin(el(losInd)).^2);
@@ -345,30 +359,30 @@ end
 % end
 % 
 % dop = diag(dopBig);
+
+nConst  = length(obj.INDS_STATE.CLOCK_BIAS);
+
 if norm(pos) > 1000 && nMeas > 0
     
-    [~,Rli] = navsu.geo.xyz2enu(zeros(1,3),llhi(1)*pi/180,llhi(2)*pi/180);
+    [~, Rli] = navsu.geo.xyz2enu(zeros(1,3),llhi(1)*pi/180,llhi(2)*pi/180);
     
     Gi = H(:,obj.INDS_STATE.POS);
     %         Gl = [(Rli*Gi')' ones(size(Gi,1),1)];
     Gl = [(Rli*Gi')' H(:,obj.INDS_STATE.CLOCK_BIAS)];
     
-    nConst  = length(obj.INDS_STATE.CLOCK_BIAS);
+    dopBig = zeros(3+nConst,3+nConst);
     
-    if max(sum(Gl(:,4:end),1))/2 >= 4 || sum(sum(Gl(:,4:end)))/2 >= 3+nConst
-        dopBig = zeros(3+nConst,3+nConst);
+    if max(sum(Gl(:,4:end), 1))/2 >= 4 || sum(sum(Gl(:, 4:end)))/2 >= 3+nConst
         if any(sum(Gl(:,4:end)) == 0)
             indsDopi = find(sum(abs(Gl),1) ~= 0);
             dopBig(indsDopi,indsDopi) = inv(Gl(:,indsDopi)'*Gl(:,indsDopi));
         else
             dopBig = inv(Gl'*Gl);
         end
-    else
-        dopBig = zeros(3+nConst,3+nConst);
     end
     
 else
-    dopBig = nan(3+length(obj.INDS_STATE.CLOCK_BIAS),3+length(obj.INDS_STATE.CLOCK_BIAS));
+    dopBig = nan(3+nConst, 3+nConst);
 end
 
 dop = diag(dopBig);
