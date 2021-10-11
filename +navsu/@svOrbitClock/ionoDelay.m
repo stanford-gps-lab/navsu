@@ -32,8 +32,8 @@ if isempty(az) || isempty(el)
         error('Need at least satellite position to compute TEC')
     else
         % Compute az and el 
-        usrPos = llh2xyz(llh);
-        [el,az] = pos2elaz(usrPos,satPos);
+        usrPos = navsu.geo.llh2xyz(llh);
+        [el,az] = navsu.geo.pos2elaz(usrPos, satPos);
     end
 end
 
@@ -44,28 +44,18 @@ end
 
 % Compute the TEC for each LOS
 tecMap   = squeeze(obj.iono.tecMap);
-tecs     = zeros(size(el));
-obliq    = zeros(size(el));
 
 % build TEC for each LOS
-for sdx = 1:length(el)
-    [latPpi, lonPpi, obliq(sdx)] = navsu.ppp.models.ionoPiercePoint( ...
-        llh(1)*pi/180, llh(2)*pi/180, az(sdx), el(sdx));
-    
-    if isnan(latPpi)
-        continue;
-    end
-    latPpi = latPpi*180/pi; lonPpi = lonPpi*180/pi;
-    
-    indsEpochs = [find(obj.iono.epochs <= epoch(sdx), 1, 'last') ...
-                  find(obj.iono.epochs > epoch(sdx), 1)];
-    
-    tecs(sdx) = -interpn(obj.iono.latVec,...
-                         obj.iono.lonVec, ...
-                         obj.iono.epochs(indsEpochs),...
-                         tecMap(:,:,indsEpochs), latPpi, lonPpi, epoch(sdx));
-    
-end
+[latPpi, lonPpi, obliq] = navsu.ppp.models.ionoPiercePoint( ...
+    llh(1)*pi/180, llh(2)*pi/180, az, el);
+  
+latPpi = latPpi*180/pi;
+lonPpi = lonPpi*180/pi;
+
+[uE, iU] = unique(obj.iono.epochs);
+tecs = -interpn(obj.iono.latVec, obj.iono.lonVec, uE, ...
+                tecMap(:, :, iU), ...
+                latPpi, lonPpi, epoch);
 
 % if we can, swap from TEC to delay (in meters)
 if nargout > 1 % only do this if requested
@@ -77,7 +67,6 @@ if nargout > 1 % only do this if requested
     delays = tecSlant*40.3*10^15./freqs.^2;
 end
     
-
 end
 
 
