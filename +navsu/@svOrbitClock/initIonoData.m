@@ -26,8 +26,13 @@ if any(dlFlag)
 end
 
 % now parse the files
-[ionoData,~,~,filenameIono] = navsu.readfiles.loadIonex(year,doy,settings,0);
+[ionoData, ~, ~, ~] = navsu.readfiles.loadIonex(year,doy,settings,0);
 
 obj.iono = ionoData;
+
+% limit to unique epochs
+[obj.iono.epochs, iUE] = unique(obj.iono.epochs);
+obj.iono.tecMap = obj.iono.tecMap(:, :, :, iUE);
+obj.iono.datevecs = obj.iono.datevecs(iUE, :);
 
 end
