@@ -45,6 +45,8 @@ function [latpp, lonpp, fpp] = ionoPiercePoint(latR, lonR, azS, elS)
 %--------------------------------------------------------------------------
 % 01100111 01101111 01000111 01010000 01010011
 %--------------------------------------------------------------------------
+% 
+%   Modified10/11/2021 by Fabian Rothmaier: vectorized the function
 
 R  = 6378.1363; %Earth radius [km]
 hI = 350;       %ionosphere thin shell height [km]
@@ -53,16 +55,19 @@ k = (R/(R+hI))*cos(elS);
 phipp = (pi/2) - elS - asin(k);
 
 %latitude of the ionosphere piercing point
-latpp = asin(sin(latR)*cos(phipp) + cos(latR)*sin(phipp)*cos(azS));
+latpp = asin(sin(latR).*cos(phipp) + cos(latR).*sin(phipp).*cos(azS));
 
 %longitude of the ionosphere piercing point
-if ((latpp >  70*pi/180) & (tan(phipp)*cos(azS)      > tan((pi/2) - latR))) | ...
-   ((latpp < -70*pi/180) & (tan(phipp)*cos(azS + pi) > tan((pi/2) + latR)))
+case1 = ((latpp >  70*pi/180) & (tan(phipp).*cos(azS)      > tan((pi/2) - latR))) | ...
+        ((latpp < -70*pi/180) & (tan(phipp).*cos(azS + pi) > tan((pi/2) + latR)));
 
-    lonpp = lonR + pi - asin(sin(phipp)*sin(azS/cos(latpp)));
-else
-    lonpp = lonR + asin(sin(phipp)*sin(azS/cos(latpp)));
-end
+asinTerm = asin(sin(phipp).*sin(azS./cos(latpp)));
+
+lonpp = lonR + asinTerm;
+lonpp(case1) = lonpp(case1) + pi - 2*asinTerm(case1);
+
 
 %slant (obliquity) factor
-fpp = (1-(k)^2)^(-1/2);
+fpp = (1 - k.^2).^(-1/2);
+
+end
