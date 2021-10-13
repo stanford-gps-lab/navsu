@@ -1,6 +1,24 @@
-function [tropo_corr, Mw,tropDataExtra] = tropoErrCorrUnb3(el, h, lat,doy)
+function [tropo_corr, Mw, tropData] = tropoErrCorrUnb3(el, h, lat, doy)
+%%UNB3 model for tropospheric delay
+% 
+%   [tropo_corr, Mw, tropData] = tropoErrCorrUnb3(el, h, lat,doy)
+%   Models the tropospheric delay using the UNB3 model.
+%   
+%   Inputs:
+%   el      N x 1 vector of satellite elevation in (deg)
+%   h       receiver height in (m)
+%   lat     receiver latitude in (deg)
+%   doy     integer day of the year
+%   
+%   Outputs:
+%   tropo_corr  N x 1 vector of tropospheric delay in (m)
+%   Mw          mapping for wet delay
+%   tropData    struct of additional details
+%       .gmfwSave   mapping of the wet delay
+%       .dall       total zenith delay in (m)
+%       .ddry       dry component of zenith delay in (m)
+%       .dwet       wet component of zenith delay in (m)
 
-% tropo_corr = zeros(size(el));
 
 % 
 latTable = [15 30 45 60 75];
@@ -49,21 +67,14 @@ d_wet = (1-B.*h./T).^((lam+1).*g./(Rd.*B)-1).*((10^-6*k2*Rd.*e)./(T.*(gm.*(lam+1
 
 % m = 1.001./sqrt(0.002001 + sin(el*pi/180).^2);
 
-[Mw, Md] = navsu.ppp.models.mappingOfNiell(el, h, lat,doy);
+[Mw, Md] = navsu.ppp.models.mappingOfNiell(el, h, lat, doy);
 
-% Mw = m(:,1);
-% Md = m(:,2);
+tropo_corr = Md.*d_dry + Mw.*d_wet;
 
-tropo_corr = Md.*d_dry+Mw.*d_wet;
-% tropo_corr = tropo_corr;
-
-% Mw = Mw;
-
-tropDataExtra.trototSave = d_dry;
-tropDataExtra.gmfwSave   = Mw;
-tropDataExtra.tzd        = d_dry(1)+d_wet(1);
-tropDataExtra.ddry       = d_dry(1);
-tropDataExtra.dwet       = d_wet(1);
+tropData.gmfwSave   = Mw;
+tropData.dall       = d_dry + d_wet;
+tropData.ddry       = d_dry;
+tropData.dwet       = d_wet;
 
 % remove bad data...
 tropo_corr(tropo_corr > 1e3) = 0;

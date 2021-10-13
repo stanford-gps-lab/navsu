@@ -14,7 +14,7 @@ switch PARAMS.tropModel
         % saastomoinen
         [trop0] = saastamoinen_model_SU(lat, lon, h, el);
         m = zeros(size(trop0));
-        tropDataSave.trototSave = zeros(size(trop0));
+        tropDataSave.ddry = zeros(size(trop0));
         tropDataSave.gmfwSave  = zeros(size(trop0));
         
     case 'GO'
