@@ -10,7 +10,7 @@ classdef DFMCnavEngineTest < matlab.unittest.TestCase
     methods (TestClassSetup)
 
         function initializeNavEngine(testCase)
-            % get file path to brdc file            
+            % get file path to brdc file
             filename = fullfile(fileparts(mfilename('fullpath')), ...
                                 'test-data', 'brdm0500.19p');
 
