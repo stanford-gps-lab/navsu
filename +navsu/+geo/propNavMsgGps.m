@@ -293,7 +293,7 @@ if dualFreq
     % Beidou dual frequency TGD offsets
     kf = (1561.098/1207.14)^2;
     tgdOffset = (eph.TGD2(iEph)-kf*eph.TGD(iEph)) ./ (1-kf);
-    pos.clock_bias = pos.clock_bias - tgdOffset;
+    pos.clock_bias(haveEph) = pos.clock_bias(haveEph) - tgdOffset;
 end
 
 %% Relativisitic effect, other elements
