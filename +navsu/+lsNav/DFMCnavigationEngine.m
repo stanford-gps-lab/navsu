@@ -21,7 +21,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         satTGD      % Timing group delay of each satellite in sec (see IS﻿20.3.3.3.3.2)
         satEl       % elevation of satellites in deg
         satAz       % azimuth of satellites in deg
-        CS (3, 1) lsNav.CarrierSmoother % array of objects for carrier 
+        CS (3, 1) navsu.lsNav.CarrierSmoother % array of objects for carrier 
         % smoothing. One smoother for each freq and one for Dual Freq.
         elevMask = 15*pi/180;    % elevation mask angle
     end
@@ -212,7 +212,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % (code phase)
             
             % build lookup table of frequency for each signal
-            attachLetter = @(a, l) arrayfun(@(x) [l, num2str(x)], a, 'UniformOutput', false);
+            attachLetter = @(a, l) arrayfun(@(x) [l, num2str(x)], a, ...
+                                            'UniformOutput', false);
             
             freqKeys = [attachLetter([1 2 5], 'G'), ...
                         attachLetter([1 4 2 6 3], 'R'), ...
@@ -271,7 +272,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             [~, Ifreq] = maxk(sum(isfinite(obsData.code), 1), nSig);
             
             obsData = structfun(@(x) x(:, Ifreq([1 2])), obsData, ...
-                'UniformOutput', false);
+                                'UniformOutput', false);
             
             
             % want as result a struct with fields
@@ -528,7 +529,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         end
         
         function G = Gmatrix(obj, satIds)
-            %Computes the geomatry matrix.
+            %Computes the geometry matrix.
             %   Takes as input the line of sight vectors in coordinate
             %   system of choice and a vector indicating the constellation
             %   of each vector. Generates matrix in ECEF frame.
@@ -719,7 +720,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                     tMax = 100; % to avoid code-carrier divergence
                 end
                 obj.CS(f_i) = ...
-                    lsNav.CarrierSmoother(consts.nEnabledSat, tMax);
+                    navsu.lsNav.CarrierSmoother(consts.nEnabledSat, tMax);
             end
             
         end
