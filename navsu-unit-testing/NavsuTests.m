@@ -4,9 +4,7 @@ classdef NavsuTests <  matlab.unittest.TestCase
     
     methods (Test)
         function orbitParserTest(testCase)
-            % Test RINEX 2 navigation message parsing
-            %             fileRinex2 = fullfile(fileparts( mfilename('fullpath')), 'data', 'thti0500.19n');
-            %             eph = navsu.readfiles.loadRinexNav(fileRinex2);
+            % Test navigation message parsing for different sources.
             %% Parse each file
             % RINEX 2 navigation data
             fileRinex2 = fullfile(fileparts( mfilename('fullpath')), 'test-data', 'thti0500.19n');
