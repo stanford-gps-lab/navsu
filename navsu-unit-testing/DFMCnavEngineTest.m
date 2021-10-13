@@ -1,23 +1,53 @@
 classdef DFMCnavEngineTest < matlab.unittest.TestCase
-    %Unittest class for the DFMCnavEngine
+    % Unittest class for the DFMCnavEngine
     %   Runs a bank of unit tests for the DFMCnavEngine class.
-    
+
     properties
-        Property1
+        navEngine   % the nav engine object
+        eph         % the ephemeris struct
     end
-    
-    methods
-        function obj = untitled(inputArg1,inputArg2)
-            %UNTITLED Construct an instance of this class
-            %   Detailed explanation goes here
-            obj.Property1 = inputArg1 + inputArg2;
+
+    methods(TestClassSetup)
+        
+        function initializeNavEngine(testCase)
+            % get file path to brdc file            
+            filename = fullfile(fileparts(mfilename('fullpath')), ...
+                                'test-data', 'brdm0500.19p');
+            
+            testCase.eph = navsu.readfiles.loadRinexNav(filename);
+            
+            testCase.navEngine = navsu.lsNav.DFMCnavigationEngine(testCase.eph);
+            
         end
         
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+    end
+
+% this would be needed if e.g. a new brdc file was downloaded
+%     methods(TestClassTeardown)
+%         
+%         function deleteDownloadedFiles(testCase)
+%             
+%         end
+%         
+%     end
+
+    methods(Test)
+        
+        function testOrbitProp(testCase)
+            % Test the orbit propagation
+            
+            epProp = navsu.time.gps2epochs(testCase.eph.gps.GPS_week_num, ...
+                                           testCase.eph.gps.Toe);
+            
+            % attempt orbit propagation for all satellites
+            testCase.navEngine.propagateOrbits(1:testCase.navEngine.numSats, ...
+                                               mean(epProp));
+            
+            % make sure it worked at least for some
+            testCase.verifyTrue(any(isfinite(testCase.navEngine.satPos), 'all'));
         end
+
+
     end
 end
 
