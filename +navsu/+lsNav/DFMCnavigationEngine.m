@@ -18,9 +18,11 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         satAcc      % Variance of satellite position
         satPRN      % PRN of each satellite
         satConstId  % constellation id of each satellite
+        constLetter % one letter identifier of each constellation: GRECJ
         satTGD      % Timing group delay of each satellite in sec (see IS﻿20.3.3.3.3.2)
         satEl       % elevation of satellites in deg
         satAz       % azimuth of satellites in deg
+        freqMap     % lookup table for frequency of each signal
         CS (3, 1) navsu.lsNav.CarrierSmoother % array of objects for carrier 
         % smoothing. One smoother for each freq and one for Dual Freq.
         elevMask = 15*pi/180;    % elevation mask angle
@@ -143,7 +145,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
     
     methods
         function obj = DFMCnavigationEngine(eph, x0)
-            %DFMCnavigationEngine GNSS navigation engine for DF, MC.
+            % DFMCnavigationEngine GNSS navigation engine for DF, MC.
             %   Provides recursive least squares estimation for dual
             %   frequency (DF), multi constellation (MC) GNSS measurements.
             %   
@@ -174,6 +176,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 obj.position = zeros(3, 1);
             end
             
+            % build frequency lookup table
+            obj.buildFreqTable;
+            
         end
         
         function satIds = getSatIds(obj, PRNs, constIds)
@@ -201,53 +206,65 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
         end
         
-        function [obsData, satIds] = readRinexData(obj, rinexObsStruct)
+        function [obsData, satIds] = readRinexData(obj, rinexStruct, ep)
+            % Parses measurement data from Rinex-like format.
+            %   Returns data in struct ready to be processed by this
+            %   navigation engine. Accepts inputs for a single or for
+            %   multiple epochs. If data for multiple epochs is contained
+            %   in the rinexStruct, a second input indicating which epoch
+            %   to parse is required (defaults to 1).
+            %   
+            %   [obsData, satIds] = obj.readRinexData(rinexObsStruct, ep)
+            %   
+            %   Inputs:
+            %   rinexStruct
+            %       .meas       - struct of measurements sorted by their
+            %                   RINEX 3 codes (C1C, ...) each of size N x M
+            %       .PRN        - N x 1 vector of satellite PRNs
+            %       .constInds  - N x 1 vector of constellation indices
+            %       .tLock      - (optional) N x M carrier phase lock time
+            %   Equal input form as to navsu.ppp.preprocessGnssObs()
+            %   ep              - (optional) index of the measurement epoch
+            %   
+            %   Outputs:
+            %   obsData         - struct of measurements stored in N x 2
+            %                     matricies for N satellites, 2 frequencies
+            %       .code       - code phase measurements (m)
+            %       .freq       - frequency of each measurement (Hz)
+            %       .doppler    - doppler measurement
+            %       .carrier    - carrier phase measurement
+            %       .CN0        - carrier to noise density ratio (dB-Hz)
+            %       .tLock      - carrier phase lock time
+            %   satIds          - indices of the N satellites among the
+            %                     object's list of satellites
             
-            % data comes in struct separated by signals
-            % steps to do, for code, carrier and doppler:
-            % - for each field in the obs struct, do
-            %   - assign to correct frequency, in right row for
-            %   constellation and PRN
-            % - need map of signal "name" to frequency, constellation,
-            % (code phase)
+            if nargin < 3
+                % assume there's only one epoch
+                ep = 1;
+            end
             
-            % build lookup table of frequency for each signal
-            attachLetter = @(a, l) arrayfun(@(x) [l, num2str(x)], a, ...
-                                            'UniformOutput', false);
-            
-            freqKeys = [attachLetter([1 2 5], 'G'), ...
-                        attachLetter([1 4 2 6 3], 'R'), ...
-                        attachLetter([1 5 7 8 6], 'E'), ...
-                        attachLetter([2 1 5 7 8 6], 'C'), ...
-                        attachLetter([1 2 5 6], 'J')];
-                   
-            freqVals = [1575.42 1227.6 1176.45 ...
-                        1602 1600.995 1246 1248.06 1202.025 ...
-                        1575.42 1176.45 1207.14 1191.795 1278.75 ...
-                        1561.098 1575.42 1176.45 1207.14 1191.795 1268.52 ...
-                        1575.42 1227.6 1176.45 1278.75]*1e6;
-                
-            freqMap = containers.Map(freqKeys, freqVals);
-            
-            constIds = 'GRECJ';
-            
-            fn = fieldnames(rinexObsStruct.meas);
+            fn = fieldnames(rinexStruct.meas);
             
             % initialize obs struct
-            nSig = length(unique(cellfun(@(x) str2double(x(2)), fn)));
-            obsData = struct('code', NaN(length(rinexObsStruct.PRN), nSig), ...
-                             'freq', NaN(length(rinexObsStruct.PRN), nSig), ...
-                             'carrier', NaN(length(rinexObsStruct.PRN), nSig), ...
-                             'tLock', NaN(length(rinexObsStruct.PRN), nSig), ...
-                             'doppler', NaN(length(rinexObsStruct.PRN), nSig));
+            codeMeas = cellfun(@(x) strcmp(x(1), 'C') && length(x) == 3, fn);
+            nSig = length(unique(cellfun(@(x) str2double(x(2)), fn(codeMeas))));
+            obsData = struct('code', NaN(length(rinexStruct.PRN), nSig), ...
+                             'freq', NaN(length(rinexStruct.PRN), nSig), ...
+                             'carrier', NaN(length(rinexStruct.PRN), nSig), ...
+                             'tLock', NaN(length(rinexStruct.PRN), nSig), ...
+                             'doppler', NaN(length(rinexStruct.PRN), nSig), ...
+                             'CN0', NaN(length(rinexStruct.PRN), nSig));
                              
             
             % scan all code meas to analyze each signal
-            for fni = find(cellfun(@(x) strcmp(x(1), 'C') && length(x) == 3,fn))'
+            for fni = find(codeMeas)'
+                % get signal identifyer
+                sigId = fn{fni}(2:end);
                 
-                rnxCode = rinexObsStruct.meas.(fn{fni});
+                rnxCode = rinexStruct.meas.(fn{fni});
                 % for which satellites do I have measurements?
-                measIds = find(isfinite(rnxCode));
+                measIds = find(isfinite(rnxCode(:, ep)) ...
+                               & rnxCode(:, ep)~=0);
                 
                 % how many signals do I have from these satellites already?
                 mI = 1;
@@ -256,16 +273,25 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 end
                 
                 % now assign the measurements
-                obsData.code(measIds, mI) = rnxCode(measIds);
+                obsData.code(measIds, mI) = rnxCode(measIds, ep);
                 % assign frequencies
                 for mId = 1:length(measIds)
-                    fKey = [constIds(rinexObsStruct.constInds(measIds(mId))) fn{fni}(2)];
-                    obsData.freq(measIds(mId), mI) = freqMap(fKey);
+                    fKey = [obj.constLetter(rinexStruct.constInds(measIds(mId))) fn{fni}(2)];
+                    obsData.freq(measIds(mId), mI) = obj.freqMap(fKey);
                 end
-                % assign carrier, doppler
-                obsData.carrier(measIds, mI) = rinexObsStruct.meas.(['L' fn{fni}(2:end)])(measIds);
-                obsData.doppler(measIds, mI) = rinexObsStruct.meas.(['D' fn{fni}(2:end)])(measIds);
-                
+                % assign carrier, doppler, CN0, lock time
+                if isfield(rinexStruct.meas, ['L' sigId]) && ~isempty(rinexStruct.meas.(['L' sigId]))
+                    obsData.carrier(measIds, mI) = rinexStruct.meas.(['L' sigId])(measIds, ep);
+                end
+                if isfield(rinexStruct.meas, ['D' sigId]) && ~isempty(rinexStruct.meas.(['D' sigId]))
+                    obsData.doppler(measIds, mI) = rinexStruct.meas.(['D' sigId])(measIds, ep);
+                end
+                if isfield(rinexStruct.meas, ['S' sigId]) && ~isempty(rinexStruct.meas.(['S' sigId]))
+                    obsData.CN0(measIds, mI) = rinexStruct.meas.(['S' sigId])(measIds, ep);
+                end
+                if isfield(rinexStruct, 'tLock') && ~isempty(rinexStruct.tLock)
+                    obsData.tLock(measIds, mI) = rinexStruct.tLock(measIds, ep);
+                end
             end
             
             % limit to two best frequencies
@@ -274,21 +300,10 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             obsData = structfun(@(x) x(:, Ifreq([1 2])), obsData, ...
                                 'UniformOutput', false);
             
-            
-            % want as result a struct with fields
-            %   .freq
-            %   .code
-            %   .carrier
-            %   .doppler
-            %   .tLock
-            % each sorted by constellation, by PRN
-            
-            % now get satIds
-            % get sat index mapping
-            satIds = zeros(length(rinexObsStruct.PRN), 1);
-            for sId = 1:length(satIds)
-                satIds(sId) = find(obj.satPRN == rinexObsStruct.PRN(sId) ...
-                                   & obj.satConstId == rinexObsStruct.constInds(sId));
+            if nargout > 1
+                % now get satIds
+                satIds = obj.getSatIds(rinexStruct.PRN, ...
+                                       rinexStruct.constInds);
             end
             
         end
@@ -722,6 +737,32 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 obj.CS(f_i) = ...
                     navsu.lsNav.CarrierSmoother(consts.nEnabledSat, tMax);
             end
+            
+        end
+        
+        function buildFreqTable(obj)
+            % Build lookup table of frequency for each signal.
+            % Can be accessed by two element string indicating
+            % constellation and RINEX3 signal number. The constellation is
+            % identified as one of 'GRECJ'.
+            
+            attachLetter = @(a, l) arrayfun(@(x) [l, num2str(x)], a, ...
+                                            'UniformOutput', false);
+            
+            obj.constLetter = 'GRECJ';
+            freqKeys = [attachLetter([1 2 5],       obj.constLetter(1)), ...
+                        attachLetter([1 4 2 6 3],   obj.constLetter(2)), ...
+                        attachLetter([1 5 7 8 6],   obj.constLetter(3)), ...
+                        attachLetter([2 1 5 7 8 6], obj.constLetter(4)), ...
+                        attachLetter([1 2 5 6],     obj.constLetter(5))];
+            
+            freqVals = [1575.42 1227.6 1176.45 ...
+                        1602 1600.995 1246 1248.06 1202.025 ...
+                        1575.42 1176.45 1207.14 1191.795 1278.75 ...
+                        1561.098 1575.42 1176.45 1207.14 1191.795 1268.52 ...
+                        1575.42 1227.6 1176.45 1278.75]*1e6;
+                
+            obj.freqMap = containers.Map(freqKeys, freqVals);
             
         end
         
