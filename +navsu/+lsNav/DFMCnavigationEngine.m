@@ -206,7 +206,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
         end
         
-        function [obsData, satIds] = readRinexData(obj, rinexStruct, ep)
+        function [obsData, satIds] = readRinexData(obj, rinexStruct, sats, ep)
             % Parses measurement data from Rinex-like format.
             %   Returns data in struct ready to be processed by this
             %   navigation engine. Accepts inputs for a single or for
@@ -214,7 +214,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %   in the rinexStruct, a second input indicating which epoch
             %   to parse is required (defaults to 1).
             %   
-            %   [obsData, satIds] = obj.readRinexData(rinexObsStruct, ep)
+            %   [obsData, satIds] = obj.readRinexData(rinexObsStruct, sats, ep)
             %   
             %   Inputs:
             %   rinexStruct
@@ -224,6 +224,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %       .constInds  - N x 1 vector of constellation indices
             %       .tLock      - (optional) N x M carrier phase lock time
             %   Equal input form as to navsu.ppp.preprocessGnssObs()
+            %   sats            - (optional) indices of satellites to use
             %   ep              - (optional) index of the measurement epoch
             %   
             %   Outputs:
@@ -238,7 +239,13 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %   satIds          - indices of the N satellites among the
             %                     object's list of satellites
             
-            if nargin < 3
+            if nargin < 3 || isempty(sats)
+                sats = 1:length(rinexStruct.PRN);
+            elseif islogical(sats)
+                % ensure integer indices
+                sats = find(sats);
+            end
+            if nargin < 4
                 % assume there's only one epoch
                 ep = 1;
             end
@@ -248,12 +255,12 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % initialize obs struct
             codeMeas = cellfun(@(x) strcmp(x(1), 'C') && length(x) == 3, fn);
             nSig = length(unique(cellfun(@(x) str2double(x(2)), fn(codeMeas))));
-            obsData = struct('code', NaN(length(rinexStruct.PRN), nSig), ...
-                             'freq', NaN(length(rinexStruct.PRN), nSig), ...
-                             'carrier', NaN(length(rinexStruct.PRN), nSig), ...
-                             'tLock', NaN(length(rinexStruct.PRN), nSig), ...
-                             'doppler', NaN(length(rinexStruct.PRN), nSig), ...
-                             'CN0', NaN(length(rinexStruct.PRN), nSig));
+            obsData = struct('code',    NaN(length(sats), nSig), ...
+                             'freq',    NaN(length(sats), nSig), ...
+                             'carrier', NaN(length(sats), nSig), ...
+                             'tLock',   NaN(length(sats), nSig), ...
+                             'doppler', NaN(length(sats), nSig), ...
+                             'CN0',     NaN(length(sats), nSig));
                              
             
             % scan all code meas to analyze each signal
@@ -261,10 +268,10 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 % get signal identifyer
                 sigId = fn{fni}(2:end);
                 
-                rnxCode = rinexStruct.meas.(fn{fni});
+                rnxCode = rinexStruct.meas.(fn{fni})(sats, ep);
                 % for which satellites do I have measurements?
-                measIds = find(isfinite(rnxCode(:, ep)) ...
-                               & rnxCode(:, ep)~=0);
+                measIds = find(isfinite(rnxCode) ...
+                               & rnxCode ~= 0);
                 
                 % how many signals do I have from these satellites already?
                 mI = 1;
@@ -273,24 +280,24 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 end
                 
                 % now assign the measurements
-                obsData.code(measIds, mI) = rnxCode(measIds, ep);
+                obsData.code(measIds, mI) = rnxCode(measIds);
                 % assign frequencies
                 for mId = 1:length(measIds)
-                    fKey = [obj.constLetter(rinexStruct.constInds(measIds(mId))) fn{fni}(2)];
+                    fKey = [obj.constLetter(rinexStruct.constInds(sats(measIds(mId)))) fn{fni}(2)];
                     obsData.freq(measIds(mId), mI) = obj.freqMap(fKey);
                 end
                 % assign carrier, doppler, CN0, lock time
                 if isfield(rinexStruct.meas, ['L' sigId]) && ~isempty(rinexStruct.meas.(['L' sigId]))
-                    obsData.carrier(measIds, mI) = rinexStruct.meas.(['L' sigId])(measIds, ep);
+                    obsData.carrier(measIds, mI) = rinexStruct.meas.(['L' sigId])(sats(measIds), ep);
                 end
                 if isfield(rinexStruct.meas, ['D' sigId]) && ~isempty(rinexStruct.meas.(['D' sigId]))
-                    obsData.doppler(measIds, mI) = rinexStruct.meas.(['D' sigId])(measIds, ep);
+                    obsData.doppler(measIds, mI) = rinexStruct.meas.(['D' sigId])(sats(measIds), ep);
                 end
                 if isfield(rinexStruct.meas, ['S' sigId]) && ~isempty(rinexStruct.meas.(['S' sigId]))
-                    obsData.CN0(measIds, mI) = rinexStruct.meas.(['S' sigId])(measIds, ep);
+                    obsData.CN0(measIds, mI) = rinexStruct.meas.(['S' sigId])(sats(measIds), ep);
                 end
                 if isfield(rinexStruct, 'tLock') && ~isempty(rinexStruct.tLock)
-                    obsData.tLock(measIds, mI) = rinexStruct.tLock(measIds, ep);
+                    obsData.tLock(measIds, mI) = rinexStruct.tLock(sats(measIds), ep);
                 end
             end
             
@@ -302,8 +309,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             if nargout > 1
                 % now get satIds
-                satIds = obj.getSatIds(rinexStruct.PRN, ...
-                                       rinexStruct.constInds);
+                satIds = obj.getSatIds(rinexStruct.PRN(sats), ...
+                                       rinexStruct.constInds(sats));
             end
             
         end
@@ -392,6 +399,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             [prMeas, prVar, satIds, epoch] = obj.preprocessMeas(varargin{:});
             % all measurement inputs are now N x 2 matricies [f_SF f_IF]
             
+            % get involved constellations
+            consts0 = unique(obj.satConstId(satIds));
+            
             % Step 2: propagate satellite ephemeris (includes Sagnac
             % effect)
             obj.propagateOrbits(satIds, epoch);
@@ -413,12 +423,13 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % check if position solution possible, return if not
             if sum(goodEl) < nStates
                 % set NaN outputs, quit
+                nStates0 = 3 + length(consts0);
                 pos = NaN(3, 1);
-                tBias = NaN(length(consts), 1);
-                R = NaN(nStates, nStates);
+                tBias = NaN(length(consts0), 1);
+                R = NaN(nStates0, nStates0);
                 varargout{1} = NaN(length(varargin{1}), 1);
                 varargout{2} = NaN(length(varargin{1}));
-                varargout{3} = NaN(nStates, nStates);
+                varargout{3} = NaN(nStates0, nStates0);
                 return
             end
             
