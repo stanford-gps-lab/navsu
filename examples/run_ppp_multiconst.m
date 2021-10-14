@@ -7,7 +7,7 @@ close all;
 % RINEX v3 observation file
 % path to the obs file, can be copied to desired location from the
 % navsu/examples folder.
-filenameGnss = '...\swift-gnss-20200312-093212.obs';
+filenameGnss = 'swift-gnss-20200312-093212.obs';
 % Truth position of the Xona roof antenna
 % (matches swift-gnss-20200312-093212.obs)
 truePosEcef = [-2706115.1823 -4278731.1983 3866392.5504];
