@@ -28,10 +28,10 @@ var = var(idx);
 % make sure enough points remain to fit
 if size(y, 1) < m_order + 1
 %     warning('Warning bad fit in polyinterp\n');
-    yy     = NaN(size(xx));
-    yy_dot = NaN(size(xx));
+    yy     = NaN(length(xx), size(y, 2));
+    yy_dot = NaN(length(xx), size(y, 2));
     chi2   = NaN;    
-    p = NaN(m_order+1,1);
+    p = NaN(size(y, 2), m_order+1);
     return
 end
 
@@ -75,7 +75,7 @@ if nargout > 1
 %     yy_dot = yscale*polyval(pdot, (xx(1:n) - xbias)/xscale)/xscale;
     
     if nargout > 2
-        chi2 = dot(y - z((n+1):end, :), (y - z((n+1):end, :))./var);
+        chi2 = dot(y - z((n+1):end, :), (y - z((n+1):end, :))./var, 2);
     end
 end
 

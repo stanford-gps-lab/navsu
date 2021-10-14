@@ -133,11 +133,11 @@ for idx = 1:length(prns)
         case 'poly'
             [posP(idx, :), ~, ~, pPosPoly(prn, 1:3, :)] = ...
                 navsu.geo.polyinterp(Pepochsi(ind1:ind2) - epochi, ...
-                                     Pposi(ind1:ind2,:), pfit, dti);
+                                     Pposi(ind1:ind2, :), pfit, dti);
         case 'lagrange'
             posP(idx, :) = ...
                 navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)' - epochi, ...
-                                        Pposi(ind1:ind2,:)', dti)';
+                                        Pposi(ind1:ind2, :)', dti)';
     end
 
     if velCalc
@@ -147,20 +147,31 @@ for idx = 1:length(prns)
             switch orbitInterpMethod
                 case 'poly'
                     posPP = navsu.geo.polyinterp(Pepochsi(ind1:ind2) - epochi, ...
-                                                 Pposi(ind1:ind2,:), pfit, dt+dti);
+                                                 Pposi(ind1:ind2, :), pfit, dt+dti);
                 case 'lagrange'
                     posPP = navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)' - epochi, ...
-                                                    Pposi(ind1:ind2,:)', dt+dti)';
+                                                    Pposi(ind1:ind2, :)', dt+dti)';
             end
 
             velP(idx, :) = (posPP - posP(idx, :)) / dt;
         else
-            Pveli = Pvel(indi, :);
+            
+            if ndims(Pvel) == 3
+                Pveli = squeeze(Pvel(:, :, indi));
+            else
+                Pveli = Pvel(indi, :);
+            end
 
-            [velP(idx, :),~,~,pPosPoly(prn,4:6,:)] = ...
-                navsu.geo.polyinterp(Pepochsi(ind1:ind2) - epochi, ...
-                                     Pveli(ind1:ind2,:), pfit, epochi);
-
+            switch orbitInterpMethod
+                case 'poly'
+                    [velP(idx, :),~,~,pPosPoly(prn,4:6,:)] = ...
+                        navsu.geo.polyinterp(Pepochsi(ind1:ind2) - epochi, ...
+                                             Pveli(ind1:ind2, :), pfit, dti);
+                case 'lagrange'
+                    velP(idx, :) = ...
+                        navsu.geo.lagrangeInter(Pepochsi(ind1:ind2)' - epochi, ...
+                                                Pveli(ind1:ind2, :)', dti)';
+            end
         end
     end
 
