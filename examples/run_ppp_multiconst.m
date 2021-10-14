@@ -57,9 +57,9 @@ jdRangeProd = (min(jdRange0)-1):(max(jdRange0)+1);
 doyProd = floor(doyProd);
 
 corrData = navsu.svOrbitClock('configFile', configFile, ...
-                              'constUse', constUse, ...
-                              'netrcFile', netrcFile, ...
-                              'cookieFile', cookieFile);
+                              'constUse', constUse, ... % defaults to GPS only
+                              'netrcFile', netrcFile, ... % not required on Mac!
+                              'cookieFile', cookieFile); % not required on Mac!
 
 corrData.settings.gpsEphCenter = igsAc;
 corrData.settings.gpsClkCenter = igsAc;
