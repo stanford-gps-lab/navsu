@@ -68,24 +68,24 @@ if isempty(obj.PEph)
     constInds = prnConstInds(:,2);
     
     epochsPeph = unique(Peph.epochs);
-    Peph2.clock_bias  = zeros(length(epochsPeph),length(prns));
-    Peph2.clock_drift = zeros(length(epochsPeph),length(prns));
-    Peph2.position    = zeros(length(epochsPeph),3,length(prns));
-    Peph2.velocity    = zeros(length(epochsPeph),3,length(prns));
-    Peph2.event       = zeros(length(epochsPeph),length(prns));
+    Peph2.clock_bias  = NaN(length(epochsPeph), length(prns));
+    Peph2.clock_drift = NaN(length(epochsPeph), length(prns));
+    Peph2.position    = NaN(length(epochsPeph), 3, length(prns));
+    Peph2.velocity    = NaN(length(epochsPeph), 3, length(prns));
+    Peph2.event       = NaN(length(epochsPeph), length(prns));
     Peph2.epochs      = epochsPeph;
     Peph2.PRN = prns;
     Peph2.constellation = constInds;
     for pdx = 1:length(prns)
-        indsi = find(Peph.PRN == prns(pdx) & Peph.constellation == constInds(pdx));
+        indsi = Peph.PRN == prns(pdx) & Peph.constellation == constInds(pdx);
 %         [~,inds2] = ismember(epochsPeph,Peph.epochs(indsi));
-        [~,inds2] = ismember(Peph.epochs(indsi),epochsPeph);
+        [~,inds2] = ismember(Peph.epochs(indsi), epochsPeph);
         
-        Peph2.clock_bias(inds2,pdx) = Peph.clock_bias(indsi);
-        Peph2.clock_drift(inds2,pdx) = Peph.clock_drift(indsi);
-        Peph2.position(inds2,:,pdx) = Peph.position(indsi,:);
-        Peph2.velocity(inds2,:,pdx) = Peph.velocity(indsi,:);
-        Peph2.Event(inds2,pdx)      = Peph.Event(indsi);
+        Peph2.clock_bias(inds2, pdx) = Peph.clock_bias(indsi);
+        Peph2.clock_drift(inds2, pdx) = Peph.clock_drift(indsi);
+        Peph2.position(inds2, :, pdx) = Peph.position(indsi,:);
+        Peph2.velocity(inds2, :, pdx) = Peph.velocity(indsi,:);
+        Peph2.Event(inds2, pdx)      = Peph.Event(indsi);
     end
     
     obj.PEph = Peph2;
