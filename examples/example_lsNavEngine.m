@@ -115,13 +115,16 @@ chi2stat = NaN(1, nEpochs); % chi-squared statistic
 
 for ep = 1:length(obsGnssRaw.epochs)
     [obsData, satIds] = navEngine.readRinexData(obsGnssRaw, sats, ep);
+    % limit to selected frequencies
+    obsData = structfun(@(x) x(:, freqs), obsData, 'UniformOutput', false);
     
+    % do PVT computation
     [posECEF(:, ep), tBias(:, ep), R(:, :, ep), prr(:, ep), P(:, :, ep)] = ...
         navEngine.positionSolution(satIds, obsGnssRaw.epochs(ep), obsData);
     
-    velECEF(:, ep) = navEngine.velocitySolution(satIds, ...
-                                                obsGnssRaw.epochs(ep), ...
-                                                obsData);
+    velECEF(:, ep) = ...
+        navEngine.velocitySolution(satIds, obsGnssRaw.epochs(ep), obsData);
+    
     % also compute chi square statistic
     s = isfinite(prr(:, ep));
     chi2stat(ep) = prr(s, ep)' * P(s, s, ep) * prr(s, ep);
