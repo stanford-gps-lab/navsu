@@ -91,7 +91,7 @@ switch inChoice
             ftpStruc.ftpSite      = 'https://cddis.nasa.gov';
             ftpStruc.sourceFormat = '[''/archive/gps/products/'' num2str(gpsWeek) ''/'']';
             ftpStruc.destFormat   = '[ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']';
-            ftpStruc.fileFormat   =  {'[''igu'' num2str(gpsWeek)  num2str(gpsDow)  ''*''  val2 ''.Z'']'};
+            ftpStruc.fileFormat   =  {'[val1 num2str(gpsWeek)  num2str(gpsDow)  ''*''  val2 ''.Z'']'};
             ftpStruc.unzipFlag    = 1;
             
             [YearChangei,dayChangei] = navsu.ftp.ftpFile(YearList,dayList,ftpStruc,center,exts{1});
@@ -513,17 +513,5 @@ switch inChoice
     otherwise
         disp('sorry we don''t got that')
 end
-
-
-
-
-
-
-
-
-
-
-
-
 
 end
