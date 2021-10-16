@@ -48,7 +48,8 @@ FLAG_NO_LOAD = false;       % Flag to not actually load the data- should probabl
 if isempty(obj.PEph)
     
     if DOWNLOAD
-        [~,filenames,filenameFull] = navsu.readfiles.loadPEph(years,doys,settings,true,atxData,FLAG_APC_OFFSET);
+        [~,filenames,filenameFull] = navsu.readfiles.loadPEph( ...
+            years, doys, settings, true, atxData, FLAG_APC_OFFSET);
         
         % build a list of IGS AC codes to download
         fileAvailable = cellfun(@exist,filenameFull);
@@ -63,7 +64,10 @@ if isempty(obj.PEph)
     
     Peph = navsu.readfiles.loadPEph(years,doys,settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET);
     
-    prnConstInds = unique([Peph.PRN Peph.constellation],'rows');
+    % exclude values where the PRN is NaN
+    Peph = structfun(@(x) x(isfinite(Peph.PRN), :), Peph, 'UniformOutput', false);
+    
+    prnConstInds = unique([Peph.PRN Peph.constellation], 'rows');
     prns = prnConstInds(:,1);
     constInds = prnConstInds(:,2);
     
