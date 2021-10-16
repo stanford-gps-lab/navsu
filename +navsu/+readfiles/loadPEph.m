@@ -1,4 +1,5 @@
-function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP)
+function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings, ...
+    FLAG_NO_LOAD, atxData, FLAG_APC_OFFSET, TIME_STRIP)
 % loadPEph
 % DESCRIPTION:
 % Find and parse IGS clock corrections.  The files to be parsed should
@@ -69,7 +70,8 @@ end
 if length(dayNum) > 1
     PFileName = {}; PFileNameFull = {};
     for idx = 1:length(dayNum)
-        [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year(idx), dayNum(idx), settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
+        [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph( ...
+            Year(idx), dayNum(idx), settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
         
         if idx == 1
             Peph = Pephi;
@@ -155,7 +157,7 @@ else
             case 'IGS'
                 
                 if ~FLAG_NO_LOAD
-                    Peph = navsu.readfiles.readSP3(fullFilePathName, 0, 1, atxData);
+                    Peph = navsu.readfiles.readSP3(fullFilePathName, 0, 1);
                     
                     % If nothing was read, just escape.s
                     if isempty(Peph)
@@ -176,7 +178,8 @@ else
                 ephCenter = settings.gpsEphCenter;
                 
                 % this function does it all
-                [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,1,TIME_STRIP,atxData);
+                [Peph,PFileName,PFileNameFull] = loadPephMGEX( ...
+                    ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,1,TIME_STRIP,atxData);
                 
         end
         
@@ -222,22 +225,40 @@ else
             case 'MGEX'
                 ephCenter = settings.gloEphCenter;
                 
-                [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,2,TIME_STRIP,atxData);
+                [Peph,PFileName,PFileNameFull] = loadPephMGEX( ...
+                    ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,2,TIME_STRIP,atxData);
                 
         end
         
-    elseif all(settings.constUse ==  [0 0 1 0 0])
+    elseif all(settings.constUse == [0 0 1 0 0])
         % Only have an MGEX option here!
         ephCenter = settings.galEphCenter;
         
-        [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,3,TIME_STRIP,atxData);
+        [Peph,PFileName,PFileNameFull] = loadPephMGEX( ...
+            ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,3,TIME_STRIP,atxData);
         
-    elseif all(settings.constUse ==  [0 0 0 1 0])
+    elseif all(settings.constUse == [0 0 0 1 0])
         % Only have an MGEX option here!
         ephCenter = settings.bdsEphCenter;
         
-        [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,4,TIME_STRIP,atxData) ;
-        
+        [Peph,PFileName,PFileNameFull] = loadPephMGEX( ...
+            ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,4,TIME_STRIP,atxData) ;
+    elseif all(settings.constUse == [0 0 0 0 1])
+        % there is a mismatch here! svOrbitClock considers this QZSS. Other
+        % functions consider this SBAS and QZSS is #6. Either way 
+        % navsu.readfiles.readSp3 can not handle it. But this case
+        % differentiation is necessary to avoid an infinite recursion.
+        warning('Currently unable to parse ephemeris for constellation #5.')
+        Peph.PRN           = [];
+        Peph.clock_bias    = [];
+        Peph.clock_drift   = [];
+        Peph.position      = [];
+        Peph.velocity      = [];
+        Peph.Event         = [];
+        Peph.epochs        = [];
+        Peph.constellation = [];
+        PFileName = '';
+        PFileNameFull = '';
     else
         % Multi-GNSS
         PRN           = [];
@@ -258,7 +279,8 @@ else
             settings2.constUse(cdx) = 1;
 
             % Call yourself
-            [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
+            [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph( ...
+                Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
 
             if ~FLAG_NO_LOAD
                 PRN           = [PRN; Pephi.PRN];
@@ -285,7 +307,8 @@ else
     end
 end
 
-    function [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,constOut,TIME_STRIP,atxData)
+    function [Peph,PFileName,PFileNameFull] = loadPephMGEX( ...
+            ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,constOut,TIME_STRIP,atxData)
         
         % day of year can sometimes be fractional for ultra rapids- need to
         % clean it up
@@ -372,21 +395,3 @@ end
 
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
