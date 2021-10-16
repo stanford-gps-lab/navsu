@@ -36,6 +36,10 @@ for dayi = 1:length(doys)
     fileId = cellfun(@(fName) endsWith(lower(fName), ...
                      ['.', num2str(mod(yr, 100)), fileEnding]), files);
     if ~any(fileId)
+        % try MGEX file
+        fileId = cellfun(@(fName) endsWith(fName, '.rnx'), files);
+    end
+    if ~any(fileId)
         % try GPS only file
         fileId = cellfun(@(fName) endsWith(lower(fName), ...
                      ['.', num2str(mod(yr, 100)), 'n']), files);
