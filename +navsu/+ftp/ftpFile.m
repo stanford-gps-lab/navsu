@@ -52,7 +52,7 @@ for ddx = 1:length(dayList)
     [gpsWeek0,tow0] = navsu.time.jd2gps(navsu.time.cal2jd(Year,1,1));
     woy = gpsWeek-gpsWeek0+1;
     
-    target_dir = [destDir eval(destFormat)];
+    target_dir = fullfile(destDir, eval(destFormat));
     
     ftpDir = eval(sourceFormat);
     
@@ -101,6 +101,12 @@ for ddx = 1:length(dayList)
                 
                 mget(mw, serverName, target_dir);
                 change = 1;
+                
+                % fail gracefully: warn user if download failed
+                if ~isfile(fullfile(target_dir,  serverName))
+                    warning(['ftp download of ', serverName, ' from ', ...
+                        ftpSite, ftpDir, ' failed!']);
+                end
                 
                 if unzipFlag
                     navsu.readfiles.unzipFile(fullfile(target_dir,  serverName));
