@@ -102,6 +102,12 @@ for ddx = 1:length(dayList)
                 mget(mw, serverName, target_dir);
                 change = 1;
                 
+                % fail gracefully: warn user if download failed
+                if ~isfile(fullfile(target_dir,  serverName))
+                    warning(['ftp download of ', serverName, ' from ', ...
+                        ftpSite, ftpDir, ' failed!']);
+                end
+                
                 if unzipFlag
                     navsu.readfiles.unzipFile(fullfile(target_dir,  serverName));
                 end

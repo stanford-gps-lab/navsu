@@ -15,7 +15,13 @@ else
                 '--ftp-ssl ' site];
 end
 
-[~, output] = system(curlCall);
+[curlFeedbackCode, output] = system(curlCall);
+
+% gracefully warn user of failure
+if curlFeedbackCode > 0
+    warning(['Failed to access %s\n', ...
+        'Could not retrieve ftp directory listing.'], site);
+end
 
 if ispc
     % legacy code. Has to be tested on windows!!

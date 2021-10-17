@@ -96,16 +96,15 @@ if nMeas > 0
         indPr = find([idList.subtype]' == navsu.internal.MeasEnum.Code);
         measPr = measList(indPr, :);
         idPr   = idList(indPr);
-        % Pull one pseudorange for each satellite
-        [~,losIndPr] = ismember([[idPr.prn]' [idPr.const]'], prnConstInds, 'rows');
         
         
         % rough guess at clock bias 
-%          bRxTemp = nanmedian(measMatPr(:,5)-gRangeSv(losIndPr)-satBias(losIndPr));
-        
         if isempty(measPr) 
             bRxi = x_est_propagated(obj.INDS_STATE.CLOCK_BIAS,1);
         else
+            % Pull one pseudorange for each satellite
+            [~,losIndPr] = ismember([[idPr.prn]' [idPr.const]'], prnConstInds, 'rows');
+        
             bRxi = median(measPr-gRangeSv(losIndPr)-satBias(losIndPr), 'omitnan');
             obj.clockBias(:) = bRxi;
         end

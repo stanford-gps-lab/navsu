@@ -1,4 +1,4 @@
-function [Clck, CFileName,CFileNameFull] = loadCFst(Year,dayNum ,settings,FLAG_NO_LOAD)
+function [Clck, CFileName,CFileNameFull] = loadCFst(Year, dayNum, settings, FLAG_NO_LOAD)
 % loadCFst
 % DESCRIPTION:
 %   Find and parse IGS clock corrections.  The files to be parsed should
@@ -51,7 +51,8 @@ if length(dayNum) > 1
     CFileName = {};
     CFileNameFull = {};
     for idx = 1:length(dayNum)
-        [Clcki, CFileNamei,filenameFulli] = navsu.readfiles.loadCFst(Year(idx),dayNum(idx),settings,FLAG_NO_LOAD);
+        [Clcki, CFileNamei,filenameFulli] = navsu.readfiles.loadCFst( ...
+            Year(idx),dayNum(idx),settings,FLAG_NO_LOAD);
         if ~FLAG_NO_LOAD
             if idx == 1
                 Clck = Clcki;
@@ -82,7 +83,7 @@ else
             case 'IGS'
                 %precise clock file
                 CfileNameFormat = 'cod%04d%01d.clk_05s';
-                CpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
+                CpathNameFormat = '/%d/%03d/';
                 
                 Clck.Cepochs = [];
                 Clck.Cclk = [];
@@ -90,10 +91,13 @@ else
 
                 for jdx = 1:length(dayNum)
                     % get 30 second clock data from prior and current days
-                    CFileName = sprintf(CfileNameFormat, floor((gps_day(jdx))/7), mod((gps_day(jdx)),7));
-                    tmp = sprintf(CpathNameFormat, yr(jdx),dayNum);
+                    CFileName = sprintf(CfileNameFormat, ...
+                                        floor(gps_day(jdx)/7), ...
+                                        mod(gps_day(jdx), 7));
+                    tmp = fullfile(settings.preciseProdDir, ...
+                                   sprintf(CpathNameFormat, yr(jdx), dayNum));
                     if ~FLAG_NO_LOAD
-                        [Cepochs, Cclk, Cclk_sig] = Read_GPS_05sec_CLK([tmp CFileName],1);
+                        [Cepochs, Cclk, Cclk_sig] = Read_GPS_05sec_CLK(fullfile(tmp, CFileName),1);
                         Cepochs = Cepochs + 86400*(gps_day(jdx));
                         
                         
@@ -117,11 +121,12 @@ else
                 PfileNameFormat1 = '%04d-%02d-%02d.tdp';
                 
                 tmp = fullfile(settings.preciseProdDir, ...
-                               sprintf(PpathNameFormat, yr,dayNum));
-                CFileName = sprintf(PfileNameFormat1, yr, mn,dy);
+                               sprintf(PpathNameFormat, yr, dayNum));
+                CFileName = sprintf(PfileNameFormat1, yr, mn, dy);
                 
                 % load jpl ultra rapids
-                [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readJplClock(fullfile(tmp, CFileName));
+                [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readJplClock( ...
+                    fullfile(tmp, CFileName));
                
                 Clck.Cepochs  = Cepochs;
                 Clck.Cclk     = Cclk;
@@ -142,7 +147,8 @@ else
                 pathStr = fullfile(settings.preciseProdDir, ...
                                    sprintf(PpathNameFormat, yr, dayNum));
                 
-                fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  num2str(dayNum,'%03d')];
+                fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  ...
+                          num2str(dayNum,'%03d')];
                 % check the directory for a file from that day
                 diri = dir(pathStr);
                 fileInd = find(contains({diri.name},fname1) ...
@@ -156,13 +162,17 @@ else
                     % if the RINEX3 filename is not available, check for the
                     % old one.
                     CfileNameFormat = [clkCenter '%04d%01d.clk'];
-                    CpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-                    CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
-                    tmp = sprintf(CpathNameFormat, yr,dayNum);
+                    CpathNameFormat = '/%d/%03d/';
+                    CFileName = sprintf(CfileNameFormat, ...
+                                        floor((gps_day)/7), ...
+                                        mod((gps_day),7));
+                    tmp = fullfile(settings.preciseProdDir, ...
+                                   sprintf(CpathNameFormat, yr,dayNum));
                 end
                 
                 if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock([tmp CFileName],32,'G');
+                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock( ...
+                        fullfile(tmp, CFileName), 32, 'G');
                     Cepochs = Cepochs + 86400*(gps_day);
                     
                     %                 if length(Cepochs) == 2880
@@ -181,7 +191,7 @@ else
                     
                 end
         end
-        CFileNameFull = {[tmp CFileName]};
+        CFileNameFull = {fullfile(tmp, CFileName)};
         CFileName = {CFileName};
     elseif all(settings.constUse ==  [0 1 0 0 0])
         GloPclkSource = 'MGEX';
@@ -196,7 +206,7 @@ else
 %                 CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
 %                 tmp = sprintf(CpathNameFormat, yr);
 %                 if ~FLAG_NO_LOAD
-%                     [Cepochs, Cclk, Cclk_sig] = readRinexClock([tmp CFileName],24);
+%                     [Cepochs, Cclk, Cclk_sig] = readRinexClock(fullfile(tmp, CFileName),24);
 %                     Cepochs = Cepochs + 86400*(gps_day);
 %                     
 %                     Clck.Cepochs  = Cepochs;
@@ -216,7 +226,8 @@ else
                 else
                     center3 = upper(clkCenter);
                 end
-                fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  num2str(dayNum,'%03d')];
+                fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  ...
+                          num2str(dayNum,'%03d')];
                 % check the directory for a file from that day
                 diri = dir(pathStr);
                 fileInd = find(contains({diri.name},fname1) ...
@@ -230,13 +241,17 @@ else
                     % if the RINEX3 filename is not available, check for the
                     % old one.
                     CfileNameFormat = [clkCenter '%04d%01d.clk'];
-                    CpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-                    CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
-                    tmp = sprintf(CpathNameFormat, yr,dayNum);
+                    CpathNameFormat = '/%d/%03d/';
+                    CFileName = sprintf(CfileNameFormat, ...
+                                        floor((gps_day)/7), ...
+                                        mod((gps_day),7));
+                    tmp = fullfile(settings.preciseProdDir, ...
+                                   sprintf(CpathNameFormat, yr, dayNum));
                 end
                 
                 if ~FLAG_NO_LOAD
-                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock([tmp CFileName],24,'R');
+                    [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock( ...
+                        fullfile(tmp, CFileName), 24, 'R');
                     Cepochs = Cepochs + 86400*(gps_day);
                     
                     %                 if length(Cepochs) == 2880
@@ -255,7 +270,7 @@ else
                     
                 end
         end
-        CFileNameFull = {[tmp CFileName]};
+        CFileNameFull = {fullfile(tmp, CFileName)};
         CFileName = {CFileName};
     elseif all(settings.constUse ==  [0 0 1 0 0])
         clkCenter = settings.galClkCenter;
@@ -283,13 +298,14 @@ else
             % if the RINEX3 filename is not available, check for the
             % old one.
             CfileNameFormat = [clkCenter '%04d%01d.clk'];
-            CpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
+            CpathNameFormat = '/%d/%03d/';
             CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
-            tmp = sprintf(CpathNameFormat, yr,dayNum);
+            tmp = fullfile(settings.preciseProdDir, ...
+                           sprintf(CpathNameFormat, yr,dayNum));
         end
         
         if ~FLAG_NO_LOAD
-            [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock([tmp CFileName],36,'E');
+            [Cepochs, Cclk, Cclk_sig] = navsu.readfiles.readRinexClock(fullfile(tmp, CFileName),36,'E');
             Cepochs = Cepochs + 86400*(gps_day);
             
             Clck.Cepochs  = Cepochs;
@@ -300,7 +316,7 @@ else
             Clck.PRNs = (1:size(Clck.Cclk,1))';
             Clck.constInds = 3*ones(size(Clck.PRNs));
         end
-        CFileNameFull = {[tmp CFileName]};
+        CFileNameFull = {fullfile(tmp, CFileName)};
         CFileName = {CFileName};
         
     elseif all(settings.constUse ==  [0 0 0 1 0])
@@ -329,13 +345,14 @@ else
             % if the RINEX3 filename is not available, check for the
             % old one.
             CfileNameFormat = [clkCenter '%04d%01d.clk'];
-            CpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
+            CpathNameFormat = '/%d/%03d/';
             CFileName = sprintf(CfileNameFormat, floor((gps_day)/7), mod((gps_day),7));
-            tmp = sprintf(CpathNameFormat, yr,dayNum);
+            tmp = fullfile(settings.preciseProdDir, ...
+                           sprintf(CpathNameFormat, yr, dayNum));
         end
         
         if ~FLAG_NO_LOAD
-            [Cepochs, Cclk, Cclk_sig] =  navsu.readfiles.readRinexClock([tmp CFileName],35,'C');
+            [Cepochs, Cclk, Cclk_sig] =  navsu.readfiles.readRinexClock(fullfile(tmp, CFileName),35,'C');
             Cepochs = Cepochs + 86400*(gps_day);
             
             Clck.Cepochs  = Cepochs;
@@ -345,8 +362,19 @@ else
             Clck.PRNs = (1:size(Clck.Cclk,1))';
             Clck.constInds = 4*ones(size(Clck.PRNs));
         end
-        CFileNameFull = {[tmp CFileName]};
+        CFileNameFull = {fullfile(tmp, CFileName)};
         CFileName = {CFileName};
+        
+    elseif all(settings.constUse ==  [0 0 0 0 1])
+        % SBAS case currently not covered. Just return empty outputs to
+        % avoid infinite recursion.
+        
+        Clck.Cepochs = [];
+        Clck.Cclk = [];
+        Clck.Cclk_sig = [];
+        
+        CFileName = '';
+        CFileNameFull = '';
         
     else
         settings2 = settings;
@@ -363,7 +391,8 @@ else
                 settings2.constUse(cdx) = 1;
                 
                 % Call yourself
-                [Cdatai,CFileNamei,CFileNameFulli] = navsu.readfiles.loadCFst(Year, dayNum, settings2,FLAG_NO_LOAD);
+                [Cdatai,CFileNamei,CFileNameFulli] = navsu.readfiles.loadCFst( ...
+                    Year, dayNum, settings2,FLAG_NO_LOAD);
                 
                 if ~FLAG_NO_LOAD
                     if isempty(PRNs)

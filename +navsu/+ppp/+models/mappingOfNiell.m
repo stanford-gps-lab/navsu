@@ -1,4 +1,13 @@
-function [Mw,Md] = mappingOfNiell(el, h, lat,doy)
+function [Mw, Md] = mappingOfNiell(el, h, lat, doy)
+%%Mapping of Niell to compute tropospheric mapping of zenith to slant delay
+% 
+%   [Mw, Md] = mappingOfNiell(el, h, lat, doy)
+%   
+%   Inputs:
+%   el      N x 1 vector of satellite elevation in (deg)
+%   h       receiver height in (m)
+%   lat     receiver latitude in (deg)
+%   doy     integer day of the year
 
 % Source: http://www.navipedia.net/index.php/Mapping_of_Niell
 % this also just comes from the original paper: 
@@ -49,13 +58,15 @@ aDry = abc2(:,1)-abc2(:,4).*cos(2*pi*(doy-28)/365.25);
 bDry = abc2(:,2)-abc2(:,5).*cos(2*pi*(doy-28)/365.25);
 cDry = abc2(:,3)-abc2(:,6).*cos(2*pi*(doy-28)/365.25);
 
-Md0 = (1+aDry./(1+bDry./(1+cDry)))./(sin(elRad)+aDry./(sin(elRad)+bDry./(sin(elRad)+cDry)));
+Md0 = (1+aDry./(1+bDry./(1+cDry))) ...
+    ./ (sin(elRad)+aDry./(sin(elRad)+bDry./(sin(elRad)+cDry)));
 
 aHt = heightCorrAbc(1);
 bHt = heightCorrAbc(2);
 cHt = heightCorrAbc(3);
 
-mht = (1+aHt./(1+bHt./(1+cHt)))./(sin(elRad)+aHt./(sin(elRad)+bHt./(sin(elRad)+cHt)));
+mht = (1+aHt./(1+bHt./(1+cHt))) ...
+    ./ (sin(elRad)+aHt./(sin(elRad)+bHt./(sin(elRad)+cHt)));
 
 % adjust by 1000 because h should be in KM
 dm = (1./sin(elRad)-mht).*h/1000;
