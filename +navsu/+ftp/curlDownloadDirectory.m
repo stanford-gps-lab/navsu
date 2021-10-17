@@ -8,18 +8,42 @@ function curlDownloadDirectory(file,localDir,netrcFile,cookieFile)
 fileNames = navsu.ftp.curlGetDirectoryContents(remoteDir, netrcFile, cookieFile);
 filePaths = fullfile(remoteDir, fileNames);
 
-% download each file
-for fI = 1:length(filePaths)
+
+if ispc
+    % Functionality to download all at once using curl- much faster than
+    % downloading individual files. 
     
-    navsu.ftp.curlDownloadSingleFile(filePaths{fI}, netrcFile, cookieFile);
+    % check if the local folder exists
+    if ~exist(localDir,'dir')
+        mkdir(localDir);
+        % download each file
+    end
+    
+    filenameAny = ['*'];
+    
+    [~,output] = system(['cd "' localDir '" & curl -c "' cookieFile '" --silent -n --netrc-file "' netrcFile '" -L -O --remote-name-all "' remoteDir '/' filenameAny '" ']);
+    
+    % unzip the downloaded files
+    navsu.readfiles.unzipFile(fullfile([localDir '_']),localDir,true);
+    
+    % delete the original compressed file
+    delete(fullfile([localDir '_']));
+    
+else
+    % download each file
+    for fI = 1:length(filePaths)
+        
+        navsu.ftp.curlDownloadSingleFile(filePaths{fI},localDir, netrcFile, cookieFile);
+        
+    end
+    
+    % unzip the downloaded files
+    navsu.readfiles.unzipFile(fullfile([localDir '_']))
+    
+    % delete the original compressed file
+    
+    delete(fullfile([localDir '_']))
     
 end
-
-% unzip the downloaded files
-navsu.readfiles.unzipFile(fullfile([localDir '_']))
-
-% delete the original compressed file
-
-delete(fullfile([localDir '_']))
 
 end

@@ -135,10 +135,8 @@ else
             end
 
             % now compile file name:
-            PpathNameFormat = '/%d/%03d/'; % can be set for all
-
-            tmp = sprintf(PpathNameFormat, yr, dayNum);
-            fullFilePathName = fullfile(settings.preciseProdDir, tmp, PFileName);
+            fullFilePathName = fullfile(settings.preciseProdDir, num2str(yr),...
+                num2str(dayNum,'%03i'), PFileName);
 
             PFileName = {PFileName};
             PFileNameFull = {fullFilePathName};
@@ -148,8 +146,8 @@ else
         switch settings.gpsEphCenter
             case 'NGA'
                 if ~FLAG_NO_LOAD
-                    Peph = navsu.readfiles.readSP3(fullFilePathName);
-                    
+%                     Peph = navsu.readfiles.readSp3(fullFilePathName,0,1);
+                    Peph = navsu.readfiles.readApc(fullFilePathName);
                 end
                 
             case 'IGS'

@@ -1,5 +1,5 @@
 function pvt = readSp3(filename, cmToApcFlag, strictConstNumFlag, ...
-                       constellationOut, atxData)
+    constellationOut, atxData)
 % readSp3
 % DESCRIPTION:
 %   Parses .sp3 precise orbit and clock files!
@@ -235,8 +235,8 @@ if strictConstNumFlag
 end
 
 dataEpochs = GPS_seconds ...
-           + GPS_week_num * 604800 ...
-           + Epoch_interval .* (0:NumEpochs-1)';
+    + GPS_week_num * 604800 ...
+    + Epoch_interval .* (0:NumEpochs-1)';
 epochs = repelem(dataEpochs, NumSV, 1);
 constInds = constellationOut*ones(size(epochs));
 
@@ -249,6 +249,7 @@ pvt = struct('filename', filename, ...
     'NumEpochs', NumEpochs, ...
     'PRN', array(:, 1), ...
     'clock_bias', array(:, 5) .* 1e-6, ...
+    'clock_drift',nan(size(array(:,5))),...
     'position', array(:, 2:4) .* 1000, ...
     'velocity',nan(size(array(:,2:4))), ...
     'Event',array(:, 5) .* 0,...
@@ -263,11 +264,11 @@ if cmToApcFlag && ~isempty(atxData)
     
     PRNs = unique(array(:,1));
     
-    % get offset vector for each satellite
-    offset = navsu.ppp.getAPCoffset(atxData, PRNs, constellationOut, dataEpochs);
-    
     % now offset each sat pos into correct direction
     for pdx = 1:NumSV
+        
+        % get offset vector for each satellite
+        offset = navsu.ppp.getAPCoffset(atxData, PRNs(pdx), constellationOut, dataEpochs(1));
         
         inds = find(array(:,1) == PRNs(pdx));
         
@@ -278,8 +279,8 @@ if cmToApcFlag && ~isempty(atxData)
             
             % do the rotation
             offsetECEF = NaN(size(offset));
-            for tdx = 1:NumEpochs                
-                offsetECEF(:, tdx) = R(:, :, tdx) * offset(:, pdx);
+            for tdx = 1:NumEpochs
+                offsetECEF(:, tdx) = R(:, :, tdx) * offset;
             end
             
             pvt.position(inds, :) = pvt.position(inds, :) + offsetECEF';

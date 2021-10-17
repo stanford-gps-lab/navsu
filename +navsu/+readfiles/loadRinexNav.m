@@ -101,7 +101,11 @@ end
 
 if any(isnan(leapSecond)) && ~isempty(Eph_R)
     % Pull the actual leap second count
-    [~,~,~,leapSecond] = navsu.time.utc2gps(Eph_R(2:7,1)',1);
+    % what year should include 
+    ephRDate = Eph_R(2:7,1)';
+    ephRDate(1) = ephRDate(1)+2000;
+    
+    [~,~,~,leapSecond] = navsu.time.utc2gps(ephRDate,1);
 end
 
 % Collect everything for output

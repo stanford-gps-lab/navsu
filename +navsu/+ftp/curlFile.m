@@ -57,7 +57,7 @@ for ddx = 1:length(dayList)
     [gpsWeek0,tow0] = navsu.time.jd2gps(navsu.time.cal2jd(Year,1,1));
     woy = gpsWeek-gpsWeek0+1;
     
-    target_dir = [destDir eval(destFormat)];
+    target_dir = fullfile(destDir, eval(destFormat));
     
     ftpDir = eval(sourceFormat);
     

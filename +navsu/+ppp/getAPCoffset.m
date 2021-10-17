@@ -26,9 +26,14 @@ end
 % convert PRN to SV number
 SVN = navsu.svprn.prn2svn(PRN, navsu.time.epochs2jd(epochs), constInds);
 
+% Only keep atxData for GNSS satellites, which are type ~= 0
+if any([atxData.type] == 0)
+    atxData = atxData([atxData.type] ~=0);
+end
+
 % get logical matrix of atx data matching the PRNs
 logMat = ([atxData.type] == constInds ...
-        & [atxData.svn] == SVN ...
+        & [atxData.prn] == PRN ...
         & [atxData.epochStart] <= epochs ...
         & [atxData.epochEnd] >= epochs)';
 

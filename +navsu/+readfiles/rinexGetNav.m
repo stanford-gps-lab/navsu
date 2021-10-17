@@ -823,8 +823,8 @@ for constIdx = 1:length(constData)
             %
             % %XXX needs to be what? the above (incomplete) comment is in
             % %XXX original GitHub checkout as of April 2020
-            for jdx = 2:length(data)
-               Eph(jdx-1,:) = data{jdx}; 
+            for jdx = 2:23
+                Eph(jdx-1,:) = data{jdx};
             end
             
             

@@ -76,6 +76,27 @@ else
         end
     end
     
+    if settings.constUse(2)
+        % GPS
+        if isfield(settings,'gloNavSource') && strcmp(settings.gloNavSource,'s')
+            BfileNameFormat = '%4d/sugl%03d0.%02dg';
+            BpathName = settings.suglGloDir;
+            BFileName = sprintf(BfileNameFormat, yr, doy, mod(yr, 100));
+        else
+            % MGEX file
+            BFileName = brdmFilename;
+            BpathName = brdmPath;
+        end
+        constellations = navsu.readfiles.initConstellation(0,1,0,0,0);
+        
+        BFileNameFull{1} = fullfile(BpathName, BFileName);
+        if ~FLAG_NO_LOAD
+            ephi = navsu.readfiles.loadRinexNav(fullfile(BpathName, BFileName),'constellations',constellations, 'outFormat','array');
+            eph.glo = ephi.glo;
+            eph.leapSecond = ephi.leapSecond;
+        end
+    end
+    
     if settings.constUse(3)
         % Galileo
         if strcmp(settings.galNavSource,'c') % BKG product

@@ -26,35 +26,51 @@ function los_enub=findLosEnub(los_xyzb, usr_ehat, usr_nhat, usr_uhat, losmask)
 
 %2001Mar26 Created by Todd Walter
 %2001Apr26 Modified by Wyant Chan   -   Added losmask feature
-%2021Oct08 Modified by Fabian Rothmaier - simplified the code
 
-n_los = size(los_xyzb, 1);
-n_usr = size(usr_ehat, 1);
-n_sat = n_los/n_usr;
-if nargin == 4
-    losmask = true(n_los, 1);
+[n_los tmp]=size(los_xyzb);
+[n_usr tmp]=size(usr_ehat);
+n_sat=n_los/n_usr;
+if (nargin==4)
+    losmask = [1:n_los]';
 end
-sat_idx = 1:n_sat;
+n_mask = size(losmask,1);    
+sat_idx=1:n_sat;
 
 %expand the user east unit vector to match the lines of sight
-[t1, ~] = meshgrid(usr_ehat, sat_idx);
-e_hat = reshape(t1, n_los, 1);
+[t1 t2]=meshgrid(usr_ehat(:,3),sat_idx);
+e_hat(:,3)=reshape(t1,n_los,1);
+
+[t1 t2]=meshgrid(usr_ehat(:,2),sat_idx);
+e_hat(:,2)=reshape(t1,n_los,1);
+
+[t1 t2]=meshgrid(usr_ehat(:,1),sat_idx);
+e_hat(:,1)=reshape(t1,n_los,1);
+
 
 %expand the user north unit vector to match the lines of sight
-[t1, ~] = meshgrid(usr_nhat, sat_idx);
-n_hat = reshape(t1, n_los, 1);
+[t1 t2]=meshgrid(usr_nhat(:,3),sat_idx);
+n_hat(:,3)=reshape(t1,n_los,1);
+
+[t1 t2]=meshgrid(usr_nhat(:,2),sat_idx);
+n_hat(:,2)=reshape(t1,n_los,1);
+
+[t1 t2]=meshgrid(usr_nhat(:,1),sat_idx);
+n_hat(:,1)=reshape(t1,n_los,1);
+
 
 %expand the user up unit vector to match the lines of sight
-[t1, ~] = meshgrid(usr_uhat, sat_idx);
-u_hat = reshape(t1, n_los, 1);
+[t1 t2]=meshgrid(usr_uhat(:,3),sat_idx);
+u_hat(:,3)=reshape(t1,n_los,1);
+
+[t1 t2]=meshgrid(usr_uhat(:,2),sat_idx);
+u_hat(:,2)=reshape(t1,n_los,1);
+
+[t1 t2]=meshgrid(usr_uhat(:,1),sat_idx);
+u_hat(:,1)=reshape(t1,n_los,1);
 
 %calculate the LOS vectors in the ENU frame
-los_enub = navsu.geo.calcLosEnub(los_xyzb(losmask, :), ...
-                                 e_hat(losmask, :), ...
-                                 n_hat(losmask, :), ...
-                                 u_hat(losmask, :));
-    
-end
+los_enub=navsu.geo.calcLosEnub(los_xyzb(losmask,:), ...
+        e_hat(losmask,:), n_hat(losmask,:), u_hat(losmask,:));
 
 
 
