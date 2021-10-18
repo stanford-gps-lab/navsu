@@ -93,53 +93,67 @@ else
     
     jd = navsu.time.cal2jd(Year,1,0) + floor(dayNum);
     % adjust Year and dayNum in case of rollover
-    %     [dayNum,Year] = navsu.time.jd2doy(jd);
     gps_day = jd - navsu.time.cal2jd(1980,1,6);
-    [yr,mn,dy]=navsu.time.jd2cal(jd);
-    [doy,~]=navsu.time.jd2doy(jd);
+    [yr,mn,dy] = navsu.time.jd2cal(jd);
     
     
     if all(settings.constUse ==  [1 0 0 0 0])
-        % NGA APC data
-        %precise orbit file
+        
+        if any(strcmp(settings.gpsEphCenter, {'NGA', 'IGS', 'jplu'}))
+            % individual processing to get PFileName
+
+            switch settings.gpsEphCenter
+                case 'NGA'
+
+                    if yr >= 2020
+                        PfileNameFormat = 'nga%04d%1d.apc';
+                    elseif yr > 2011
+                        PfileNameFormat = 'apc%04d%1d';
+                    else
+                        PfileNameFormat = 'NGA%04d%1d.APC';
+                    end
+                    PFileName = sprintf(PfileNameFormat, ...
+                                        floor(gps_day/7), ...
+                                        mod(gps_day, 7));
+
+                case 'IGS'
+                    PfileNameFormat = 'igs%04d%1d.sp3';
+
+                    PFileName = sprintf(PfileNameFormat, ...
+                                        floor(gps_day/7), ...
+                                        mod(gps_day, 7));
+
+                case 'jplu'
+                    % jpl ultra rapids are actually in a different format
+                    %                 [ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']
+
+                    % filename is just year-mn-dy.pos
+                    PfileNameFormat1 = '%04d-%02d-%02d.pos';
+
+                    PFileName = sprintf(PfileNameFormat1, yr, mn, dy);
+
+            end
+
+            % now compile file name:
+            fullFilePathName = fullfile(settings.preciseProdDir, num2str(yr),...
+                num2str(dayNum,'%03i'), PFileName);
+
+            PFileName = {PFileName};
+            PFileNameFull = {fullFilePathName};
+        end
+        
+        % now actually download
         switch settings.gpsEphCenter
             case 'NGA'
-                PfileNameFormat1 = 'NGA%04d%1d.APC';
-                PfileNameFormat2 = 'apc%04d%1d';
-                PfileNameFormat3 = 'nga%04d%1d.apc';
-                
-                PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-                
-                PFileName = sprintf(PfileNameFormat1, floor((gps_day)/7), mod((gps_day),7));
-                if yr >= 2020
-                    PFileName = sprintf(PfileNameFormat3, floor((gps_day)/7), mod((gps_day),7));
-                    
-                elseif yr > 2011
-                    PFileName = sprintf(PfileNameFormat2, floor((gps_day)/7), mod((gps_day),7));
-                end
-%                 tmp = sprintf(PpathNameFormat, yr,dayNum);
-                tmp = fullfile(settings.preciseProdDir,num2str(yr,'%04i'),num2str(dayNum,'%03i'));
                 if ~FLAG_NO_LOAD
-%                                         Peph = ExpandPeph(navsu.readfiles.readSp3([tmp PFileName]));
-                    Peph = (navsu.readfiles.readApc(fullfile(tmp, PFileName)));
-                    
-                    Peph.epochs = ones(Peph.NumSV, 1) * (Peph.GPS_seconds + ...
-                        Peph.GPS_week_num*7*24*3600 + ...
-                        Peph.Epoch_interval .* (0:Peph.NumEpochs-1));
-                    Peph.epochs = Peph.epochs(:);
+%                     Peph = navsu.readfiles.readSp3(fullFilePathName,0,1);
+                    Peph = navsu.readfiles.readApc(fullFilePathName);
                 end
-                PFileNameFull = {[tmp PFileName]};
-                PFileName = {PFileName};
                 
             case 'IGS'
-                PfileNameFormat1 = 'igs%04d%1d.sp3';
-                PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-                
-                tmp = sprintf(PpathNameFormat, yr,dayNum);
-                PFileName = sprintf(PfileNameFormat1, floor((gps_day)/7), mod((gps_day),7));
                 
                 if ~FLAG_NO_LOAD
-                    Peph = ReadSP3([tmp PFileName],0,1,atxData);
+                    Peph = navsu.readfiles.readSP3(fullFilePathName, 0, 1, atxData);
                     
                     % If nothing was read, just escape.s
                     if isempty(Peph)
@@ -150,61 +164,45 @@ else
                         Peph.clock_drift = nan(size(Peph.PRN));
                     end
                     
-                    if ~isfield(Peph,'velocity')
-                        Peph.velocity = nan(size(Peph.position));
-                    end
-                    
-                    Peph.epochs = ones(Peph.NumSV, 1) * (Peph.GPS_seconds + ...
-                        Peph.GPS_week_num*7*24*3600 + ...
-                        Peph.Epoch_interval .* (0:Peph.NumEpochs-1));
-                    Peph.epochs = Peph.epochs(:);
                 end
-                PFileNameFull = {[tmp PFileName]};
-                PFileName = {PFileName};
                 
             case 'jplu'
-                % jpl ultra rapids are actually in a different format
-                %                 [ int2str(Year) ''/'' num2str(dayNum, ''%03d'') ''/'']
                 
-                PpathNameFormat =  [settings.preciseProdDir '%d/%03d/'];
-                % filename is just year-mn-dy.pos
-                PfileNameFormat1 = '%04d-%02d-%02d.pos';
-                
-                tmp = sprintf(PpathNameFormat, yr,dayNum);
-                PFileName = sprintf(PfileNameFormat1, yr, mn,dy);
-                
-                Peph = navsu.readfiles.readJplPos([tmp PFileName]);
+                Peph = navsu.readfiles.readJplPos(fullFilePathName);
                 
             otherwise
                 ephCenter = settings.gpsEphCenter;
                 
+                % this function does it all
                 [Peph,PFileName,PFileNameFull] = loadPephMGEX(ephCenter,settings,Year,dayNum,FLAG_NO_LOAD,FLAG_APC_OFFSET,1,TIME_STRIP,atxData);
                 
         end
         
-    elseif all(settings.constUse ==  [0 1 0 0 0])
+    elseif all(settings.constUse == [0 1 0 0 0])
         GloPephSource = 'MGEX';
         switch GloPephSource
             case 'IGS'
                 %precise orbit file
                 PfileNameFormat1 = 'igl%04d%1d.sp3';
                 PfileNameFormat1 = [settings.gloEphCenter '%04d%1d.sp3'];
-                PfileNameFormat2 = 'igl%04d%1d';
+                PFileName = sprintf(PfileNameFormat1, floor((gps_day)/7), mod((gps_day),7));
+                
                 if strcmp(settings.gloEphCenter,'com')
                     % Use CODE MGEX data
                     PpathNameFormat = [settings.rnxMgexPephDir settings.gloEphCenter '/%d/'];
                 else
                     PpathNameFormat =  [settings.gloIgsDir '%d/'];
                 end
-                PFileName = sprintf(PfileNameFormat1, floor((gps_day)/7), mod((gps_day),7));
                 tmp = sprintf(PpathNameFormat, yr);
                 
+                fullFilePathName = fullfile(tmp, PFileName);
+
                 if ~FLAG_NO_LOAD
                     if strcmp(settings.gloEphCenter,'emx') || strcmp(settings.gloEphCenter,'com')
-                        Peph = readSp3([tmp PFileName],FLAG_APC_OFFSET,1,2);
+                        Peph = navsu.readfiles.readSp3(fullFilePathName,FLAG_APC_OFFSET,1,2);
                         
                     else
-                        Peph = ReadSP3([tmp PFileName],1,1);
+                        Peph = navsu.readfiles.readSP3(fullFilePathName,1,1);
                     end
                     % If nothing was read, just escape.s
                     if isempty(Peph)
@@ -215,15 +213,8 @@ else
                         Peph.clock_drift = nan(size(Peph.PRN));
                     end
                     
-                    if ~isfield(Peph,'velocity')
-                        Peph.velocity = nan(size(Peph.position));
-                    end
-                    Peph.epochs = ones(Peph.NumSV, 1) * (Peph.GPS_seconds + ...
-                        Peph.GPS_week_num*7*24*3600 + ...
-                        Peph.Epoch_interval .* (0:Peph.NumEpochs-1));
-                    Peph.epochs = Peph.epochs(:);
                 end
-                PFileNameFull = {[tmp PFileName]};
+                PFileNameFull = {fullFilePathName};
                 PFileName = {PFileName};
                 
             case 'MGEX'
@@ -260,27 +251,25 @@ else
         
         settings2 = settings;
         
-        for cdx = 1:length(settings.constUse)
-            if settings.constUse(cdx)
-                settings2.constUse = [0 0 0 0 0];
-                settings2.constUse(cdx) = 1;
-                
-                % Call yourself
-                [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
-                
-                if ~FLAG_NO_LOAD
-                    PRN           = [PRN; Pephi.PRN];
-                    clock_bias    = [clock_bias; Pephi.clock_bias];
-                    clock_drift   = [clock_drift; Pephi.clock_drift];
-                    position      = [position; Pephi.position];
-                    velocity      = [velocity; Pephi.velocity];
-                    Event         = [Event; Pephi.Event];
-                    epochs        = [epochs; Pephi.epochs];
-                    constellation = [constellation; cdx*ones(size(Pephi.epochs))];
-                end
-                PFileName      = [PFileName PFileNamei];
-                PFileNameFull = [PFileNameFull PFileNameFulli];
+        for cdx = find(settings.constUse)
+            settings2.constUse = [0 0 0 0 0];
+            settings2.constUse(cdx) = 1;
+
+            % Call yourself
+            [Pephi,PFileNamei,PFileNameFulli] = navsu.readfiles.loadPEph(Year, dayNum, settings2,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET,TIME_STRIP);
+
+            if ~FLAG_NO_LOAD
+                PRN           = [PRN; Pephi.PRN];
+                clock_bias    = [clock_bias; Pephi.clock_bias];
+                clock_drift   = [clock_drift; Pephi.clock_drift];
+                position      = [position; Pephi.position];
+                velocity      = [velocity; Pephi.velocity];
+                Event         = [Event; Pephi.Event];
+                epochs        = [epochs; Pephi.epochs];
+                constellation = [constellation; cdx*ones(size(Pephi.epochs))];
             end
+            PFileName      = [PFileName PFileNamei];
+            PFileNameFull = [PFileNameFull PFileNameFulli];
         end
         
         Peph.PRN           = PRN;
@@ -309,12 +298,10 @@ end
         Peph.Event         = [];
         Peph.epochs        = [];
         Peph.constellation = [];
-        PFileName     = [];
-        PFileNameFull = [];
         % look for RINEX3 format file first, then fall back on old
         % format if it doesn't exist
-        PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
-        pathStr = sprintf(PpathNameFormat, Year,dayNum);
+        PpathNameFormat = '/%d/%03d/';
+        pathStr = fullfile(settings.preciseProdDir, sprintf(PpathNameFormat, Year,dayNum));
         if strcmp(ephCenter,'com')
             center3 = 'COD';
         else
@@ -323,8 +310,9 @@ end
         fname1 = [center3 '0MGXFIN_' num2str(Year,'%04d')  num2str(dayNum,'%03d')];
         % check the directory for a file from that day
         diri = dir(pathStr);
-        fileInd = find(~cellfun(@isempty,strfind({diri.name},fname1)) & cellfun(@isempty,strfind({diri.name},'.gz')) & ...
-            ~cellfun(@isempty,strfind({diri.name},'ORB.SP3')) );
+        fileInd = find(contains({diri.name}, fname1) ...
+                     & ~contains({diri.name}, '.gz') ...
+                     & contains({diri.name}, 'ORB.SP3'));
         
         if ~isempty(fileInd)
             tmp = pathStr;
@@ -340,26 +328,21 @@ end
             else
                 PfileNameFormat1 = [ephCenter '%04d%1d.sp3'];
             end
-            PpathNameFormat =  [settings.preciseProdDir '/%d/%03d/'];
+            PpathNameFormat = '/%d/%03d/';
             PFileName = sprintf(PfileNameFormat1, floor((gps_day)/7), mod((gps_day),7));
-            tmp = sprintf(PpathNameFormat, yr,dayNum);
+            tmp = fullfile(settings.preciseProdDir, sprintf(PpathNameFormat, yr,dayNum));
         end
         
+        fullFileName = fullfile(tmp, PFileName);
+        
         if ~FLAG_NO_LOAD
-            Peph = navsu.readfiles.readSp3([tmp PFileName],FLAG_APC_OFFSET,1,constOut,atxData);
+            Peph = navsu.readfiles.readSp3(fullFileName,FLAG_APC_OFFSET,1,constOut,atxData);
             
             % Ensure all fields are filled
             if ~isfield(Peph,'clock_drift')
                 Peph.clock_drift = nan(size(Peph.PRN));
             end
             
-            if ~isfield(Peph,'velocity')
-                Peph.velocity = nan(size(Peph.position));
-            end
-            Peph.epochs = ones(Peph.NumSV, 1) * (Peph.GPS_seconds + ...
-                Peph.GPS_week_num*7*24*3600 + ...
-                Peph.Epoch_interval .* (0:Peph.NumEpochs-1));
-            Peph.epochs = Peph.epochs(:);
             
             Peph.Event(isnan(Peph.Event)) = 1;
             
@@ -381,7 +364,7 @@ end
             
             Peph.constellation = constOut*ones(size(Peph.epochs));
         end
-        PFileNameFull = {[tmp PFileName]};
+        PFileNameFull = {fullFileName};
         PFileName = {PFileName};
     end
 
