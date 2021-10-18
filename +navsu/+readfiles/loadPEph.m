@@ -117,11 +117,11 @@ else
                 elseif yr > 2011
                     PFileName = sprintf(PfileNameFormat2, floor((gps_day)/7), mod((gps_day),7));
                 end
-                tmp = sprintf(PpathNameFormat, yr,dayNum);
-                
+%                 tmp = sprintf(PpathNameFormat, yr,dayNum);
+                tmp = fullfile(settings.preciseProdDir,num2str(yr,'%04i'),num2str(dayNum,'%03i'));
                 if ~FLAG_NO_LOAD
 %                                         Peph = ExpandPeph(navsu.readfiles.readSp3([tmp PFileName]));
-                    Peph = (navsu.readfiles.readApc(fullfile([tmp PFileName])));
+                    Peph = (navsu.readfiles.readApc(fullfile(tmp, PFileName)));
                     
                     Peph.epochs = ones(Peph.NumSV, 1) * (Peph.GPS_seconds + ...
                         Peph.GPS_week_num*7*24*3600 + ...

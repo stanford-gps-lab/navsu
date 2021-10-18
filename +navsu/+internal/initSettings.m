@@ -56,19 +56,19 @@ settings.netrcFile = res.netrcFile;
 settings.baseDir = preciseProdDir;
 % GPS----------------------------------------------------------------------
 % Daily precise products (orbit and clock)
-settings.preciseProdDir = [preciseProdDir 'precise-daily/'];
+settings.preciseProdDir = fullfile(preciseProdDir, 'precise-daily/');
 % Observations from IGS stations
-settings.mgxObsDir      = [obsDir 'mgex-obs/'];
+settings.mgxObsDir      = fullfile(obsDir ,'mgex-obs/');
 % High rate observations
 settings.mgxHrObsDir    = [obsDir 'mgex-hr-obs/'];
 % Temporary directory
-settings.tempDir        = [preciseProdDir 'temp/'];
+settings.tempDir        = fullfile(preciseProdDir, 'temp/');
 % Differential code biases
 settings.dcbDir         = [preciseProdDir 'dcb/'];
 % GPS navigation data from IGS stations
-settings.navGpsDir      = [preciseProdDir 'nav-daily/gps/'];
+settings.navGpsDir      = fullfile(preciseProdDir, 'nav-daily/gps/');
 % Multi-GNSS navigation data from IGS stations
-settings.navMgxDir         = [preciseProdDir 'nav-daily/mgex/'];
+settings.navMgxDir         = fullfile(preciseProdDir, 'nav-daily/mgex/');
 
 
 %% Precise clock and orbit centers
