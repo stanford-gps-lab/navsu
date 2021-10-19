@@ -320,8 +320,8 @@ switch inChoice
         ftpStruc.sourceFormat = '[''/gnss/data/daily/'' num2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'' num2str(mod(Year,100),''%02i'') ''p/'' ]';
         ftpStruc.destFormat   = '[int2str(Year) ''/'' num2str(dayNum,''%03d'') ''/'']';
 %         ftpStruc.fileFormat   =  {'[''*MN.rnx*'']'};
-%         ftpStruc.fileFormat   = {'[''*'']'};
-        ftpStruc.fileFormat   =  {'[''BRDM*.rnx*'']'};
+        ftpStruc.fileFormat   = {'[''*'']'};
+%         ftpStruc.fileFormat   =  {'[''BRDM*.rnx*'']'};
         ftpStruc.unzipFlag    = 1;
         
         [YearChangei,dayChangei] =navsu.ftp.curlFile(YearList,dayList,ftpStruc,netrcFile,cookieFile);
