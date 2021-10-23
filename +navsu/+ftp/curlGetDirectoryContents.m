@@ -2,11 +2,14 @@ function files = curlGetDirectoryContents(site, netrcFile, cookieFile)
 % Pull directory contents using curl
 
 % make sure the path is ending with a slash
-if ~strcmp(site(end), '/')
+if ~endsWith(site, '/')
     site = [site, '/'];
 end
 
-if ispc && nargin == 3 && isfile(netrcFile) && isfile(cookieFile)
+% use ftp or http?
+useHttp = ispc && nargin == 3 && isfile(netrcFile) && isfile(cookieFile);
+
+if useHttp
     curlCall = ['curl --silent -c "' cookieFile ...
                 '" -n --netrc-file "' netrcFile '" -L "' ...
                 site '*?list"'];
@@ -24,8 +27,8 @@ if curlFeedbackCode > 0
              'cURL exited with code %i.'], site, curlFeedbackCode);
 end
 
-if ispc
-    % legacy code. Has to be tested on windows!!
+if useHttp
+    % this works with the output of the http call
     files = textscan(output, '%s%f');
     files = files{1};
 else
