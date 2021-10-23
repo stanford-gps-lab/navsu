@@ -78,7 +78,8 @@ else
         
     else
         
-        error('Sorry, nothing is currently implemented to unzip files for non-windows machines. See <https://www.7-zip.org/download.html> for possible alternatives.');
+        error(['Sorry, nothing is currently implemented to unzip these files for non-windows machines. ', ...
+               'See <https://www.7-zip.org/download.html> for possible alternatives.']);
         
     end
     

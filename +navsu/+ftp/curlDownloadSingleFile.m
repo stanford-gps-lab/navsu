@@ -1,6 +1,10 @@
 function curlDownloadSingleFile(file, localDir, netrcFile, cookieFile)
 % Use curl to download a single file
 
+if startsWith(localDir, '~')
+    warning('Local directory file path cannot start with "~" but must be fully specified!')
+end
+
 % pull the filename
 [remoteDir, filename, ext] = fileparts(file);
 
@@ -13,7 +17,7 @@ if ~exist(localDir,'dir')
     mkdir(localDir);
 end
 
-if ispc
+if ispc && nargin == 4 && isfile(netrcFile) && isfile(cookieFile)
     system(['curl --silent -c "' cookieFile ...
             '" -n --netrc-file "' netrcFile ...
             ' " -L -o "' localFile ...

@@ -6,7 +6,7 @@ if ~strcmp(site(end), '/')
     site = [site, '/'];
 end
 
-if ispc
+if ispc && nargin == 3 && isfile(netrcFile) && isfile(cookieFile)
     curlCall = ['curl --silent -c "' cookieFile ...
                 '" -n --netrc-file "' netrcFile '" -L "' ...
                 site '*?list"'];
@@ -20,7 +20,8 @@ end
 % gracefully warn user of failure
 if curlFeedbackCode > 0
     warning(['Failed to access %s\n', ...
-        'Could not retrieve ftp directory listing.'], site);
+             'Could not retrieve ftp directory listing.\n', ...
+             'cURL exited with code %i.'], site, curlFeedbackCode);
 end
 
 if ispc
