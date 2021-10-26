@@ -92,10 +92,10 @@ posP = nan(size(prns,1), 3);
 velP = nan(size(prns,1), 3);
 ROut = nan(size(prns,1), 3, 3);
 if isempty(pPosPoly)
-    pPosPoly = NaN(max(prns, 'omitnan'), 6, pfit+1);
+    pPosPoly = NaN(max(prns, [], 'omitnan'), 6, pfit+1);
 end
 if isempty(pPosInds)
-    pPosInds = NaN(max(prns, 'omitnan'), 2);
+    pPosInds = NaN(max(prns, [], 'omitnan'), 2);
 end
 
 
