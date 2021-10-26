@@ -1,36 +1,50 @@
-function curlDownloadSingleFile(file, localDir, netrcFile, cookieFile)
-% Use curl to download a single file
+function curlDownloadSingleFile(remoteFile, localDir, varargin)
+% Use curl to download a single file from a remote directory.
+% 
+%   curlDownloadSingleFile(remoteFile, localDir, netrcFile, cookieFile)
+%   curlDownloadSingleFile(remoteFile, localDir)
+%   
+%   Can be called with and without netrc and cookie file. On windows opts
+%   for faster http download if netrc and cookie file are supplied. See:
+%   https://cddis.nasa.gov/Data_and_Derived_Products/CDDIS_Archive_Access.html
+%   https://cddis.nasa.gov/Data_and_Derived_Products/CreateNetrcFile.html
+
 
 if startsWith(localDir, '~')
     warning('Local directory file path cannot start with "~" but must be fully specified!')
 end
 
 % pull the filename
-[remoteDir, filename, ext] = fileparts(file);
+[~, filename, ext] = fileparts(remoteFile);
 
-filename = [filename ext];
-
-localFile = fullfile(localDir, filename);
+localFile = fullfile(localDir, [filename ext]);
 
 % check if the local folder exists
-if ~exist(localDir,'dir')
+if ~exist(localDir, 'dir')
     mkdir(localDir);
 end
 
-if ispc && nargin == 4 && isfile(netrcFile) && isfile(cookieFile)
-    system(['curl --silent -c "' cookieFile ...
-            '" -n --netrc-file "' netrcFile ...
-            ' " -L -o "' localFile ...
-            '" "' remoteDir '/' filename '" ']);
+if ispc && numel(varargin) == 2 && all(cellfun(@ischar, varargin)) ...
+        && all(cellfun(@isfile, varargin))
+    % use http protocol
+    system(['curl --silent -c "' varargin{2} ...
+            '" -n --netrc-file "' varargin{1} ...
+            ' " -L -o "' localFile '" "' remoteFile '" ']);
+elseif ispc
+    % can use ftp-ssl protocol, but need to force timeout
+    system(['curl --silent --speed-time 1 --speed-limit 10 ' ...
+            '-u anonymous:fabianr@stanford.edu ' ...
+            '-o "' localFile '" --ftp-ssl "' remoteFile '"']);
 else
-    % use ftp-ssl protocol on mac:
-    system(['curl --silent -u anonymous:fabianr@stanford.edu -o "' ...
-            localFile '" --ftp-ssl "' remoteDir '/' filename '"']);
+    % use ftp-ssl protocol
+    system(['curl --silent ' ...
+            '-u anonymous:fabianr@stanford.edu ' ...
+            '-o "' localFile '" --ftp-ssl "' remoteFile '"']);
 end
 
 % fail gracefully: warn user of failed download
 if ~isfile(localFile)
-    warning(['cURL download of ', filename, ' from ', remoteDir, ' failed!']);
+    warning(['cURL download of ', remoteFile, ' failed!']);
 end
 
 end
