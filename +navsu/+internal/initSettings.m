@@ -2,10 +2,10 @@ function settings = initSettings(varargin)
 
 % Parse inputs
 p = inputParser;
-p.addParameter('configFile', []); 
-p.addParameter('netrcFile',[]);
-p.addParameter('cookieFile',[]);
-p.addParameter('cookieDir',[]);
+p.addParameter('configFile', ''); 
+p.addParameter('netrcFile', '');
+p.addParameter('cookieFile', '');
+p.addParameter('cookieDir', '');
 parse(p, varargin{:});
 res = p.Results;
 iniFile = res.configFile;
@@ -44,11 +44,11 @@ if ~isempty(res.cookieFile)
     settings.cookieFile = res.cookieFile; 
 elseif ~isempty(res.cookieDir)
     % only a directory was provided- 
-    settings.cookieFile = fullfile(res.cookieDir,defaultCookieFilename);
+    settings.cookieFile = fullfile(res.cookieDir, defaultCookieFilename);
 else
     % No location information about where to place teh cookie file was
     % provided
-    settings.cookieFile = fullfile(preciseProdDir,defaultCookieFilename);
+    settings.cookieFile = fullfile(preciseProdDir, defaultCookieFilename);
 end
 settings.netrcFile = res.netrcFile;
 
