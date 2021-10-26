@@ -3,33 +3,39 @@ function [posP, velP, pPosInds, pPosPoly, ROut] = pephInterp(peph, prns, ...
 %% pephInterp
 % Given precise orbit from IGS products, this function performs either
 % lagrange or polynomial interpolation of the orbit to the desired epochs
+%   
+% [posP, velP, pPosInds, pPosPoly, ROut] = pephInterp(peph, prns, ...
+%                                              constInds, epochs, varargin)
 %
 % Required Inputs:
+%  peph               - precise ephemeris struct. See navsu.readfiles.loadPEph
 %  prns               - N-length vector of PRN per desired interpolation
+%  constInds          - N-length vector of constellation index per desired
+%                       interpolation.
 %  epochs             - N-length GPS epoch per desired interpolation
-%  Ppos               - Precise position matrix from IGS products
-%  Pprns              - prns associated with Ppos
-%  Pepochs            - GPS epochs associated with Ppos
 %
 % Optional Inputs (these need to be passed as name-value pairs):
-%  pPosInds           - currently not used
-%  pPosPoly           - currently not used
-%  constInds          - N-length vector of constellation index per desired
-%                       interpolation.  Defaults to all GPS
-%  PconstInds
 %  FLAG_APC_OFFSET    - flag indicating whether or not to offset the
 %                       output position by the antenna phase center using
-%                       a nominal attitude model
+%                       a nominal attitude model. Default is "false".
 %  atxData            - stucture containing data from IGS ATX file- can be
 %                       produced by navsu.readfiles.readAtx.m
-%  sunPos             - position of the sun in ECEF
-%  dttx               - additional fine time offset
+%  sunPos             - position of the sun in ECEF. Used with atxData.
+%  orbitInterpMethod  - orbit interpolation method. 'lagrange' (default) or
+%                       'poly'
+%  nPolyFit           - Number of points to use for the orbit
+%                       interpolation. Default is 12.
+%  pfit               - Order of polynomial to be used in 'poly'
+%                       interpolation. Default is 8.
+%  dttx               - additional fine time offset. Defaults to 0.
+%  pPosInds           - Indices of data point used for interpolation.
+%  pPosPoly           - Polynomial interpolation points from 'poly'.
 %
 % Outputs:
 %  posP               - interpolated satellite precise position
 %  velP               - interpolated satellite precise velocity
-%  pPosInds           - currently not used
-%  pPosPoly           - currently not used
+%  pPosInds           - Indices of data point used for interpolation.
+%  pPosPoly           - Polynomial interpolation points from 'poly'.
 %  ROut               - rotation matrix from ECEF to SV body frame (or vice
 %                       versa)
 
@@ -85,6 +91,13 @@ dt = 0.01;
 posP = nan(size(prns,1), 3);
 velP = nan(size(prns,1), 3);
 ROut = nan(size(prns,1), 3, 3);
+if isempty(pPosPoly)
+    pPosPoly = NaN(max(prns, 'omitnan'), 6, pfit+1);
+end
+if isempty(pPosInds)
+    pPosInds = NaN(max(prns, 'omitnan'), 2);
+end
+
 
 for idx = 1:length(prns)
     prn = prns(idx);
@@ -164,7 +177,7 @@ for idx = 1:length(prns)
 
             switch orbitInterpMethod
                 case 'poly'
-                    [velP(idx, :),~,~,pPosPoly(prn,4:6,:)] = ...
+                    [velP(idx, :),~,~,pPosPoly(prn, 4:6, :)] = ...
                         navsu.geo.polyinterp(Pepochsi(ind1:ind2) - epochi, ...
                                              Pveli(ind1:ind2, :), pfit, dti);
                 case 'lagrange'
