@@ -263,8 +263,9 @@ if cmToApcFlag && ~isempty(atxData)
     
     PRNs = unique(array(:,1));
     
-    % get offset vector for each satellite
-    offset = navsu.ppp.getAPCoffset(atxData, PRNs, constellationOut, dataEpochs);
+    % get offset vector for each satellite (at first epoch, this should not
+    % change during the scenario)
+    offset = navsu.ppp.getAPCoffset(atxData, PRNs, constellationOut, dataEpochs(1));
     
     % now offset each sat pos into correct direction
     for pdx = 1:NumSV
@@ -277,7 +278,7 @@ if cmToApcFlag && ~isempty(atxData)
             R = navsu.geo.svLocalFrame(pvt.position(inds, :), dataEpochs);
             
             % do the rotation
-            offsetECEF = NaN(size(offset));
+            offsetECEF = NaN(3, NumEpochs);
             for tdx = 1:NumEpochs                
                 offsetECEF(:, tdx) = R(:, :, tdx) * offset(:, pdx);
             end
