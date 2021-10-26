@@ -30,10 +30,8 @@ if ~isempty(iniFile)
     preciseProdDir = iniData.preciseproddir;
     obsDir         = iniData.obsdir;
 else
-    cdi = cd;
-    cdi(strfind(cdi,'\')) = '/';
-    preciseProdDir = [cdi '/data/'];
-    obsDir         = [cdi '/data/'];
+    preciseProdDir = fullfile(pwd, 'data/');
+    obsDir         = fullfile(pwd, 'data/');
 end
 
 
@@ -56,19 +54,19 @@ settings.netrcFile = res.netrcFile;
 settings.baseDir = preciseProdDir;
 % GPS----------------------------------------------------------------------
 % Daily precise products (orbit and clock)
-settings.preciseProdDir = [preciseProdDir 'precise-daily/'];
+settings.preciseProdDir = fullfile(preciseProdDir, 'precise-daily/');
 % Observations from IGS stations
-settings.mgxObsDir      = [obsDir 'mgex-obs/'];
+settings.mgxObsDir      = fullfile(obsDir, 'mgex-obs/');
 % High rate observations
-settings.mgxHrObsDir    = [obsDir 'mgex-hr-obs/'];
+settings.mgxHrObsDir    = fullfile(obsDir, 'mgex-hr-obs/');
 % Temporary directory
-settings.tempDir        = [preciseProdDir 'temp/'];
+settings.tempDir        = fullfile(preciseProdDir, 'temp/');
 % Differential code biases
-settings.dcbDir         = [preciseProdDir 'dcb/'];
+settings.dcbDir         = fullfile(preciseProdDir, 'dcb/');
 % GPS navigation data from IGS stations
-settings.navGpsDir      = [preciseProdDir 'nav-daily/gps/'];
+settings.navGpsDir      = fullfile(preciseProdDir, 'nav-daily/gps/');
 % Multi-GNSS navigation data from IGS stations
-settings.navMgxDir         = [preciseProdDir 'nav-daily/mgex/'];
+settings.navMgxDir      = fullfile(preciseProdDir, 'nav-daily/mgex/');
 
 
 %% Precise clock and orbit centers
@@ -87,7 +85,7 @@ settings.galClkCenter   = 'com'; % MGEX/IGS source of high rate precise clock
 settings.bdsClkCenter   = 'com'; % MGEX/IGS source of high rate precise clock
 
 settings.navSource   = 'sugl'; % sugl, iac
-settings.MGEXSource = 's'; % THIS IS ACTUALLY GAL NAV SOURCE
+settings.MGEXSource  = 's'; % THIS IS ACTUALLY GAL NAV SOURCE
 
 % old settings still needed :(
 settings.GloPephSource = 'MGEX';
@@ -97,37 +95,21 @@ settings.pfit           = 8;     % order of fit for position interpolation
 settings.cdfit          = 2;     % order of fit for clock interpolation
 
 %% IGS Analysis Center settings
-settings.orbCenter = {settings.gpsEphCenter ,settings.gloEphCenter ,settings.galEphCenter ,settings.bdsEphCenter ,'com'};
-settings.clkCenter = {settings.gpsClkCenter ,settings.gloClkCenter ,settings.galClkCenter ,settings.bdsClkCenter ,'com'};
+settings.orbCenter = {settings.gpsEphCenter, ...
+                      settings.gloEphCenter, ...
+                      settings.galEphCenter, ...
+                      settings.bdsEphCenter, 'com'};
+settings.clkCenter = {settings.gpsClkCenter, ...
+                      settings.gloClkCenter, ...
+                      settings.galClkCenter, ...
+                      settings.bdsClkCenter, 'com'};
 
 settings.orbitInterpMethod = 'lagrange';
 
 %% Primary directory
 baseDir = preciseProdDir;
-tempDir = [baseDir '\Temp Dir\'];
+tempDir = fullfile(baseDir, 'Temp Dir/');
 
 settings.tempDir = tempDir;
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
