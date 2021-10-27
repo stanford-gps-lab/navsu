@@ -2,9 +2,10 @@ function [status,result] = unzipFile(filename, outLocation, overwrite)
 % unzipFile
 % DESCRIPTION:
 %   Unzip a given file using the portable version of 7zip included in the
-%   repo if this is a windows machine
+%   repo if this is a windows machine. Can alternatively be called on a
+%   folder to unpack all contained archives. Recurses on subfolders.
 % INPUT:
-%   filename    - name of the file to be parsed
+%   filename    - name of the file or folder to be parsed
 % OPTIONAL INPUTS:
 %   outLocation - If desired, you can specify a different output location
 %                 than the same folder as the input file
@@ -67,7 +68,7 @@ else
     elseif endsWith(filename, '.Z')
         
         % host machine's native executable
-        [status,result] = system(['gunzip "' filename '"']);
+        [status, result] = system(['gunzip "' filename '"']);
         
         % (MAY ALSO WORK:) host machine's native uncompress executable, if available
         % [status,result] = system(['uncompress ' filename]);
@@ -76,10 +77,33 @@ else
         % than that bundled with recent versions of macOS (tested on 10.14)
         % unzippedFilename = gunzip(filename, outLocation);
         
-    else
+    elseif isfolder(filename)
+        % recursively unzip everything in the folder
+        d = dir(filename);
         
-        error(['Sorry, nothing is currently implemented to unzip these files for non-windows machines. ', ...
-               'See <https://www.7-zip.org/download.html> for possible alternatives.']);
+        status = ones(length(d), 1); % 0 = success, 1 = failure
+        result = cell(length(d), 1);
+        % to avoid stack overflows from "." and ".."
+        toUnpack = ~arrayfun(@(x) startsWith(x.name, '.') ...
+                                || endsWith(x.name, '.'), d);
+        for dI = find(toUnpack')
+            % try unzipping every file
+            [status(dI), result{dI}] = navsu.readfiles.unzipFile( ...
+                fullfile(filename, d(dI).name), outLocation, overwrite);
+        end
+        % compile output variables
+        status =  max(status);
+        haveResult = ~cellfun(@isempty, result);
+        if any(haveResult)
+            result = join([result{haveResult}], '\n');
+        else
+            result = [];
+        end
+    else
+        result = []; status = 1;
+        fprintf('Missing the means to unpack %s on non-windows machines.\n', filename);
+%         error(['Sorry, nothing is currently implemented to unzip these files for non-windows machines. ', ...
+%                'See <https://www.7-zip.org/download.html> for possible alternatives.']);
         
     end
     
