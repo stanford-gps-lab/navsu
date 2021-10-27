@@ -1,4 +1,4 @@
-function [eph,BFileName,BFileNameFull] = loadBrdc(Year, dayNum, settings,varargin)
+function [eph,BFileName,BFileNameFull] = loadBrdc(Year, dayNum, settings, varargin)
 %% File is deprecated, use not recommended!!!
 
 
@@ -69,9 +69,9 @@ else
         end
         constellations = navsu.readfiles.initConstellation(1,0,0,0,0);
         
-        BFileNameFull{1} = fullfile([BpathName BFileName]);
+        BFileNameFull{1} = fullfile(BpathName, BFileName);
         if ~FLAG_NO_LOAD
-            ephi = navsu.readfiles.loadRinexNav(fullfile([BpathName BFileName]),'constellations',constellations, 'outFormat','array');
+            ephi = navsu.readfiles.loadRinexNav(BFileNameFull{1},'constellations',constellations, 'outFormat','array');
             eph.gps = ephi.gps;
         end
     end
@@ -92,11 +92,11 @@ else
             
             BFileName = sprintf(BfileNameFormat, yr, doy, mod(yr, 100));
         end
-        BFileNameFull{1} = fullfile([BpathName BFileName]);
+        BFileNameFull{1} = fullfile(BpathName, BFileName);
 
         constellations = navsu.readfiles.initConstellation(0, 0, 1, 0, 0, 0);
         if ~FLAG_NO_LOAD
-            ephi = navsu.readfiles.loadRinexNav(fullfile([BpathName BFileName]),'constellations',constellations, 'outFormat','array');
+            ephi = navsu.readfiles.loadRinexNav(BFileNameFull{1}, 'constellations',constellations, 'outFormat','array');
             eph.gal = ephi.gal;
         end
     end
