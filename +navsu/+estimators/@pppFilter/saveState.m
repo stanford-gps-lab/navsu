@@ -1,10 +1,8 @@
-function outData = saveState(obj,outData,epoch,obs)
+function outData = saveState(obj, outData, epoch, obs)
 % Create a structure with all the information that you want to save :)
 
 
-outState = [];
-
-outState = saveOutStatePpp(obj,outData,epoch,obs);
+outState = obj.saveOutStatePpp(outData, epoch, obs);
 % 
 % outState.epoch = epoch;
 % if strcmp(obj.PARAMS.outputPos,'APC')

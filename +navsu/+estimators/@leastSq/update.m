@@ -13,25 +13,19 @@ measExclude = res.measExclude;
 extraInputs = res.extraInputs;
 
 %%
-
-PARAMS = obj.PARAMS;
-
-%%
-gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
+gnssMeas = navsu.ppp.pullMeasFromList(obs, navsu.internal.MeasEnum.GNSS);
 
 if isempty(gnssMeas)
     % Currently, we need a GNSS measurement in order to proceed.
     return;
 end
 
-constsUnique = unique(gnssMeas.constInds);
 
 %%
 if isempty(obj.INDS_STATE)
     constsUnique = unique(gnssMeas.constInds);
     
     PARAMS = obj.PARAMS;
-    rangeStruc = gnssMeas.range;
     
     obj.INDS_STATE = [];
     obj.INDS_STATE.ATTITUDE = 1:3;
@@ -78,7 +72,7 @@ if isempty(obj.INDS_STATE)
 end
 
 %% Compute the least squares solution
-[complete,measId,extraInputs] = leastSquaresSol(obj,epoch,obs,corrData,...
+[complete,measId,extraInputs] = obj.leastSquaresSol(epoch,obs,corrData,...
     'measExclude',measExclude,'extraInputs',extraInputs);
 
 obj.initialized = 2;

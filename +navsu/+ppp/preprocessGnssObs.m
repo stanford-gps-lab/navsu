@@ -193,7 +193,7 @@ dayListDcb = dayList;
 epochDcb = navsu.time.jd2epochs(navsu.time.doy2jd(YearListDcb,dayListDcb))+100;
 
 dcbData = corrData.dcb;
-dcbType = dcbData.type;
+% dcbType = dcbData.type;
 % dcbType = 2;
 
 
@@ -207,7 +207,7 @@ dcbType = dcbData.type;
 %     dcbData2 = [];
 dcbCorr = zeros(size(prphType));
 
-if dcbType == 1 && ~isempty(corrData.dcb)
+if ~isempty(dcbData) && dcbData.type == 1 
     % CODE
     
     for idx = 1:size(prphType,1)
@@ -238,8 +238,7 @@ if dcbType == 1 && ~isempty(corrData.dcb)
         end
     end
     
-elseif dcbType == 3 && ~isempty(corrData.dcb)
-    % DLR
+elseif ~isempty(dcbData) && dcbData.type == 3
     % these are relative corrections that need to be further referenced to
     % the L1P-L2P combination (need the TGD term)
     
@@ -345,7 +344,7 @@ elseif dcbType == 3 && ~isempty(corrData.dcb)
     end
     
     
-elseif dcbType == 5 && ~isempty(corrData.dcb)
+elseif ~isempty(dcbData) && dcbData.type == 5
     
     for idx = 1:size(prphType,1)
         for jdx = 1:size(prphType,2)
@@ -367,7 +366,7 @@ elseif dcbType == 5 && ~isempty(corrData.dcb)
     end
     
     
-elseif dcbType == 2 && ~isempty(corrData.dcb)
+elseif ~isempty(dcbData) && dcbData.type == 2
     % STANFORD
     
     for idx = 1:size(prphType,1)
@@ -391,7 +390,7 @@ elseif dcbType == 2 && ~isempty(corrData.dcb)
     end
     
     
-elseif dcbType == 6 && ~isempty(corrData.dcb)
+elseif ~isempty(dcbData) && dcbData.type == 6
     epochDcb = NaN;
     
     for idx = 1:size(prphType,1)

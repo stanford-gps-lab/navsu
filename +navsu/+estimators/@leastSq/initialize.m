@@ -9,10 +9,6 @@ p.addParameter('measExclude',[]);
 parse(p, varargin{:});
 res        = p.Results;
 measExclude = res.measExclude;
-%%
-
-% There's actually nothing to do here, but this function is necessary!
-PARAMS = obj.PARAMS;
 
 %%
 gnssMeas = navsu.ppp.pullMeasFromList(obs,navsu.internal.MeasEnum.GNSS);
@@ -22,7 +18,6 @@ if isempty(gnssMeas)
     return;
 end
 
-constsUnique = unique(gnssMeas.constInds);
 
 %%
 if isempty(obj.INDS_STATE)
@@ -76,7 +71,8 @@ if isempty(obj.INDS_STATE)
 end
 
 %% Compute the least squares solution
-[complete,measId] = leastSquaresSol(obj,gnssMeas.epochs,obs,corrData,'measExclude',measExclude);
+[complete,measId] = obj.leastSquaresSol(gnssMeas.epochs, obs, corrData, ...
+                                        'measExclude', measExclude);
 
 if complete
     obj.initialized = 1;

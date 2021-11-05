@@ -141,9 +141,14 @@ measIdRemovedFull = [measExclude(:); measIdRemoved(:);];
 % Deal with resets if any of the removed measurements were carrier phases
 if ~isempty(measIdRemovedFull)
     for jdx = 1:size(measIdRemovedFull,1)
-        if ~isempty(measIdRemovedFull(jdx).TypeID) && measIdRemovedFull(jdx).TypeID == navsu.internal.MeasEnum.GNSS && measIdRemovedFull(jdx).subtype == navsu.internal.MeasEnum.Carrier
+        if ~isempty(measIdRemovedFull(jdx).TypeID) ...
+                    && measIdRemovedFull(jdx).TypeID == navsu.internal.MeasEnum.GNSS ...
+                    && measIdRemovedFull(jdx).subtype == navsu.internal.MeasEnum.Carrier
             % carrier phase- reset ambiguity by just removing the state
-            obj.removeFlexState([measIdRemovedFull(jdx).prn measIdRemovedFull(jdx).const 1 measIdRemovedFull(jdx).freq] );
+            obj.removeFlexState([measIdRemovedFull(jdx).prn ...
+                                 measIdRemovedFull(jdx).const ...
+                                 1 ...
+                                 measIdRemovedFull(jdx).freq] );
         end
     end
 end
@@ -152,7 +157,8 @@ end
 if ~isempty(gnssMeas) && nMeas > 0
     measGnss = measId([measId.TypeID] == navsu.internal.MeasEnum.GNSS);
     if ~isempty(measGnss)
-        obj.allSatsSeen = sortrows(unique([[[measGnss.prn]' [measGnss.const]']; obj.allSatsSeen],'rows'),2);
+        obj.allSatsSeen = sortrows(unique([[[measGnss.prn]' [measGnss.const]']; ...
+                                           obj.allSatsSeen],'rows'),2);
     end
     % Save residuals
     obj.resids.measId = measId;
@@ -178,15 +184,13 @@ if ~isempty(gnssMeas) && nMeas > 0
     
     measRemovedIdAny = [measIdRemovedLow; measIdRemoved; measRemovedSlip];
     measRemovedReason = [obj.RemovedEl*ones(size(measIdRemovedLow)); ...
-        obj.RemovedResid*ones(size(measIdRemoved));...
-        obj.RemovedSlip*ones(size(measRemovedSlip))];
+                         obj.RemovedResid*ones(size(measIdRemoved));...
+                         obj.RemovedSlip*ones(size(measRemovedSlip))];
     
     obj.measRemoved.id = measRemovedIdAny;
     obj.measRemoved.reason = measRemovedReason;
     obj.measRemoved.epoch  = epoch0*ones(size(measRemovedReason));
 end
-
-
 
 
 end

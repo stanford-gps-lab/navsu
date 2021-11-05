@@ -64,7 +64,7 @@ if isempty(obj.INDS_STATE)
         constUn = unique(rangeStruc.constInds(:));
         for idx = 1:length(constUn)
             if constUn(idx) == 1 && PARAMS.states.RX_DCB_GPS
-                % If using separate DCBs for each GLONASS satellite, no need
+                % If using separate DCBs for each GPS satellite, no need
                 % for a signal specific one
                 continue;
             end

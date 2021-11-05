@@ -239,7 +239,7 @@ if nMeas > 0
         
     end
     % Geometry matrix
-    A = (svPosRot-pos')./sqrt(sum((pos'-svPosRot).^2,2));
+    A = (svPosRot-pos') ./ sqrt(sum((pos'-svPosRot).^2, 2));
     
     % geometric range
     gRange = sqrt(sum((svPosRot-pos').^2,2));

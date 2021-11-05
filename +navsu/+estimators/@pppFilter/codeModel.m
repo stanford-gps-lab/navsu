@@ -3,9 +3,6 @@ function [predMeasi,Hii,sig] = codeModel(obj,SimpleModel,nState,sigi,freqi,tecSl
     relClockCorr,relRangeCorr,A,indIonosi,indEphErri)
 
 
-predMeas = [];
-H = [];
-sig = [];
 Hii = zeros(1,nState);
 
 %% code
@@ -27,9 +24,11 @@ else
     ionoCorri = 0;
 end
 
-if ~SimpleModel && obj.PARAMS.states.RX_DCB && ~(obj.PARAMS.states.RX_DCB_GLO && constIndi == 2) ...
+if ~SimpleModel && obj.PARAMS.states.RX_DCB ...
+        && ~(obj.PARAMS.states.RX_DCB_GLO && constIndi == 2) ...
         && ~(obj.PARAMS.states.RX_DCB_GPS && constIndi == 1)
-    indRxDcb = find(obj.INDS_STATE.RX_DCB.sig == sigi & obj.INDS_STATE.RX_DCB.constInds == constIndi, 1);
+    indRxDcb = find(obj.INDS_STATE.RX_DCB.sig == sigi ...
+                    & obj.INDS_STATE.RX_DCB.constInds == constIndi, 1);
     if ~isempty(indRxDcb)
         rxDcb = state(obj.INDS_STATE.RX_DCB.INDS(indRxDcb));
         Hii(1,obj.INDS_STATE.RX_DCB.INDS(indRxDcb)) = 1;
@@ -106,13 +105,5 @@ if ~SimpleModel && norm(rArmBody) > 0
     
 end
 sig = 3;
-
-
-
-
-
-
-
-
 
 end
