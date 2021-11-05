@@ -281,23 +281,29 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 
                 % now assign the measurements
                 obsData.code(measIds, mI) = rnxCode(measIds);
+                sIds = sats(measIds);
                 % assign frequencies
                 for mId = 1:length(measIds)
-                    fKey = [obj.constLetter(rinexStruct.constInds(sats(measIds(mId)))) fn{fni}(2)];
+                    fKey = [obj.constLetter(rinexStruct.constInds(sIds(mId))) ...
+                            fn{fni}(2)];
                     obsData.freq(measIds(mId), mI) = obj.freqMap(fKey);
                 end
                 % assign carrier, doppler, CN0, lock time
-                if isfield(rinexStruct.meas, ['L' sigId]) && ~isempty(rinexStruct.meas.(['L' sigId]))
-                    obsData.carrier(measIds, mI) = rinexStruct.meas.(['L' sigId])(sats(measIds), ep);
+                if isfield(rinexStruct.meas, ['L' sigId]) ...
+                        && ~isempty(rinexStruct.meas.(['L' sigId]))
+                    obsData.carrier(measIds, mI) = rinexStruct.meas.(['L' sigId])(sIds, ep);
                 end
-                if isfield(rinexStruct.meas, ['D' sigId]) && ~isempty(rinexStruct.meas.(['D' sigId]))
-                    obsData.doppler(measIds, mI) = rinexStruct.meas.(['D' sigId])(sats(measIds), ep);
+                if isfield(rinexStruct.meas, ['D' sigId]) ...
+                        && ~isempty(rinexStruct.meas.(['D' sigId]))
+                    obsData.doppler(measIds, mI) = rinexStruct.meas.(['D' sigId])(sIds, ep);
                 end
-                if isfield(rinexStruct.meas, ['S' sigId]) && ~isempty(rinexStruct.meas.(['S' sigId]))
-                    obsData.CN0(measIds, mI) = rinexStruct.meas.(['S' sigId])(sats(measIds), ep);
+                if isfield(rinexStruct.meas, ['S' sigId]) ...
+                        && ~isempty(rinexStruct.meas.(['S' sigId]))
+                    obsData.CN0(measIds, mI) = rinexStruct.meas.(['S' sigId])(sIds, ep);
                 end
-                if isfield(rinexStruct, 'tLock') && ~isempty(rinexStruct.tLock)
-                    obsData.tLock(measIds, mI) = rinexStruct.tLock(sats(measIds), ep);
+                if isfield(rinexStruct, 'tLock') ...
+                        && ~isempty(rinexStruct.tLock)
+                    obsData.tLock(measIds, mI) = rinexStruct.tLock(sIds, ep);
                 end
             end
             
@@ -433,9 +439,14 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 return
             end
             
-            loopCounter = 0;
+            % initialize loop counter, last state update
+            loopCounter = 0; dx = inf;
+
             while sum(goodEl) >= nStates && loopCounter <= 20
                 
+                % use latest elevation mask
+                goodElNow = goodEl;
+
                 % Step 3: correct measurement errors
                 [errCorr, SigURE] = obj.UREcorrection(satIds, prMeas, prVar);
                 
@@ -447,8 +458,15 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                       + obj.internal_satClkBias(satIds)*navsu.constants.c;
 
                 % Step 4: do least squares update
-                [dx, R, varargout{1:nargout-3}] = obj.doLSupdate( ...
-                    satIds(goodEl), prhat(goodEl), SigURE(goodEl));
+                [dxi, R, varargout{1:nargout-3}] = obj.doLSupdate( ...
+                    satIds(goodElNow), prhat(goodElNow), SigURE(goodElNow));
+                
+                % check for oscillating state, bad update
+                if all(dxi + dx < 1e-6) || any(isnan(dxi))
+                    break;
+                else
+                    dx = dxi;
+                end
 
                 obj.position = obj.position + dx(1:3);
                 obj.tBias(consts) = obj.tBias(consts) + dx(4:end);
@@ -458,7 +476,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 normDx = norm(dx);
                 if normDx < 1e-6
                     % stop update, we have converged
-                    break
+                    break;
                 elseif normDx > 1e3
                     % large update, redo orbit propagation with new
                     % theoranges
@@ -483,8 +501,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 if nargout > 1
                     tBias = obj.tBias(consts);
                     if nargout > 3
+                        % make sure prr, P are for the right satIds
                         prr = NaN(length(varargin{1}), 1);
-                        [~, LocB] = ismember(satIds(goodEl), varargin{1});
+                        [~, LocB] = ismember(satIds(goodElNow), varargin{1});
                         prr(LocB) = varargout{1};
                         varargout{1} = prr;
                         if nargout > 4
