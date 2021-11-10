@@ -76,7 +76,7 @@ function xcorsta=step2lon(xsta,t)
 
 d2pi=6.283185307179586476925287d0 ;
 
-[ datdi([1:9],[1:5])]=reshape([0,0,0,1,0,0.47d0,0.23d0,0.16d0,0.07d0,0,2,0,0,0,-0.20d0,-0.12d0,-0.11d0,-0.05d0,1,0,-1,0,0,-0.11d0,-0.08d0,-0.09d0,-0.04d0,2,0,0,0,0,-0.13d0,-0.11d0,-0.15d0,-0.07d0,2,0,0,1,0,-0.05d0,-0.05d0,-0.06d0,-0.03d0],9,5);
+datdi = reshape([0,0,0,1,0,0.47d0,0.23d0,0.16d0,0.07d0,0,2,0,0,0,-0.20d0,-0.12d0,-0.11d0,-0.05d0,1,0,-1,0,0,-0.11d0,-0.08d0,-0.09d0,-0.04d0,2,0,0,0,0,-0.13d0,-0.11d0,-0.15d0,-0.07d0,2,0,0,1,0,-0.05d0,-0.05d0,-0.06d0,-0.03d0],9,5);
 
 deg2rad = d2pi./360d0;
 
@@ -113,9 +113,8 @@ ps = rem(ps,360d0);
 dr_tot = 0d0;
 dn_tot = 0d0;
 
-for i = 1 : 3
-    xcorsta(i) = 0d0;
-end; i = fix(3+1);
+xcorsta = zeros(size(xsta));
+
 for j = 1 : 5
     thetaf =(datdi(1,j).*s+datdi(2,j).*h+datdi(3,j).*p+datdi(4,j).*zns+datdi(5,j).*ps).*deg2rad;
     
@@ -130,11 +129,9 @@ for j = 1 : 5
     xcorsta(1) = xcorsta(1) + dr.*cosla.*cosphi - de.*sinla -dn.*sinphi.*cosla;
     xcorsta(2) = xcorsta(2) + dr.*sinla.*cosphi + de.*cosla -dn.*sinphi.*sinla;
     xcorsta(3) = xcorsta(3) + dr.*sinphi + dn.*cosphi;
-end; j = fix(5+1);
+end
 
-for i = 1 : 3
-    xcorsta(i) = xcorsta(i)./1000d0;
-end; i = fix(3+1);
+xcorsta = xcorsta ./ 1000d0;
 
 %  Finished.
 

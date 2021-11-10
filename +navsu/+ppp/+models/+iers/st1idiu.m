@@ -112,6 +112,7 @@ dn = dnsun + dnmon;
 de = desun + demon;
 
 %  Compute the corrections for the station.
+xcorsta = zeros(size(xsta)); % ensures identical output dimensions
 xcorsta(1) = dr.*cosla.*cosphi - de.*sinla - dn.*sinphi.*cosla;
 xcorsta(2) = dr.*sinla.*cosphi + de.*cosla - dn.*sinphi.*sinla;
 xcorsta(3) = dr.*sinphi + dn.*cosphi;

@@ -79,7 +79,18 @@ function xcorsta = step2diu(xsta,fhr,t)
 
 d2pi=6.283185307179586476925287d0;
 
-[ datdi([1:9],[1:31])]=reshape([-3d0,0d0,2d0,0d0,0d0,-0.01d0,0d0,0d0,0d0,-3d0,2d0,0d0,0d0,0d0,-0.01d0,0d0,0d0,0d0,-2d0,0d0,1d0,-1d0,0d0,-0.02d0,0d0,0d0,0d0,-2d0,0d0,1d0,0d0,0d0,-0.08d0,0d0,-0.01d0,0.01d0,-2d0,2d0,-1d0,0d0,0d0,-0.02d0,0d0,0d0,0d0,-1d0,0d0,0d0,-1d0,0d0,-0.10d0,0d0,0d0,0d0,-1d0,0d0,0d0,0d0,0d0,-0.51d0,0d0,-0.02d0,0.03d0,-1d0,2d0,0d0,0d0,0d0,0.01d0,0d0,0d0,0d0,0d0,-2d0,1d0,0d0,0d0,0.01d0,0d0,0d0,0d0,0d0,0d0,-1d0,0d0,0d0,0.02d0,0d0,0d0,0d0,0d0,0d0,1d0,0d0,0d0,0.06d0,0d0,0d0,0d0,0d0,0d0,1d0,1d0,0d0,0.01d0,0d0,0d0,0d0,0d0,2d0,-1d0,0d0,0d0,0.01d0,0d0,0d0,0d0,1d0,-3d0,0d0,0d0,1d0,-0.06d0,0d0,0d0,0d0,1d0,-2d0,0d0,-1d0,0d0,0.01d0,0d0,0d0,0d0,1d0,-2d0,0d0,0d0,0d0,-1.23d0,-0.07d0,0.06d0,0.01d0,1d0,-1d0,0d0,0d0,-1d0,0.02d0,0d0,0d0,0d0,1d0,-1d0,0d0,0d0,1d0,0.04d0,0d0,0d0,0d0,1d0,0d0,0d0,-1d0,0d0,-0.22d0,0.01d0,0.01d0,0d0,1d0,0d0,0d0,0d0,0d0,12.00d0,-0.80d0,-0.67d0,-0.03d0,1d0,0d0,0d0,1d0,0d0,1.73d0,-0.12d0,-0.10d0,0d0,1d0,0d0,0d0,2d0,0d0,-0.04d0,0d0,0d0,0d0,1d0,1d0,0d0,0d0,-1d0,-0.50d0,-0.01d0,0.03d0,0d0,1d0,1d0,0d0,0d0,1d0,0.01d0,0d0,0d0,0d0,0d0,1d0,0d0,1d0,-1d0,-0.01d0,0d0,0d0,0d0,1d0,2d0,-2d0,0d0,0d0,-0.01d0,0d0,0d0,0d0,1d0,2d0,0d0,0d0,0d0,-0.11d0,0.01d0,0.01d0,0d0,2d0,-2d0,1d0,0d0,0d0,-0.01d0,0d0,0d0,0d0,2d0,0d0,-1d0,0d0,0d0,-0.02d0,0d0,0d0,0d0,3d0,0d0,0d0,0d0,0d0,0d0,0d0,0d0,0d0,3d0,0d0,0d0,1d0,0d0,0d0,0d0,0d0,0d0],9,31);
+datdi = reshape( ...
+    [-3d0, 0d0, 2d0, 0d0, 0d0, -0.01d0, 0d0, 0d0, 0d0, ...
+     -3d0, 2d0, 0d0, 0d0, 0d0, -0.01d0, 0d0, 0d0, 0d0, ...
+     -2d0, 0d0, 1d0, -1d0, 0d0, -0.02d0, 0d0, 0d0, 0d0, ...
+     -2d0, 0d0, 1d0, 0d0, 0d0, -0.08d0, 0d0, -0.01d0, 0.01d0, ...
+     -2d0, 2d0, -1d0, 0d0, 0d0, -0.02d0, 0d0, 0d0, 0d0, ...
+     -1d0, 0d0, 0d0, -1d0, 0d0, -0.10d0, 0d0, 0d0, 0d0, ...
+     -1d0, 0d0, 0d0, 0d0, 0d0, -0.51d0, 0d0, -0.02d0, 0.03d0, ...
+     -1d0, 2d0, 0d0, 0d0, 0d0, 0.01d0, 0d0, 0d0, 0d0, ...
+     0d0, -2d0, 1d0, 0d0, 0d0, 0.01d0, 0d0, 0d0, 0d0, ...
+     0d0, 0d0, -1d0, 0d0, 0d0, 0.02d0, 0d0, 0d0, 0d0, ...
+     0d0, 0d0, 1d0, 0d0, 0d0, 0.06d0, 0d0, 0d0, 0d0, 0d0, 0d0, 1d0, 1d0, 0d0,0.01d0,0d0,0d0,0d0,0d0,2d0,-1d0,0d0,0d0,0.01d0,0d0,0d0,0d0,1d0,-3d0,0d0,0d0,1d0,-0.06d0,0d0,0d0,0d0,1d0,-2d0,0d0,-1d0,0d0,0.01d0,0d0,0d0,0d0,1d0,-2d0,0d0,0d0,0d0,-1.23d0,-0.07d0,0.06d0,0.01d0,1d0,-1d0,0d0,0d0,-1d0,0.02d0,0d0,0d0,0d0,1d0,-1d0,0d0,0d0,1d0,0.04d0,0d0,0d0,0d0,1d0,0d0,0d0,-1d0,0d0,-0.22d0,0.01d0,0.01d0,0d0,1d0,0d0,0d0,0d0,0d0,12.00d0,-0.80d0,-0.67d0,-0.03d0,1d0,0d0,0d0,1d0,0d0,1.73d0,-0.12d0,-0.10d0,0d0,1d0,0d0,0d0,2d0,0d0,-0.04d0,0d0,0d0,0d0,1d0,1d0,0d0,0d0,-1d0,-0.50d0,-0.01d0,0.03d0,0d0,1d0,1d0,0d0,0d0,1d0,0.01d0,0d0,0d0,0d0,0d0,1d0,0d0,1d0,-1d0,-0.01d0,0d0,0d0,0d0,1d0,2d0,-2d0,0d0,0d0,-0.01d0,0d0,0d0,0d0,1d0,2d0,0d0,0d0,0d0,-0.11d0,0.01d0,0.01d0,0d0,2d0,-2d0,1d0,0d0,0d0,-0.01d0,0d0,0d0,0d0,2d0,0d0,-1d0,0d0,0d0,-0.02d0,0d0,0d0,0d0,3d0,0d0,0d0,0d0,0d0,0d0,0d0,0d0,0d0,3d0,0d0,0d0,1d0,0d0,0d0,0d0,0d0,0d0],9,31);
 
 deg2rad = d2pi./360d0;
 
@@ -108,37 +119,37 @@ p = rem(p,360d0);
 zns = rem(zns,360d0);
 ps = rem(ps,360d0);
 
-rsta = sqrt(xsta(1).^2+xsta(2).^2+xsta(3).^2);
+rsta = norm(xsta);
 sinphi = xsta(3)./rsta;
 cosphi = sqrt(xsta(1).^2+xsta(2).^2)./rsta;
 
 cosla = xsta(1)./cosphi./rsta;
 sinla = xsta(2)./cosphi./rsta;
-zla = atan2(xsta(2),xsta(1));
+zla = atan2(xsta(2), xsta(1));
 
-for i = 1 : 3
-    % Initialize.
-    xcorsta(i) = 0d0;
-end; i = fix(3+1);
+% initialize
+xcorsta = zeros(size(xsta));
+
 for j = 1 : 31
     % Convert from degrees to radians.
-    thetaf =(tau+datdi(1,j).*s+datdi(2,j).*h+datdi(3,j).*p+datdi(4,j).*zns+datdi(5,j).*ps).*deg2rad;
+    thetaf = (tau + datdi(1,j).*s + datdi(2,j).*h + datdi(3,j).*p + datdi(4,j).*zns + datdi(5,j).*ps).*deg2rad;
     
-    dr = datdi(6,j).*2d0.*sinphi.*cosphi.*sin(thetaf+zla) + datdi(7,j).*2d0.*sinphi.*cosphi.*cos(thetaf+zla);
+    dr = datdi(6,j).*2d0.*sinphi.*cosphi.*sin(thetaf+zla) ...
+        + datdi(7,j).*2d0.*sinphi.*cosphi.*cos(thetaf+zla);
     
-    dn = datdi(8,j).*(cosphi.^2-sinphi.^2).*sin(thetaf+zla)+ datdi(9,j).*(cosphi.^2-sinphi.^2).*cos(thetaf+zla);
+    dn = datdi(8,j).*(cosphi.^2-sinphi.^2).*sin(thetaf+zla) ...
+        + datdi(9,j).*(cosphi.^2-sinphi.^2).*cos(thetaf+zla);
     %     Modified 20 June 2007
     
-    de = datdi(8,j).*sinphi.*cos(thetaf+zla) - datdi(9,j).*sinphi.*sin(thetaf+zla);
+    de = datdi(8,j).*sinphi.*cos(thetaf+zla) ...
+        - datdi(9,j).*sinphi.*sin(thetaf+zla);
     
     xcorsta(1) = xcorsta(1) + dr.*cosla.*cosphi - de.*sinla -dn.*sinphi.*cosla;
     xcorsta(2) = xcorsta(2) + dr.*sinla.*cosphi + de.*cosla -dn.*sinphi.*sinla;
     xcorsta(3) = xcorsta(3) + dr.*sinphi + dn.*cosphi;
-end; j = fix(31+1);
+end
 
-for i = 1 : 3
-    xcorsta(i) = xcorsta(i)./1000d0;
-end; i = fix(3+1);
+xcorsta = xcorsta ./ 1000d0;
 
 %  Finished.
 

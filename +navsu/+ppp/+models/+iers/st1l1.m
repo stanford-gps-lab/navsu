@@ -113,6 +113,7 @@ demon = l1.*sinphi.*(cosphi.^2-sinphi.^2).*fac2mon.*xmon(3).*(xmon(1).*sinla-xmo
 de = 3d0.*(desun+demon);
 dn = 3d0.*(dnsun+dnmon);
 
+xcorsta = zeros(size(xsta)); % ensures output dimensions match
 xcorsta(1) = -de.*sinla - dn.*sinphi.*cosla;
 xcorsta(2) = de.*cosla - dn.*sinphi.*sinla;
 xcorsta(3) = dn.*cosphi;

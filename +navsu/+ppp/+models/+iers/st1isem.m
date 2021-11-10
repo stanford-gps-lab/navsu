@@ -114,6 +114,7 @@ dr = drsun + drmon;
 dn = dnsun + dnmon;
 de = desun + demon;
 
+xcorsta = zeros(size(xsta)); % ensures output dimensions match
 xcorsta(1) = dr.*cosla.*cosphi - de.*sinla - dn.*sinphi.*cosla;
 xcorsta(2) = dr.*sinla.*cosphi + de.*cosla - dn.*sinphi.*sinla;
 xcorsta(3) = dr.*sinphi + dn.*cosphi;

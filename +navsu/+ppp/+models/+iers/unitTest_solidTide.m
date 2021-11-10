@@ -19,7 +19,7 @@ DXTIDE0(2) = 0.6304056321824967613D-01;
 DXTIDE0(3) = 0.5516568152597246810D-01;
 
 
-dxtide=dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
+dxtide = navsu.ppp.models.iers.dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
 err = dxtide-DXTIDE0
 
 %%%%
@@ -41,7 +41,7 @@ DXTIDE0(1) = -0.2036831479592075833D-01;
 DXTIDE0(2) =  0.5658254776225972449D-01;
 DXTIDE0(3) = -0.7597679676871742227D-01;
 
-dxtide=dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
+dxtide = navsu.ppp.models.iers.dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
 err = dxtide-DXTIDE0
 
 XSTA(1) =  1112200.5696D0;
@@ -61,7 +61,7 @@ FHR     = 0.00D0 ;
 DXTIDE0(1) = .00509570869172363845D0;
 DXTIDE0(2) = .0828663025983528700D0;
 DXTIDE0(3) = -.0636634925404189617D0;
-dxtide=dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
+dxtide = navsu.ppp.models.iers.dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
 err = dxtide-DXTIDE0
 
 XSTA(1) = 1112152.8166D0; 
@@ -82,7 +82,7 @@ DXTIDE0(1) =  .0050957086917236384D0;
 DXTIDE0(2) =  .082866302598352870D0;
 DXTIDE0(3) = -.063663492540418962D0 ;
 
-dxtide=dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
+dxtide = navsu.ppp.models.iers.dehanttideinel(XSTA,YR,MONTH,DAY,FHR,XSUN,XMON);
 err = dxtide-DXTIDE0
 
 

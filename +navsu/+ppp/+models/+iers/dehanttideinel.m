@@ -1,5 +1,5 @@
 %
-function dxtide =dehanttideinel(xsta,yr,month,day,fhr,xsun,xmon)
+function dxtide = dehanttideinel(xsta,yr,month,day,fhr,xsun,xmon)
 %+
 %  - - - - - - - - - - - - - - -
 %   D E H A N T T I D E I N E L
@@ -219,9 +219,19 @@ function dxtide =dehanttideinel(xsta,yr,month,day,fhr,xsun,xmon)
 %                                  second. Created additional test case
 %  2016 December 19 M.A. Davis     Updated routine DAT for 2017.0 leap
 %                                  second, and added new test case.
+%  2021 November 10 F.P. Rothmaier Vectorized, cleaned up code.
 %-----------------------------------------------------------------------
 
-xcorsta=zeros(1,3); 
+% the position input defines the shape of everything
+wantCol = iscolumn(xsta);
+if (wantCol && ~iscolumn(xsun)) || (~wantCol && iscolumn(xsun))
+    xsun = xsun';
+end
+if (wantCol && ~iscolumn(xmon)) || (~wantCol && iscolumn(xmon))
+    xmon = xmon';
+end
+
+
 %----------------------------------------------------------------------
 % NOMINAL SECOND DEGREE AND THIRD DEGREE LOVE NUMBERS AND SHIDA NUMBERS
 %----------------------------------------------------------------------
@@ -233,8 +243,8 @@ l3=  0.015d0;
 %----------------------------------------------------------------------
 % SCALAR PRODUCT OF STATION VECTOR WITH SUN/MOON VECTOR
 %----------------------------------------------------------------------
-[scs,rsta,rsun]=navsu.ppp.models.iers.sprod(xsta,xsun);
-[scm,rsta,rmon]=navsu.ppp.models.iers.sprod(xsta,xmon);
+[scs,rsta,rsun]=navsu.ppp.models.iers.sprod(xsta, xsun);
+[scm,rsta,rmon]=navsu.ppp.models.iers.sprod(xsta, xmon);
 scsun = scs./rsta./rsun;
 scmon = scm./rsta./rmon;
 %----------------------------------------------------------------------
@@ -271,11 +281,11 @@ fac3sun = fac2sun.*(re./rsun);
 fac3mon = fac2mon.*(re./rmon);
 
 % TOTAL DISPLACEMENT
-for i = 1 : 3
-    dxtide(i) = fac2sun.*(x2sun.*xsun(i)./rsun+p2sun.*xsta(i)./rsta)+ fac2mon.*(x2mon.*xmon(i)./rmon+p2mon.*xsta(i)./rsta)+ fac3sun.*(x3sun.*xsun(i)./rsun+p3sun.*xsta(i)./rsta)+ fac3mon.*(x3mon.*xmon(i)./rmon+p3mon.*xsta(i)./rsta);
-end; i = fix(3+1);
+dxtide = fac2sun.*(x2sun.*xsun./rsun + p2sun.*xsta./rsta) ...
+       + fac2mon.*(x2mon.*xmon./rmon + p2mon.*xsta./rsta) ...
+       + fac3sun.*(x3sun.*xsun./rsun + p3sun.*xsta./rsta) ...
+       + fac3mon.*(x3mon.*xmon./rmon + p3mon.*xsta./rsta);
 
-[xcorsta]=navsu.ppp.models.iers.zero_vec8(xcorsta);
 %+---------------------------------------------------------------------
 % CORRECTIONS FOR THE OUT-OF-PHASE PART OF LOVE NUMBERS (PART H_2^(0)I
 % AND L_2^(0)I )
@@ -284,24 +294,18 @@ end; i = fix(3+1);
 % FIRST, FOR THE DIURNAL BAND
 
 xcorsta = navsu.ppp.models.iers.st1idiu(xsta,xsun,xmon,fac2sun,fac2mon);
-for i = 1 : 3
-    dxtide(i) = dxtide(i) + xcorsta(i);
-end; i = fix(3+1);
+dxtide = dxtide + xcorsta;
 
 % SECOND, FOR THE SEMI-DIURNAL BAND
 
-xcorsta=navsu.ppp.models.iers.st1isem(xsta,xsun,xmon,fac2sun,fac2mon);
-for i = 1 : 3
-    dxtide(i) = dxtide(i) + xcorsta(i);
-end; i = fix(3+1);
+xcorsta = navsu.ppp.models.iers.st1isem(xsta,xsun,xmon,fac2sun,fac2mon);
+dxtide = dxtide + xcorsta;
 
 %+---------------------------------------------------------------------
 % CORRECTIONS FOR THE LATITUDE DEPENDENCE OF LOVE NUMBERS (PART L^(1) )
 %----------------------------------------------------------------------
 xcorsta = navsu.ppp.models.iers.st1l1(xsta,xsun,xmon,fac2sun,fac2mon);
-for i = 1 : 3
-    dxtide(i) = dxtide(i) + xcorsta(i);
-end; i = fix(3+1);
+dxtide = dxtide + xcorsta;
 
 % CONSIDER CORRECTIONS FOR STEP 2
 
@@ -312,14 +316,14 @@ end; i = fix(3+1);
 %
 %   1) CALL THE SUBROUTINE COMPUTING THE JULIAN DATE
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-[jjm0,jjm1]=navsu.ppp.models.iers.cal2jd_iers(yr,month,day);
+[jjm0, jjm1] = navsu.ppp.models.iers.cal2jd_iers(yr, month, day);
 fhrd = fhr./24.0d0;
 %     17 May 2013 Corrected bug as noted in header
-t =((jjm0-2451545.0d0)+jjm1+fhrd)./36525d0;
+t = ((jjm0-2451545.0d0) + jjm1+fhrd) ./ 36525d0;
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %   2) CALL THE SUBROUTINE COMPUTING THE CORRECTION OF UTC TIME
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-dtt=navsu.ppp.models.iers.dat(yr,month,day,fhrd);
+dtt = navsu.ppp.models.iers.dat(yr, month, day, fhrd);
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 dtt = dtt + 32.184d0;
 %     CONVERSION OF T IN TT TIME
@@ -328,18 +332,14 @@ t = t + dtt./(3600.0d0.*24.0d0.*36525d0);
 %  SECOND, WE CAN CALL THE SUBROUTINE STEP2DIU, FOR THE DIURNAL BAND
 %  CORRECTIONS, (in-phase and out-of-phase frequency dependence):
 
-xcorsta=navsu.ppp.models.iers.step2diu(xsta,fhr,t);
-for i = 1 : 3
-    dxtide(i) = dxtide(i) + xcorsta(i);
-end; i = fix(3+1);
+xcorsta = navsu.ppp.models.iers.step2diu(xsta, fhr, t);
+dxtide = dxtide + xcorsta;
 
 %  CORRECTIONS FOR THE LONG-PERIOD BAND,
 %  (in-phase and out-of-phase frequency dependence):
 
-xcorsta=navsu.ppp.models.iers.step2lon(xsta,t);
-for i = 1 : 3
-    dxtide(i) = dxtide(i) + xcorsta(i);
-end; i = fix(3+1);
+xcorsta = navsu.ppp.models.iers.step2lon(xsta, t);
+dxtide = dxtide + xcorsta;
 
 % CONSIDER CORRECTIONS FOR STEP 3
 
