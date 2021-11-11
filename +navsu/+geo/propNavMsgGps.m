@@ -100,6 +100,10 @@ for loop = 1:tmArrayLen
         % use eph closest to current time
         t = tmArray(loop) - eph.GPS_week_num(idx) * 604800 - eph.Toe(idx);
     end
+    if ~any(isfinite(t))
+        % possibly we set everything to inf!
+        continue
+    end
     [~, tdx] = min(abs(t));
     I = idx(tdx);
     

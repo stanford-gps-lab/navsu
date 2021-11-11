@@ -18,7 +18,8 @@ function [yearChange,dayChange] = curlFile(yearList,dayList,ftpStruc,netrcFile,c
 %
 % See also: navsu.ftp.download, navsu.ftp.ftpFileHr
 
-if ispc && nargin > 3 && isfile(netrcFile) && isfile(cookieFile)
+if ispc && nargin > 3 && ischar(netrcFile) && ischar(cookieFile) ...
+        && isfile(netrcFile) && isfile(cookieFile)
     ftpSite  = ftpStruc.ftpSite;
 else
     % at least on Mac we have to use the ftp protocol
