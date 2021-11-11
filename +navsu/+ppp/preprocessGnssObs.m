@@ -17,8 +17,8 @@ downsampleFactor = res.downsampleFactor; % FActor by which to downsample
 obsDes           = res.obsDesired;       % RINEX observaiton code cell array... fairly complicated, sorry
 
 %%
-obsInds    = repmat([1 2 3 4],1,3); % 1 = code, 2 = carrier, 3 = snr, 4 = doppler
-signalInds = kron(1:3,ones(1,4));
+obsInds    = repmat([1 2 3 4], 1, 3); % 1 = code, 2 = carrier, 3 = snr, 4 = doppler
+signalInds = kron(1:3, ones(1, 4));
 
 
 %% Extract which measurements should be used
@@ -74,8 +74,8 @@ if isempty(obsDes) || 1
                 sigi = sigRankings{freqNum}{idx};
 
                 % check if any measurements available
-                if ~isfield(obsGnssRaw.meas,['C' sigi]) ...
-                        || ~any(obsGnssRaw.meas.(['C' sigi])(indsConst,:), 'all')
+                if ~isfield(obsGnssRaw.meas, ['C' sigi]) ...
+                    || ~any(obsGnssRaw.meas.(['C' sigi])(indsConst, :), 'all')
                     continue;
                 end
                 
