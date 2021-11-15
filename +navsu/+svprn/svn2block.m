@@ -33,7 +33,7 @@ end
 [svndata,blockText] = navsu.svprn.constSvnData(const,source);
 
 for i = 1:length(svn)
-    idx = svndata(svndata(:,1) == svn(i),13);
+    idx = svndata(svndata(:,1) == svn(i), 13);
     %     if flag_number
     if ~isempty(idx)
         blockNums(i) = idx(1);

@@ -9,6 +9,8 @@ function svn = prn2x(colId, prn, epoch, const, source)
 %   prn     - PRN
 %   epoch   - time is in fractional year (e.g 2012.233 very crudely) or 
 %             Julian day (e.g. 2444239.5)
+%   const   - N x 1 vector of constellation indices
+%   source  - OPTIONAL data source (only applies to GLONASS)
 %   
 % OUTPUT:
 %   svn     - satellite vehicle number.

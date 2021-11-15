@@ -60,8 +60,9 @@ svndata(svndata(:,8) == Inf,end) = Inf;
 prn = NaN(size(svn));       
 
 for sdx = 1:size(svndata,1)
-    pdx = svndata(sdx,1) == svn & ...
-           epoch >= svndata(sdx,end-1) & epoch <= svndata(sdx,end); 
+    pdx = svndata(sdx,1) == svn ...
+          & epoch >= svndata(sdx,end-1) ...
+          & epoch <= svndata(sdx,end); 
     if any(pdx)
         prn(pdx) = svndata(sdx,2);
     end
