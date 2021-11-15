@@ -30,21 +30,22 @@ if nargin < 4
     end
 end
 
-[svndata,blockText] = navsu.svprn.constSvnData(const,source);
+[svndata, blockText] = navsu.svprn.constSvnData(const,source);
 
-for i = 1:length(svn)
+% preallocate outputs
+nSvn = length(svn);
+blockNums = NaN(1, nSvn);
+block = repmat({''}, 1, nSvn);
+
+for i = 1:nSvn
     idx = svndata(svndata(:,1) == svn(i), 13);
     %     if flag_number
     if ~isempty(idx)
         blockNums(i) = idx(1);
-    else
-        blockNums(i) = NaN;
     end
     %     else
     if ~isempty(idx)
         block{i} = blockText{idx};
-    else
-        block{i} = '';
     end
     %     end
 end
