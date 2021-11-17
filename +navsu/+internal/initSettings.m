@@ -25,11 +25,12 @@ iniFile = res.configFile;
 % [2] https://cddis.nasa.gov/Data_and_Derived_Products/CreateNetrcFile.html
 
 %% Pull info from the .ini file if available
-if ~isempty(iniFile)
+if ~isempty(iniFile) && isfile(iniFile)
     iniData = navsu.thirdparty.ini2struct(iniFile);
     preciseProdDir = iniData.preciseproddir;
     obsDir         = iniData.obsdir;
 else
+    warning('Did not receive a valid config file. Setting default values.');
     preciseProdDir = fullfile(pwd, 'data/');
     obsDir         = fullfile(pwd, 'data/');
 end
