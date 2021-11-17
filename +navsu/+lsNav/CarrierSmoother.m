@@ -54,21 +54,28 @@ classdef CarrierSmoother < matlab.mixin.Copyable
             
             
             % first step: get smoothing constant M for each satellite
-            M = obj.nSmoothingEpochs(satIds); % how many epochs have already been smoothed
+            M = max(1, obj.nSmoothingEpochs(satIds));
             
             % increase by 1 for every sat with finite carrier phase and
             % maintained carrier lock, else set to 1
             dt = epoch - obj.tLastSmoothing(satIds);
+            if any(dt < 0)
+                disp('Resetting carrier smoother due to negative timestep.');
+                obj.reset(satIds);
+                % recompute everything so far
+                M = max(1, obj.nSmoothingEpochs(satIds));
+                dt = epoch - obj.tLastSmoothing(satIds);
+                carrierDelta = carrier - obj.lastCarrierPhase(satIds);
+            end
             M = 1 + M .* (isfinite(carrierDelta) ...
-                        & lockTime > dt ...
-                        & lockTime < obj.tMax);
+                          & lockTime > dt);
             M = min(M, obj.tMax./dt);
             % -> M is now the number of epochs across which to smoothen
             
             
             % second step: actually do the smoothing
             prUpdate = (M-1)./M .* (obj.lastSmoothedPr(satIds) + carrierDelta);
-            prUpdate(M == 1) = 0;
+            prUpdate(M == 1) = 0; % to avoid NaN's
             prSmoothed = code ./ M + prUpdate;
             
             % update sigma accordingly
@@ -85,7 +92,24 @@ classdef CarrierSmoother < matlab.mixin.Copyable
             obj.lastPrVar(satIds)           = prVarRcvr;
         end
         
-        
+        function reset(obj, satIds)
+            % Resets the smoother to initial conditions. Can be run for
+            % certain satellites only.
+            %   
+            %   obj.reset;
+            %   obj.reset(satIds);
+
+            if nargin < 2
+                satIds = true(size(obj.lastCarrierPhase));
+            end
+
+            obj.lastCarrierPhase(satIds) = NaN;
+            obj.tLastSmoothing(satIds) = NaN;
+            obj.lastSmoothedPr(satIds) = NaN;
+            obj.nSmoothingEpochs(satIds) = 0;
+            obj.lastPrVar(satIds) = 0;
+
+        end
     end
 end
 
