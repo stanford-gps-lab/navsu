@@ -16,7 +16,8 @@ function curlDownloadDirectory(remoteDir, localDir, varargin)
 remoteDir = fileparts(remoteDir);
 
 if startsWith(localDir, '~')
-    warning('Local directory file path cannot start with "~" but must be fully specified!')
+    warning(['Local directory file path cannot start with "~".', ...
+             'Please fully specify path!']);
 end
 
 if ispc && numel(varargin) == 2 && all(cellfun(@ischar, varargin)) ...
@@ -55,9 +56,11 @@ else
     fileNames = navsu.ftp.curlGetDirectoryContents(remoteDir);
     filePaths = fullfile(remoteDir, fileNames);
 
-    % download each file one by one
+    % download each file one by one if it doesn't exist locally
     for fI = 1:length(filePaths)
-        navsu.ftp.curlDownloadSingleFile(filePaths{fI}, localDir);
+        if ~isfile(fullfile(localDir, fileNames{fI}))
+            navsu.ftp.curlDownloadSingleFile(filePaths{fI}, localDir);
+        end
     end
 end
 
