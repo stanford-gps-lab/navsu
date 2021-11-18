@@ -39,6 +39,8 @@ sat_idx = 1:n_sat;
 %expand the user east unit vector to match the lines of sight
 [t1, ~] = meshgrid(usr_ehat, sat_idx);
 e_hat = reshape(t1, n_los, 3);
+% this is essentially repelem(usr_ehat, n_sat, 1) that works before Matlab
+% R2015a
 
 %expand the user north unit vector to match the lines of sight
 [t1, ~] = meshgrid(usr_nhat, sat_idx);
