@@ -38,15 +38,15 @@ sat_idx = 1:n_sat;
 
 %expand the user east unit vector to match the lines of sight
 [t1, ~] = meshgrid(usr_ehat, sat_idx);
-e_hat = reshape(t1, n_los, 1);
+e_hat = reshape(t1, n_los, 3);
 
 %expand the user north unit vector to match the lines of sight
 [t1, ~] = meshgrid(usr_nhat, sat_idx);
-n_hat = reshape(t1, n_los, 1);
+n_hat = reshape(t1, n_los, 3);
 
 %expand the user up unit vector to match the lines of sight
 [t1, ~] = meshgrid(usr_uhat, sat_idx);
-u_hat = reshape(t1, n_los, 1);
+u_hat = reshape(t1, n_los, 3);
 
 %calculate the LOS vectors in the ENU frame
 los_enub = navsu.geo.calcLosEnub(los_xyzb(losmask, :), ...

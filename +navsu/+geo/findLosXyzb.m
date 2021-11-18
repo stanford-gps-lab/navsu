@@ -16,10 +16,10 @@ function los_xyzb=findLosXyzb(xyz_usr, xyz_sat, losmask,flagPairs)
 %   Given n_usr user xyz positions and n_sat satellite xyz positions both in
 %   ECEF WGS-84 coordinates (X in first column, Y in second column ...) in
 %   XYZ_USR and XYZ_SAT respectively, this function returns the n_usr*n_sat
-%   line of sight unit vectors augmented by a one at the end.  These LOS
-%   vectors may then be used to form the position solution.  Optional LOSMASK
-%   is a vector of indices (1 to n_usr*n_sat) that specifies which LOS vectors
-%   to selectively compute.
+%   line of sight unit vectors from user to satellite augmented by a one at
+%   the end.  These LOS vectors may then be used to form the position
+%   solution. Optional LOSMASK is a vector of indices (1 to n_usr*n_sat)
+%   that specifies which LOS vectors to selectively compute.
 %
 %   See also: FIND_LOS_ENUB
 

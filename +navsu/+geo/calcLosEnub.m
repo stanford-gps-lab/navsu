@@ -20,6 +20,8 @@ function los_enub = calcLosEnub(los_xyzb, e_hat, n_hat, u_hat)
 %   line of sight unit vectors augmented by a one at the end in the East, North
 %   and Up frame.  These LOS vectors may then be used to form the position
 %   solution.
+%   NOTE: Flips the sign. xyzb los vectors user -> satellite are returned
+%   as satellite -> user.
 %
 %   See also: FIND_LOS_XYZB FIND_LOS_ENUB
 
@@ -29,7 +31,7 @@ function los_enub = calcLosEnub(los_xyzb, e_hat, n_hat, u_hat)
 
 
 %initialize 4th column of the line of sight vector
-los_enub(:, 4) = los_xyzb(:, 4);
+los_enub(:, 4) = ones(size(e_hat, 1), 1) .* los_xyzb(:, 4);
 
 %dot the east unit vector with the los vector to determine -cos(elev)*sin(azim)
 los_enub(:, 1) = sum(-e_hat.*los_xyzb(:, 1:3), 2);
