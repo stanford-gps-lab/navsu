@@ -80,19 +80,17 @@ allData = allData{1};
 fclose(fid);
 
 %perform some simple checks
-if any(cellfun(@isempty,allData))
+if any(cellfun(@isempty, allData))
     warning('Error reading %s -- unexpected blank line(s) found!\n', file_nav);
     return
 else
-    header_end = find(cellfun(@(x) ~isempty(x), strfind(allData,'END OF HEADER')));
+    header_end = find(contains(allData, 'END OF HEADER'));
     if isempty(header_end) 
         warning('Error reading %s -- end of header not found!\n', file_nav);
         return
-    end
-    
-    if length(header_end) > 1
+    elseif length(header_end) > 1
         warning('Error reading %s -- multiple headers found!\n', file_nav);
-       return 
+        return 
     end
 end
 
