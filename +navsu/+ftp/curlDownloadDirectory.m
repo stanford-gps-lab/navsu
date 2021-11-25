@@ -20,8 +20,7 @@ if startsWith(localDir, '~')
              'Please fully specify path!']);
 end
 
-if ispc && numel(varargin) == 2 && all(cellfun(@ischar, varargin)) ...
-        && all(cellfun(@isfile, varargin))
+if navsu.ftp.curlUseHttp(varargin{:})
     % Functionality to download all at once using curl- much faster than
     % downloading individual files. But requires netrc and cookie file.
     % This currently only works on windows.

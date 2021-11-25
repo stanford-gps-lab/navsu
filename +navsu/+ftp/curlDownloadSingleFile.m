@@ -24,8 +24,7 @@ if ~exist(localDir, 'dir')
     mkdir(localDir);
 end
 
-if ispc && numel(varargin) == 2 && all(cellfun(@ischar, varargin)) ...
-        && all(cellfun(@isfile, varargin))
+if navsu.ftp.curlUseHttp(varargin{:})
     % use http protocol
     system(['curl --silent -c "' varargin{2} ...
             '" -n --netrc-file "' varargin{1} ...

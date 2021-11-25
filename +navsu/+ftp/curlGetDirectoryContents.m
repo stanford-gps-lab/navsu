@@ -18,8 +18,7 @@ if ~endsWith(remoteDir, '/')
 end
 
 % use ftp or http?
-useHttp = ispc && numel(varargin) == 2 && all(cellfun(@ischar, varargin)) ...
-               && all(cellfun(@isfile, varargin));
+useHttp = navsu.ftp.curlUseHttp(varargin{:});
 
 if useHttp
     curlCall = ['curl --silent -c "' varargin{2} ...
