@@ -491,11 +491,11 @@ end
         
 %constLetters = {'G' 'E' 'R' 'J' 'C' 'S' 'I' 'R2'};
 [~,entries] = ismember(firstChars, {constData.constLetter});
-entries(entries == 0) = [];
 indEntries = find(entries);
-prnEntries = str2double(cellfun(@(x) x(2:4), allData(indEntries), 'un', 0)); %#ok<FNDSB>
-% newest occasional GLOANSS PRN 136 shows up and needs GPS format.
-entries(entries == 2 & prnEntries > 100) = 8;
+prnEntries = str2double(cellfun(@(x) x(2:4), allData(indEntries+header_end), 'un', 0));
+% newest occasional GLONASS PRN 136 shows up and needs GPS format.
+entries(entries == 0) = [];
+entries(entries == 3 & prnEntries > 100) = 8;
 
 % Find number of SVs listed for each constellation
 entryCounts = num2cell(hist(entries,1:8)); %#ok<HIST>
@@ -1052,3 +1052,4 @@ for constIdx = 1:length(constData)
 
 end % for constIdx
 
+end % of function
