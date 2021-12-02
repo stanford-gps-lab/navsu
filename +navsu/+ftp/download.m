@@ -420,7 +420,7 @@ switch inChoice
                 ftpStruc.fileFormat   =  {'[''BRDM*.rnx*'']'};
                 ftpStruc.unzipFlag    = 1;
                 
-                [YearChangei,dayChangei] =navsu.ftp.curlFile(YearList,dayList,ftpStruc,netrcFile,cookieFile);
+                [YearChangei,dayChangei] =navsu.ftp.curlFile(Year,dayNum,ftpStruc,netrcFile,cookieFile);
             end
         end
         
