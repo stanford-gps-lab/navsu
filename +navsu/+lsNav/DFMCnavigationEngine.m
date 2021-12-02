@@ -18,13 +18,11 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         satAcc      % Variance of satellite position
         satPRN      % PRN of each satellite
         satConstId  % constellation id of each satellite
-        constLetter % one letter identifier of each constellation: GRECJ
-        satTGD      % Timing group delay of each satellite in sec (see IS﻿20.3.3.3.3.2)
+        satTGD      % Timing group delay of each satellite in sec (see IS ﻿20.3.3.3.3.2)
         satEl       % elevation of satellites in deg
         satAz       % azimuth of satellites in deg
-        freqMap     % lookup table for frequency of each signal
-        CS (3, 1) navsu.lsNav.CarrierSmoother % array of objects for carrier 
-        % smoothing. One smoother for each freq and one for Dual Freq.
+        CS navsu.lsNav.CarrierSmoother % array of objects for carrier 
+        % smoothing. One smoother for each signal, one for each Dual Freq.
         elevMask = 15*pi/180;    % elevation mask angle
     end
     
@@ -176,11 +174,114 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 obj.position = zeros(3, 1);
             end
             
-            % build frequency lookup table
-            obj.buildFreqTable;
             
         end
         
+        function [pos, vel, tBias, R, prr, P, chi2stat, dop, useDF] = ...
+                batchPvtSolution(obj, obsGnss, useConst, fBands)
+            % Run the PVT solver for measurements at multiple epochs.
+            %   Automatically runs the recursive least squares positioning
+            %   over a batch of measurements at multiple epochs.
+            %   
+            %   [posECEF, velECEF, tBias, R, prr, P, chi2stat, dop] = ...
+            %       obj.batchPvtSolution(obsGnss)
+            %   
+            %   Can be called with a limited number of constellations or
+            %   frequencies:
+            %   [pos, vel, tBias, R, prr, P, chi2s, dop] = ...
+            %       obj.batchPvtSolution(obsGnss, useConst, freqs)
+            %   
+            %   Inputs:
+            %   obsGnss     Struct of measurement data, same input as for
+            %               obj.readRinexData and 
+            %               navsu.ppp.preprocessGnssObs. Contains data for
+            %               N satellites at M epochs.
+            %       .constInds  N x 1 vector of indices indicating the
+            %                   constellation of each signal
+            %       .PRN        N x 1 vector of satellite PRNs
+            %       .epochs     1 x M vector of measurement epochs
+            %       .meas       struct of measurements sorted by their
+            %                   RINEX 3 codes (C1C, ...) each of size N x M
+            %       .tLock      (optional) struct of carrier phase lock
+            %                   time, same fields as .meas struct.
+            %   useConst    OPTIONAL indices limiting the constellations to
+            %               be used. Default is 1:5.
+            %   fBands      OPTIONAL indices indicating the frequency bands
+            %               to be used. Default is [1 2].
+            %   
+            %   Outputs:
+            %   pos     3 x M matrix of ECEF position solutions
+            %   vel     3 x M matrix of ECEF velocity solutions
+            %   tBias   C x M matrix of clock biases for C constellations
+            %   R       (3+C) x (3+C) x M position, time covariance matrix
+            %   prr     N x M matrix of pseudorange residuals
+            %   P       N x N x M matrix of residual information matricies
+            %   chi2s   1 x N vector of residual chi^2 statistic values
+            %   dop     (3+C) x M matrix of DOP values (diagonal values of
+            %           DOP matricies)
+            %   useDF   1 x M logical vector that is positive where a dual
+            %           frequency position solution was computed.
+
+            if nargin < 3 || isempty(useConst)
+                % default to using everything
+                useConst = 1:5;
+            elseif islogical(useConst)
+                % ensure integer indices
+                useConst = find(useConst);
+            end
+            % limit to constellations in the data
+            useConst = intersect(useConst, obsGnss.constInds);
+
+            if nargin < 4 || isempty(fBands)
+                % default to using dual frequency
+                fBands = 1:2;
+            elseif islogical(fBands)
+                % ensure integer indices
+                fBands = find(fBands);
+            end
+
+            % select the satellites to use
+            sats = ismember(obsGnss.constInds, useConst);
+            
+            % initialize all the outputs
+            nEpochs = length(obsGnss.epochs);
+            nConsts = length(useConst);
+            nSats = sum(sats);
+
+            pos = NaN(3, nEpochs);
+            vel = NaN(3, nEpochs);
+            tBias = NaN(nConsts, nEpochs);
+            prr = NaN(nSats, nEpochs); % pseudorange residuals
+            R = NaN(3+nConsts, 3+nConsts, nEpochs); % cov. matrix
+            P = NaN(nSats, nSats, nEpochs); % residuals information matrix
+            chi2stat = NaN(1, nEpochs); % chi-squared statistic
+            dop = NaN(3+nConsts, nEpochs); % geometric dilution of precision
+            useDF = false(1, nEpochs); % are we using the DF solution?
+
+            for ep = 1:nEpochs
+                % parse obs data for this epoch, retrieve satellite indices
+                [obsData, satIds] = obj.readRinexData(obsGnss, sats, ep);
+
+                % limit to selected frequencies
+                obsData = obj.frequencyMask(obsData, fBands);
+                
+                % do PVT computation
+                [pos(:, ep), tBias(:, ep), R(:, :, ep), prr(:, ep), ...
+                    P(:, :, ep), dopMat, useDF(ep)] = ...
+                    obj.positionSolution(satIds, obsGnss.epochs(ep), obsData);
+                
+                vel(:, ep) = ...
+                    obj.velocitySolution(satIds, obsGnss.epochs(ep), obsData);
+                
+                % also compute chi square statistic, save dop
+                s = isfinite(prr(:, ep));
+                chi2stat(ep) = prr(s, ep)' * P(s, s, ep) * prr(s, ep);
+                dop(:, ep) = diag(dopMat);
+            end
+
+        end
+
+
         function satIds = getSatIds(obj, PRNs, constIds)
             % Get indices of the satellites for a given vector of PRNs and
             % constIds.
@@ -206,7 +307,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
         end
         
-        function [obsData, satIds] = readRinexData(obj, rinexStruct, sats, ep)
+        function [obsData, satIds] = readRinexData(obj, rnxStruct, sats, ep)
             % Parses measurement data from Rinex-like format.
             %   Returns data in struct ready to be processed by this
             %   navigation engine. Accepts inputs for a single or for
@@ -222,7 +323,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %                   RINEX 3 codes (C1C, ...) each of size N x M
             %       .PRN        - N x 1 vector of satellite PRNs
             %       .constInds  - N x 1 vector of constellation indices
-            %       .tLock      - (optional) N x M carrier phase lock time
+            %       .tLock      - (optional) struct of carrier phase lock
+            %                   time, same fields as .meas struct.
             %   Equal input form as to navsu.ppp.preprocessGnssObs()
             %   sats            - (optional) indices of satellites to use
             %   ep              - (optional) index of the measurement epoch
@@ -240,7 +342,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %                     object's list of satellites
             
             if nargin < 3 || isempty(sats)
-                sats = 1:length(rinexStruct.PRN);
+                sats = 1:length(rnxStruct.PRN);
             elseif islogical(sats)
                 % ensure integer indices
                 sats = find(sats);
@@ -250,73 +352,75 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 ep = 1;
             end
             
-            fn = fieldnames(rinexStruct.meas);
+            % identify code measurements among observables
+            [codeObservables, fn] = obj.findRnxCodeObs(rnxStruct, sats, ep);
+
+            % now we can preallocate the output struct
+            nSat = length(sats);
+            nSig = max(sum(codeObservables, 1));
+            obsData = struct('code',    NaN(nSat, nSig), ...
+                             'freq',    NaN(nSat, nSig), ...
+                             'carrier', NaN(nSat, nSig), ...
+                             'tLock',   NaN(nSat, nSig), ...
+                             'doppler', NaN(nSat, nSig), ...
+                             'CN0',     NaN(nSat, nSig), ...
+                             'fBand',   NaN(nSat, nSig));
+            obsData.rnxCode = repmat({''}, nSat, nSig);
             
-            % initialize obs struct
-            codeMeas = cellfun(@(x) strcmp(x(1), 'C') && length(x) == 3, fn);
-            nSig = length(unique(cellfun(@(x) str2double(x(2)), fn(codeMeas))));
-            obsData = struct('code',    NaN(length(sats), nSig), ...
-                             'freq',    NaN(length(sats), nSig), ...
-                             'carrier', NaN(length(sats), nSig), ...
-                             'tLock',   NaN(length(sats), nSig), ...
-                             'doppler', NaN(length(sats), nSig), ...
-                             'CN0',     NaN(length(sats), nSig));
-                             
+            for c = 1:size(codeObservables, 2)
+                % get signal names of code measurements for this constellation
+                fni = fn(codeObservables(:, c));
             
-            % scan all code meas to analyze each signal
-            for fni = find(codeMeas)'
-                % get signal identifyer
-                sigId = fn{fni}(2:end);
-                
-                rnxCode = rinexStruct.meas.(fn{fni})(sats, ep);
-                % for which satellites do I have measurements?
-                measIds = find(isfinite(rnxCode) ...
-                               & rnxCode ~= 0);
-                
-                % how many signals do I have from these satellites already?
-                mI = 1;
-                while any(isfinite(obsData.code(measIds, mI)))
-                    mI = mI + 1;
-                end
-                
-                % now assign the measurements
-                obsData.code(measIds, mI) = rnxCode(measIds);
-                sIds = sats(measIds);
-                % assign frequencies
-                for mId = 1:length(measIds)
-                    fKey = [obj.constLetter(rinexStruct.constInds(sIds(mId))) ...
-                            fn{fni}(2)];
-                    obsData.freq(measIds(mId), mI) = obj.freqMap(fKey);
-                end
-                % assign carrier, doppler, CN0, lock time
-                if isfield(rinexStruct.meas, ['L' sigId]) ...
-                        && ~isempty(rinexStruct.meas.(['L' sigId]))
-                    obsData.carrier(measIds, mI) = rinexStruct.meas.(['L' sigId])(sIds, ep);
-                end
-                if isfield(rinexStruct.meas, ['D' sigId]) ...
-                        && ~isempty(rinexStruct.meas.(['D' sigId]))
-                    obsData.doppler(measIds, mI) = rinexStruct.meas.(['D' sigId])(sIds, ep);
-                end
-                if isfield(rinexStruct.meas, ['S' sigId]) ...
-                        && ~isempty(rinexStruct.meas.(['S' sigId]))
-                    obsData.CN0(measIds, mI) = rinexStruct.meas.(['S' sigId])(sIds, ep);
-                end
-                if isfield(rinexStruct, 'tLock') ...
-                        && ~isempty(rinexStruct.tLock)
-                    obsData.tLock(measIds, mI) = rinexStruct.tLock(sIds, ep);
+                % scan all code meas to analyze each signal
+                for sI = 1:length(fni)
+                    % get signal identifyer
+                    codeId = fni{sI};
+                    sigId = codeId(2:end);
+                    
+                    rnxCodeMeas = rnxStruct.meas.(codeId)(sats, ep);
+                    % for which satellites do I have measurements?
+                    satIds = find(isfinite(rnxCodeMeas) & rnxCodeMeas ~= 0);
+                    
+                    % now assign the measurements
+                    obsData.code(satIds, sI) = rnxCodeMeas(satIds);
+                    sIds = sats(satIds);
+
+                    % assign frequencies
+                    obsData.freq(satIds, sI) = ...
+                        navsu.svprn.mapSignalFreq(str2double(codeId(2)), ...
+                                                  rnxStruct.PRN(sIds), ...
+                                                  rnxStruct.constInds(sIds), ...
+                                                  navsu.time.epochs2jd(rnxStruct.epochs(ep)));
+                    % assign carrier, doppler, CN0, carrier lock time
+                    if isfield(rnxStruct.meas, ['L' sigId]) ...
+                            && ~isempty(rnxStruct.meas.(['L' sigId]))
+                        obsData.carrier(satIds, sI) = rnxStruct.meas.(['L' sigId])(sIds, ep);
+                    end
+                    if isfield(rnxStruct.meas, ['D' sigId]) ...
+                            && ~isempty(rnxStruct.meas.(['D' sigId]))
+                        obsData.doppler(satIds, sI) = rnxStruct.meas.(['D' sigId])(sIds, ep);
+                    end
+                    if isfield(rnxStruct.meas, ['S' sigId]) ...
+                            && ~isempty(rnxStruct.meas.(['S' sigId]))
+                        obsData.CN0(satIds, sI) = rnxStruct.meas.(['S' sigId])(sIds, ep);
+                    end
+                    if isfield(rnxStruct, 'tLock') ...
+                            && ~isempty(rnxStruct.tLock) ...
+                            && isfield(rnxStruct.tLock, ['L' sigId]) ...
+                            && ~isempty(rnxStruct.tLock.(['L' sigId]))
+                        obsData.tLock(satIds, sI) = rnxStruct.tLock.(['L' sigId])(sIds, ep);
+                    end
+                    % store signal identifier
+                    obsData.rnxCode(satIds, sI) = {sigId};
+                    % store frequency band
+                    obsData.fBand(satIds, sI) = str2double(sigId(1));
                 end
             end
             
-            % limit to two best frequencies
-            [~, Ifreq] = maxk(sum(isfinite(obsData.code), 1), nSig);
-            
-            obsData = structfun(@(x) x(:, Ifreq([1 2])), obsData, ...
-                                'UniformOutput', false);
-            
             if nargout > 1
                 % now get satIds
-                satIds = obj.getSatIds(rinexStruct.PRN(sats), ...
-                                       rinexStruct.constInds(sats));
+                satIds = obj.getSatIds(rnxStruct.PRN(sats), ...
+                                       rnxStruct.constInds(sats));
             end
             
         end
@@ -369,7 +473,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
         end
         
-        function [pos, tBias, R, varargout] = positionSolution(obj, varargin)
+        function [pos, tBias, R, varargout] = positionSolution(obj, ...
+                allSatIds, epoch, obsData)
             %Update the position estimate based on new measurements.
             %   Takes as input a new set of measurements. Computes a new
             %   position and time bias solution. Can receive single or
@@ -377,7 +482,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %   measurements are passed performs carrier smoothing.
             %   
             %   [pos, tBias] = obj.positionSolution( ...
-            %       satIds, epoch, freq, obsData)
+            %       satIds, epoch, obsData)
             %   [pos, tBias, R, prr, P, DOP] = obj.positionSolution( ... )
             
             %   INPUTS (for N satellites, on F frequencies):
@@ -402,7 +507,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             
             % Step 1: preprocess measurements
-            [prMeas, prVar, satIds, epoch] = obj.preprocessMeas(varargin{:});
+            [prMeas, prVar, satIds] = obj.preprocessMeas( ...
+                allSatIds, epoch, obsData);
             % all measurement inputs are now N x 2 matricies [f_SF f_IF]
             
             % get involved constellations
@@ -433,9 +539,11 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 pos = NaN(3, 1);
                 tBias = NaN(length(consts0), 1);
                 R = NaN(nStates0, nStates0);
-                varargout{1} = NaN(length(varargin{1}), 1);
-                varargout{2} = NaN(length(varargin{1}));
-                varargout{3} = NaN(nStates0, nStates0);
+                nSats = length(allSatIds);
+                varargout{1} = NaN(nSats, 1);  % prr
+                varargout{2} = NaN(nSats); % P
+                varargout{3} = NaN(nStates0, nStates0); % dop
+                varargout{4} = false; % useDF
                 return
             end
             
@@ -448,18 +556,19 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 goodElNow = goodEl;
 
                 % Step 3: correct measurement errors
-                [errCorr, SigURE] = obj.UREcorrection(satIds, prMeas, prVar);
+                [errCorr, SigURE, varargout{4}] = obj.UREcorrection(...
+                    satIds(goodElNow), prMeas(goodElNow, :), prVar(goodElNow, :));
                 
                 % calculate the a-priori pseudo range residual prhat
-                prhat = prMeas(:, 1) ...
+                prhat = prMeas(goodElNow, 1) ...
                       - errCorr ...
-                      - obj.theoranges(satIds) ...
-                      - obj.tBias(obj.satConstId(satIds)) ...
-                      + obj.internal_satClkBias(satIds)*navsu.constants.c;
+                      - obj.theoranges(satIds(goodElNow)) ...
+                      - obj.tBias(obj.satConstId(satIds(goodElNow))) ...
+                      + obj.internal_satClkBias(satIds(goodElNow))*navsu.constants.c;
 
                 % Step 4: do least squares update
-                [dxi, R, varargout{1:nargout-3}] = obj.doLSupdate( ...
-                    satIds(goodElNow), prhat(goodElNow), SigURE(goodElNow));
+                [dxi, R, varargout{1:min(nargout-3, 3)}] = obj.doLSupdate( ...
+                    satIds(goodElNow), prhat, SigURE);
                 
                 % check for oscillating state, bad update
                 if all(dxi + dx < 1e-6) || any(isnan(dxi))
@@ -501,13 +610,14 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 if nargout > 1
                     tBias = obj.tBias(consts);
                     if nargout > 3
+                        nSats = length(allSatIds);
                         % make sure prr, P are for the right satIds
-                        prr = NaN(length(varargin{1}), 1);
-                        [~, LocB] = ismember(satIds(goodElNow), varargin{1});
+                        prr = NaN(nSats, 1);
+                        [~, LocB] = ismember(satIds(goodElNow), satIds);
                         prr(LocB) = varargout{1};
                         varargout{1} = prr;
                         if nargout > 4
-                            P = NaN(length(varargin{1}));
+                            P = NaN(nSats);
                             P(LocB, LocB) = varargout{2};
                             varargout{2} = P;
                         end
@@ -616,7 +726,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             dop = inv(G'*G);
         end
         
-        function [errCorr, SigURE] = UREcorrection(obj, satIds, prMeas, measVar)
+        function [errCorr, SigURE, useDF] = UREcorrection(obj, satIds, prMeas, measVar)
             %Compute User Range Error (URE) corrections and Variances.
             
             % retrieve TGD correction
@@ -641,7 +751,10 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 el = obj.satEl(satIds);
                 az = obj.satAz(satIds);
                 if ~isempty(obj.Beph)
-                    ionoDelay = klobucharModel(obj.Beph.iono, ...
+
+                    ionoCorrCoeffs = obj.getIonoCoeffs(obj.Beph, satIds);
+                    
+                    ionoDelay = navsu.ppp.models.klobuchar(ionoCorrCoeffs, ...
                                            obj.internal_satEpoch(satIds), ...
                                            llh(1)/180*pi, llh(2)/180*pi, ...
                                            az, el) * navsu.constants.c;
@@ -684,8 +797,39 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % leverage result of Klobuchar model
             SigIono(isfinite(ionoDelay)) = ionoDelay(isfinite(ionoDelay)).^2;
             % determine when to use DF iono delay estimate
-            useDFionoDelay = isfinite(ionoDelayDF) ...
-                           & measVar(:, end) < measVar(:, 1) + SigIono;
+
+            haveDF = isfinite(ionoDelayDF) & isfinite(measVar(:, end));
+            % use either DF or SF. Use DF if it results in better G'WG
+            if sum(haveDF) < 3 + length(unique(obj.satConstId(satIds)))
+                useDF = false;
+            else
+                % compare using SF vs. DF, choose option with smaller
+                % largest dimension of R = inv(G'WG): min(eig(G'WG))
+                WSF = diag(1./(SigRNM + SigIono + SigTropo + SigCS));
+                GSF = obj.Gmatrix(satIds);
+                WDF = diag(1 ./ (measVar(haveDF, end) ...
+                                 + SigTropo(haveDF) ...
+                                 + SigCS(haveDF)));
+                GDF = obj.Gmatrix(satIds(haveDF));
+                useDF = min(eig(GDF'*WDF*GDF)) > min(eig(GSF'*WSF*GSF));
+            end
+
+            if useDF
+                % use only DF measurements
+                useDFionoDelay = haveDF;
+                SigIono(~useDFionoDelay) = inf;
+            else
+                % don't use DF measurements
+                useDFionoDelay = false(size(ionoDelayDF));
+            end
+
+%             if sum(useDFionoDelay) < 4 + length(unique(obj.satConstId(satIds)))
+%                 % don't use DF measurements
+%                 useDFionoDelay = false(size(useDFionoDelay));
+%             else
+%                 % use only DF measurements
+%                 SigIono(~useDFionoDelay) = inf;
+%             end
             % apply DF iono delay estimation where appropriate
             SigIono(useDFionoDelay)     = measVar(useDFionoDelay, end);
             ionoDelay(useDFionoDelay)   = ionoDelayDF(useDFionoDelay);
@@ -729,7 +873,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         
         function initializeEngine(obj, consts)
             % Initialize several nav engine properties based on
-            % constellation structure.
+            % the involved constellations.
             % 
             % obj.initializeEngine(consts)
             % 
@@ -758,46 +902,24 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             obj.internal_satClkBias = NaN(consts.nEnabledSat, 1);
             obj.internal_satClkRate = NaN(consts.nEnabledSat, 1);
             obj.internal_satEpoch   = NaN(consts.nEnabledSat, 1);
-            for f_i = 1:length(obj.CS)
-                if f_i == 3
-                    tMax = 1800; % code-carrier div. no issue for DF
-                else
-                    tMax = 100; % to avoid code-carrier divergence
-                end
-                obj.CS(f_i) = ...
-                    navsu.lsNav.CarrierSmoother(consts.nEnabledSat, tMax);
-            end
-            
-        end
-        
-        function buildFreqTable(obj)
-            % Build lookup table of frequency for each signal.
-            % Can be accessed by two element string indicating
-            % constellation and RINEX3 signal number. The constellation is
-            % identified as one of 'GRECJ'.
-            
-            attachLetter = @(a, l) arrayfun(@(x) [l, num2str(x)], a, ...
-                                            'UniformOutput', false);
-            
-            obj.constLetter = 'GRECJ';
-            freqKeys = [attachLetter([1 2 5],       obj.constLetter(1)), ...
-                        attachLetter([1 4 2 6 3],   obj.constLetter(2)), ...
-                        attachLetter([1 5 7 8 6],   obj.constLetter(3)), ...
-                        attachLetter([2 1 5 7 8 6], obj.constLetter(4)), ...
-                        attachLetter([1 2 5 6],     obj.constLetter(5))];
-            
-            freqVals = [1575.42 1227.6 1176.45 ...
-                        1602 1600.995 1246 1248.06 1202.025 ...
-                        1575.42 1176.45 1207.14 1191.795 1278.75 ...
-                        1561.098 1575.42 1176.45 1207.14 1191.795 1268.52 ...
-                        1575.42 1227.6 1176.45 1278.75]*1e6;
-                
-            obj.freqMap = containers.Map(freqKeys, freqVals);
+
+%             defaultSignals = {'1C', '1C', '1C', '2I', '1C', '1C'; ...
+%                               '2C', '2C', '7I', }
+% 
+%             for f_i = 1:length(obj.CS)
+%                 if f_i == 3
+%                     tMax = 1800; % code-carrier div. no issue for DF
+%                 else
+%                     tMax = 100; % to avoid code-carrier divergence
+%                 end
+%                 obj.CS(f_i) = ...
+%                     navsu.lsNav.CarrierSmoother('', consts.nEnabledSat, tMax);
+%             end
             
         end
         
         
-        function [prMeas, prVar, satIds, epoch] = preprocessMeas( ...
+        function [prMeas, prVar, satIds] = preprocessMeas( ...
                 obj, satIds, epoch, obsData)
             %Preprocess the passed inputs and measurements
             %   
@@ -812,33 +934,47 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % dimensions
             if size(obsData.code, 2) == 1
                 % single frequency measurement
-                codeMeas = [obsData.code, NaN(size(obsData.code))];
-            else
-                codeMeas = obsData.code;
+                obsData.code = [obsData.code, NaN(size(obsData.code))];
             end
             
             if size(obsData.freq, 2) == 1
-                freq = [obsData.freq, NaN(size(obsData.freq))];
-            else
-                freq = obsData.freq;
+                obsData.freq = [obsData.freq, NaN(size(obsData.freq))];
             end
             
             if ~isfield(obsData, 'carrier') || isempty(obsData.carrier)
                 % don't have carrier measurement
-                carrierMeas = NaN(size(codeMeas));
+                obsData.carrier = NaN(size(obsData.code));
             elseif size(obsData.carrier, 2) == 1
-                carrierMeas = [obsData.carrier, NaN(size(obsData.carrier))];
-            else
-                carrierMeas = obsData.carrier;
+                obsData.carrier = [obsData.carrier, NaN(size(obsData.carrier))];
             end
             
             if ~isfield(obsData, 'tLock') || isempty(obsData.tLock)
                 % don't have carrier measurement
-                lockTime = NaN(size(carrierMeas));
+                obsData.tLock = zeros(size(obsData.carrier));
             elseif size(obsData.tLock, 2) == 1
-                lockTime = [obsData.tLock, NaN(size(obsData.tLock))];
-            else
-                lockTime = obsData.tLock;
+                obsData.tLock = [obsData.tLock, zeros(size(obsData.tLock))];
+            end
+            obsData.tLock(isnan(obsData.tLock)) = 0;
+
+            if ~isfield(obsData, 'fBand') || isempty(obsData.fBand)
+                % don't have frequency bands assigned
+                obsData.fBand = (1:size(obsData.code, 2)) ...
+                                .* ones(size(obsData.code));
+                obsData.fBand(~isfinite(obsData.code)) = NaN;
+            elseif size(obsData.fBand, 2) == 1
+                obsData.fBand = [obsData.fBand, zeros(obsData.fBand)];
+            end
+
+            if ~isfield(obsData, 'rnxCode') || isempty(obsData.rnxCode)
+                % make up rinex signal identifiers based on frequency bands
+                fVals = isfinite(obsData.fBand);
+                obsData.rnxCode = repmat({''}, size(obsData.fBand));
+                obsData.rnxCode(fVals) = arrayfun(@(x) [num2str(x), 'C'], ...
+                    obsData.fBand(fVals), 'UniformOutput', false);
+            elseif size(obsData.rnxCode, 2) == 1
+                obsData.rnxCode = [obsData.rnxCode, ...
+                                   repmat({''}, size(obsData.rnxCode))];
+
             end
             
             % Step 0: clean up inputs
@@ -846,90 +982,306 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             if islogical(satIds)
                 satIds = find(satIds);
             end
-            % limit to satellites with measurement
-            noPr = all(~isfinite(codeMeas), 2);
+            % limit to satellites with any measurement
+            noPr = all(~isfinite(obsData.code), 2);
             satIds(noPr) = [];
-            freq(noPr, :) = [];
-            codeMeas(noPr, :) = [];
-            carrierMeas(noPr, :) = [];
-            lockTime(noPr, :) = [];
+            for fn = fieldnames(obsData)'
+                obsData.(fn{1})(noPr, :) = [];
+            end
+%             obsData.freq(noPr, :) = [];
+%             obsData.code(noPr, :) = [];
+%             obsData.carrier(noPr, :) = [];
+%             obsData.tLock(noPr, :) = [];
+%             obsData.fBand(noPr, :) = [];
+%             obsData.rnxCode(noPr, :) = [];
+
             % convert carrier phase to meter
-            carrierMeas = carrierMeas .* navsu.constants.c ./ freq;
-            
+            obsData.carrier = obsData.carrier .* navsu.constants.c ./ obsData.freq;
+
             % Step 1a: build iono-free combinations
-            codeMeas = [codeMeas, obj.buildIFobs(codeMeas, freq)];
-            carrierMeas = [carrierMeas, obj.buildIFobs(carrierMeas, freq)];
-            lockTime(isnan(lockTime)) = 0;
-            lockTime = [lockTime, min(lockTime, [], 2)];
-            
-%             % could consider doppler as check on cycle slips
-%             lCp = [obj.CS(1).lastCarrierPhase(satIds) obj.CS(2).lastCarrierPhase(satIds)];
-%             lCpE = [obj.CS(1).tLastSmoothing(satIds) obj.CS(2).tLastSmoothing(satIds)];
-%             % get rate of change of carrier phase in cycles/sec
-%             carrierDelta = (carrierMeas(:, 1:2) - lCp) ./ (epoch - lCpE) .* freq / navsu.constants.c;
-%             carrierVSdoppler = carrierDelta + obsData.doppler(~noPr,  :);
-%             % should be close to 0
-            
-            coSig = obj.codeMeasSigma(satIds, freq).^2;
-            coSig = [coSig, obj.buildIFvar(coSig, freq)];
-            caSig = obj.carrierMeasSigma(freq).^2;
-            caSig = [caSig, obj.buildIFvar(caSig, freq)];
+            [obsData, SigRNM] = obj.buildIFobs(satIds, obsData);
             
             % Step 1b: perform carrier smoothing
-            [prSmoothed, prVarRcvr] = deal(NaN(size(codeMeas)));
-            for f_i = 1:size(carrierMeas, 2)
-                [prSmoothed(:, f_i), prVarRcvr(:, f_i)] = obj.CS(f_i).smoothen( ...
-                    satIds, epoch, ...
-                    codeMeas(:, f_i), carrierMeas(:, f_i), ...
-                    lockTime(:, f_i), coSig(:, f_i), caSig(:, f_i));
+            [prSmoothed, prVarRcvr] = obj.carrierSmoothing(satIds, epoch, obsData, SigRNM);
+
+            % now the signals could be averaged on each frequency band
+%             fBs = unique(obsData.fBand(isfinite(obsData.fBand)));
+%             for fbi = 1:length(fBs)
+% 
+%                 haveSignal = obsData.fBand == fBs(fbi);
+%                 nSignals = sum(haveSignal, 2);
+%                 prAverage(:, fbi) = sum(prSmoothed .* (haveSignal), 2) ...
+%                                     ./ nSignals;
+% 
+%                 prAvVar(:, fbi) = sum(prVarRcvr .* (haveSignal), 2) ...
+%                                     ./ nSignals.^2;
+% 
+%             end
+            
+
+            % now limit to best option on each frequency band!!
+            prMeas = NaN(size(obsData.code, 1), 2);
+            prVar = NaN(size(obsData.code, 1), 2);
+            for s = 1:size(obsData.code, 1)
+                % choose best signal on fBand 1
+                sigsBand1 = find(obsData.fBand(s, :) == 1);
+                if ~isempty(sigsBand1)
+                    [prVar(s, 1), iBest] = min(prVarRcvr(s, sigsBand1));
+                    prMeas(s, 1) = prSmoothed(s, sigsBand1(iBest));
+                end
+                % choose best dual frequency signal
+                sigsDF = find(obsData.fBand(s, :) > 10);
+                if ~isempty(sigsDF)
+                    [prVar(s, 2), iBest] = min(prVarRcvr(s, sigsDF));
+                    prMeas(s, 2) = prSmoothed(s, sigsDF(iBest));
+                end                
             end
+
+
             % all measurement inputs are now N x 3 matricies [f_1 f_2 f_IF]
             
             % Step 1c: limit to 1 single frequency (SF) measurement
-            chooseSecondSF = isfinite(prSmoothed(:, 2)) ...
-                           & (prVarRcvr(:, 2) < prVarRcvr(:, 1) ...
-                              | isnan(prSmoothed(:, 1)));
-            prSF = prSmoothed(:, 1);
-            prSF(chooseSecondSF) = prSmoothed(chooseSecondSF, 2);
-            prVarSF = prVarRcvr(:, 1);
-            prVarSF(chooseSecondSF) = prVarRcvr(chooseSecondSF, 2);
-            
-            prMeas = [prSF, prSmoothed(:, end)];
-            prVar = [prVarSF, prVarRcvr(:, end)];
+            % NOTE: that's a bad idea. TGD, iono corrections expect L1
+%             chooseSecondSF = isfinite(prSmoothed(:, 2)) ...
+%                            & (prVarRcvr(:, 2) < prVarRcvr(:, 1) ...
+%                               | isnan(prSmoothed(:, 1)));
+%             prSF = prSmoothed(:, 1);
+% %             prSF(chooseSecondSF) = prSmoothed(chooseSecondSF, 2);
+%             prVarSF = prVarRcvr(:, 1);
+% %             prVarSF(chooseSecondSF) = prVarRcvr(chooseSecondSF, 2);
+%             
+%             prMeas = [prSF, prSmoothed(:, end)];
+%             prVar = [prVarSF, prVarRcvr(:, end)];
             
         end
-        
-        function obsIF = buildIFobs(~, obs, freq)
-            % Calculate the iono-free (IF) combination of a measurement for
-            % two given frequencies.
-            % 
-            % obsIF = obj.buildIFobs(obs, freq)
-            % 
-            % obs   N x 2 matrix of observations (code or carrier) in meter
-            % freq  N x 2 matrix of frequencies in Hz
+
+        function ionoCorrCoeffs = getIonoCoeffs(obj, eph, satIds)
+            %Extracts the iono correction coefficients for the right day.
+            %   
+            %   ionoCorrCoeffs = obj.getIonoCoeffs(eph, epidx)
+            %
+            %   For a given ephemeris data struct and epoch index extracts
+            %   the GPS iono correction coefficients for the right day.
+            %   This is necessary if the ephemeris struct contains data for
+            %   multiple days.
+            %   
+
+            ephEp = mean(obj.internal_satEpoch(satIds));
+            [doy, yr] = navsu.time.jd2doy(navsu.time.epochs2jd(ephEp));
+            ephDay = obj.Beph.doy == floor(doy) & obj.Beph.year == yr;
+
+            if ~any(ephDay)
+                % don't have ephemeris for this day
+                ionoCorrCoeffs = NaN(1, 8);
+                return
+            end
+
+            % do we have GPS correction parameters for this day?
+            hasGPSiono = arrayfun(@(x) all(x.ionoCorrType(ephDay, :) == 'GPS'), ...
+                                  obj.Beph.iono);
             
-            if size(obs, 2) == 2 && size(freq, 2) == 2
-                gamma = (freq(:, 1) ./ freq(:, 2)).^2;
-                obsIF = (gamma.*obs(:, 1) - obs(:, 2)) ./ (gamma-1);
+            if any(hasGPSiono)
+                % using rinex 3
+                ionoCorr = eph.iono(hasGPSiono).ionoCorrCoeffs;
+            elseif strcmp(eph.iono.ionoCorrType, 'RINEX2_A0-B3')
+                % using rinex 2, can only do single day right now
+                ionoCorr = eph.iono.ionoCorrCoeffs;
             else
-                obsIF = NaN(size(obs, 1), 1);
+                % don't have iono parameters for this day from GPS
+                ionoCorrCoeffs = NaN(1, 8);
+                return
+            end
+            % get the 8 coefficients for the right day
+            corrIds = (find(ephDay)-1)*8 + (1:8);
+            ionoCorrCoeffs = ionoCorr(corrIds);
+
+        end
+        
+        function [codeObservables, fn] = findRnxCodeObs(~, rnxStruct, sats, ep)
+            % Returns a logical matrix indicating which observables in the
+            % rinex struct contain code observables of each frequency.
+            % Used by obj.readRinexData. Needs input struct in the same
+            % format.
+            %   [codeObservables, fn] = rnxCodeObs(~, rnxStruct, sats, ep)
+
+            % identify code measurements among observables
+            fn = fieldnames(rnxStruct.meas);
+            codeMeas = cellfun(@(x) strcmp(x(1), 'C') && length(x) == 3, fn);
+
+            % identify which observable has data for which constellation
+            constRows = rnxStruct.constInds' == unique(rnxStruct.constInds);
+            nConsts = size(constRows, 2);
+            hasConstMeas = false(length(fn), nConsts);
+            for c = 1:nConsts
+                cRows = intersect(find(constRows(:, c)), sats);
+                hasConstMeas(:, c) = cellfun(@(x) ...
+                    any(isfinite(rnxStruct.meas.(x)(cRows, ep))), fn);
+            end
+            % how many signals per constellation
+            codeObservables = hasConstMeas & codeMeas;
+
+        end
+
+        function [obsData, SigRNM] = buildIFobs(obj, satIds, obsData)
+            % Calculate the iono-free (IF) combinations of the measurements
+            % contained in the obsData struct.
+            % 
+            % obsIF = obj.buildIFobs(obsData)
+            % 
+            % Inputs:
+            %   obsData   struct of obs data. See obj.preprocessMeas(...)
+            
+            % count number of iono-free combinations
+            nSigs = size(obsData.code, 2);
+
+            % determine possible iono-free signal combinations 
+            ifCombs = false(nSigs-1, nSigs);
+            for sI = 1:nSigs-1
+
+                % for valid IF combination:
+                %   - both fBands finite: isfinite(obsData.fBand(:, sI)) &
+                %                         isfinite(obsData.fBand(:, sI+1:end))
+                %   - fBands not equal: obsData.fBand(:, sI) ~=
+                %                       obsData.fBand(:, sI+1:end)
+
+                ifCombs(sI, sI+1:nSigs) = ...
+                    any(isfinite(obsData.fBand(:, sI)) ...
+                      & isfinite(obsData.fBand(:, sI+1:end)) ...
+                      & obsData.fBand(:, sI) ~= obsData.fBand(:, sI+1:end), 1);
+            end
+
+            % get recever tracking noise + multipath of code, carrier meas
+            SigRNM.code = obj.codeMeasSigma(satIds, obsData.freq).^2;
+            SigRNM.carrier = obj.carrierMeasSigma(obsData.freq).^2;
+
+            % build IF combinations
+            for sI = find(any(ifCombs, 2))'
+                gamma = (obsData.freq(:, sI) ./ obsData.freq(:, ifCombs(sI, :))).^2;
+                % build iono-free code and carrier measurements
+                for o = {'code', 'carrier'}
+                    oIF = obj.buildIFmeas(obsData.(o{1})(:, sI), ...
+                                          obsData.(o{1})(:, ifCombs(sI, :)), ...
+                                          gamma);
+                    obsData.(o{1}) = [obsData.(o{1}), oIF];
+                    % set receiver noise + multipath variances as well
+                    if nargout > 1
+                        vIF = obj.buildIFvar(SigRNM.(o{1})(:, sI), ...
+                                             SigRNM.(o{1})(:, ifCombs(sI, :)), ...
+                                             gamma);
+                        SigRNM.(o{1}) = [SigRNM.(o{1}), vIF];
+                    end
+                end
+
+                % determine carrier lock time of IF combinations
+                obsData.tLock = [obsData.tLock, ...
+                                 min(obsData.tLock(:, sI), obsData.tLock(:, ifCombs(sI, :)))];
+
+                % create IF signal identifiers
+                for IFi = find(ifCombs(sI, :))
+                    newRnx = repmat({''}, size(obsData.rnxCode(:, sI)));
+                    haveDF = ~any(cellfun(@isempty, obsData.rnxCode(:, [sI, IFi])), 2);
+                    joinedCodes = join([repmat({'IF'}, size(newRnx)), ...
+                                        obsData.rnxCode(:, [sI, IFi])], '');
+                    newRnx(haveDF) = joinedCodes(haveDF);
+                    obsData.rnxCode = [obsData.rnxCode, newRnx];
+                end
+
+                % make up IF frequency bands
+                for IFi = find(ifCombs(sI, :))
+                    newBand = obsData.fBand(:, [sI, IFi]) * [10; 1];
+                    obsData.fBand = [obsData.fBand, newBand];
+                end
+
+                % fill remaining properties (CN0, Doppler) with NaNs
+                for fn = fieldnames(obsData)'
+                    if size(obsData.(fn{1}), 2) == nSigs
+                        % no iono-free values were added yet
+                        obsData.(fn{1}) = [obsData.(fn{1}), NaN(size(oIF))];
+                    end
+                end
+
+                
             end
         end
+
+        function ifMeas = buildIFmeas(~, measF1, measF2, gamma)
+            % Builds the iono-free measurement combination for two
+            % measurements (code or carrier) and the ratio of their
+            % frequencies, gamma.
+            % 
+            % ifMeas = obj.buildIFmeas(measF1, measF2, gamma)
+            %   
+            % where gamma = (F1/F2).^2
+
+            ifMeas = (gamma.*measF1 - measF2) ./ (gamma-1);
+        end
         
-        function varIF = buildIFvar(~, measVar, freq)
+        function varIF = buildIFvar(~, measVarF1, measVarF2, gamma)
             % Calculate the variance of the iono-free (IF) combination of 
-            % a measurement for two given variances and frequencies.
+            % measurements with given variances and the ratio of their
+            % frequencies, gamma.
             % 
-            % varIF = obj.buildIFobs(measVar, freq)
+            % varIF = obj.buildIFobs(measVarF1, measVarF2, gamma)
             % 
-            % measVar   N x 2 matrix of meas variances (code or carrier) in
-            %           meter^2
-            % freq      N x 2 matrix of frequencies in Hz
-            if size(measVar, 2) == 2 && size(freq, 2) == 2
-                gamma = (freq(:, 1) ./ freq(:, 2)).^2;
-                varIF = (gamma.^2.*measVar(:, 1) + measVar(:, 2)) ./ (gamma-1).^2;
-            else
-                varIF = NaN(size(measVar, 1), 1);
+            % measVar1  N x 1 matrix of meas variances (code or carrier) in
+            %           meter^2 on frequency 1
+            % measVar2  N x M matrix of meas variances (code or carrier) in
+            %           meter^2 on frequency 2
+            % gamma     N x M matrix of squared frequency ratios (F1/F2).^2
+
+            varIF = (gamma.^2.*measVarF1 + measVarF2) ./ (gamma-1).^2;
+        end
+
+        function [prSmoothed, prVarRcvr] = carrierSmoothing(obj, satIds, epoch, obsData, SigRNM)
+            % Performs carrier smoothing on the observables.
+            %   Returns a matrix of smoothed range measurements based on
+            %   passed code and carrier values. Also returns a matrix of
+            %   the approximate receiver noise on the smoothed signals.
+            %   
+            %   [prSmoothed, prVarRcvr] = obj.carrierSmoothing( ...
+            %                              satIds, epoch, obsData, SigRNM)
+
+            % Need one carrier smoother per signal, per constellation
+            % Each smoother is identified by constelleation and rnx sig id
+
+            haveSigs = cellfun(@(x) ~isempty(x), obsData.rnxCode);
+
+            [prSmoothed, prVarRcvr] = deal(NaN(size(obsData.code)));
+            for c = unique(obj.satConstId(satIds))'
+                % where do I have signals from this constellation?
+                constSigs = obj.satConstId(satIds) == c & haveSigs;
+
+                for f_i = find(any(constSigs, 1))
+                    % call the right smoother for each constellation, each
+                    % frequency
+                    sigs = constSigs(:, f_i);
+                    sigId = unique(obsData.rnxCode(sigs, f_i));
+                    
+                    smootherId = strcmp(sigId, {obj.CS.signal}) ...
+                               & c == [obj.CS.const];
+
+                    if ~any(smootherId)
+                        % need to add a smoother for this signal
+                        if startsWith(sigId, 'IF')
+                            % set large smoothing time for iono-free combo
+                            tMax = 1800;
+                        else
+                            tMax = 300;
+                        end
+                        obj.CS(end+1) = navsu.lsNav.CarrierSmoother(sigId{1}, ...
+                                                                    c, ...
+                                                                    obj.numSats, ...
+                                                                    tMax);
+                        % use this new smoother
+                        smootherId = [smootherId, true]; %#ok
+                    end
+                    [prSmoothed(sigs, f_i), prVarRcvr(sigs, f_i)] = ...
+                        obj.CS(smootherId).smoothen( ...
+                        satIds(sigs), epoch, ...
+                        structfun(@(x) x(sigs, f_i), obsData, 'UniformOutput', false), ...
+                        structfun(@(x) x(sigs, f_i), SigRNM, 'UniformOutput', false));
+                end
+
             end
         end
         
@@ -1078,8 +1430,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             % apply elevation mask
             measExclude = obj.satEl(satIds) < obj.elevMask ...
-                        | isnan(prhat) ...
-                        | isnan(measVar);
+                        | ~isfinite(prhat) ...
+                        | ~isfinite(measVar);
             satIds(measExclude) = [];
             prhat(measExclude) = [];
             measVar(measExclude) = [];
@@ -1095,6 +1447,11 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             P = NaN(N);
             DOP = NaN(nOutStates, nOutStates);
             
+            % make sure there's enough satellites remaining
+            if length(outStates) > length(prhat)
+                return
+            end
+
             % solve weighted least squares equation
             G = obj.Gmatrix(satIds); % geometry matrix
             W = diag(1./measVar); % weighting matrix
@@ -1118,7 +1475,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             end
             if nargout > 2
                 % a-posteriori pseudo range residual
-                prr(~measExclude) = prhat - G*dx;
+                prr(~measExclude) = prhat - G*dx(outStates);
                 if nargout > 3
                     % residual information matrix
                     P(~measExclude, ~measExclude) = W - W * G * LSest;
@@ -1130,6 +1487,23 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             end
         end
         
+        function obsData = frequencyMask(~, obsData, fBands)
+            % Limit obsData to signals on specific frequency bands
+            % obsData = obj.frequencyMask(obsData, fBands)
+
+            excludeVals = ~ismember(obsData.fBand, fBands);
+            fn = fieldnames(obsData);
+            for fni = 1:length(fn)
+                if iscell(obsData.(fn{fni}))
+                    % char per signal
+                    obsData.(fn{fni})(excludeVals) = {''};
+                else
+                    % double per signal
+                    obsData.(fn{fni})(excludeVals) = NaN;
+                end
+            end
+
+        end
     end
 end
 
