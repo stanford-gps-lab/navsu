@@ -43,51 +43,24 @@ if strcmp(constellation,'BDS')
 end
 
 tmArray = GPSweek * 604800 + GPSsec;
-tmArrayLen = length(tmArray);
-pos = struct('x', NaN(tmArrayLen, 1), 'y', NaN(tmArrayLen, 1), 'z', NaN(tmArrayLen, 1), ...
-    'x_dot', NaN(tmArrayLen, 1), 'y_dot', NaN(tmArrayLen, 1), 'z_dot', NaN(tmArrayLen, 1), ...
-    'clock_bias', NaN(tmArrayLen, 1), 'clock_drift', NaN(tmArrayLen, 1),'clock_rel', NaN(tmArrayLen, 1), ...
-    'accuracy', NaN(tmArrayLen, 1), 'health', NaN(tmArrayLen, 1), ...
-	'IODC', NaN(tmArrayLen, 1), 't_m_toe', NaN(tmArrayLen, 1), ...
-    'tslu', NaN(tmArrayLen, 1), 'toe_m_ttom', NaN(tmArrayLen, 1), ...
-    'AoD',NaN(tmArrayLen,1),...
-    'Fit_interval', NaN(tmArrayLen, 1),'TGD',NaN(tmArrayLen,1),'t_m_toc',NaN(tmArrayLen,1));
+tmN = length(tmArray);
+pos = struct('x', NaN(tmN, 1), 'y', NaN(tmN, 1), 'z', NaN(tmN, 1), ...
+    'x_dot', NaN(tmN, 1), 'y_dot', NaN(tmN, 1), 'z_dot', NaN(tmN, 1), ...
+    'clock_bias', NaN(tmN, 1), 'clock_drift', NaN(tmN, 1),'clock_rel', NaN(tmN, 1), ...
+    'accuracy', NaN(tmN, 1), 'health', NaN(tmN, 1), ...
+	'IODC', NaN(tmN, 1), 't_m_toe', NaN(tmN, 1), ...
+    'tslu', NaN(tmN, 1), 'toe_m_ttom', NaN(tmN, 1), ...
+    'AoD',NaN(tmN,1),...
+    'Fit_interval', NaN(tmN, 1),'TGD',NaN(tmN,1),'t_m_toc',NaN(tmN,1));
 
-% if strcmp(constellation,'GAL')
-%    %  Parsing data source
-%    binData = repmat(' ',length(eph.codes_on_L2),22);
-%    binData(:,2:2:end) = dec2bin(eph.codes_on_L2,11);
-%    binData = str2num(binData);
-%    
-% %    very naive. does not check for duplicates in fields!
-%    galEphSource = zeros(length(eph.codes_on_L2),1);
-%    galEphSource(find(binData(:,end)))   = 1; % I/NAV E1-B
-%    galEphSource(find(binData(:,end-1))) = 2; % F/NAV E5a-I
-%    galEphSource(find(binData(:,end-2))) = 3; % I/NAV E5b-I
-%    
-%    galClkRef = zeros(length(eph.codes_on_L2),1);
-%    galClkRef(find(binData(:,end-8)))   = 1; % af0-af2, Toc are for E5a,E1
-%    galClkRef(find(binData(:,end-9)))   = 2; % af0-af2, Toc are for E5b,E1
-% 
-% end
 
-[iEph, iLastU] = deal(zeros(tmArrayLen, 1));
+[iEph, iLastU] = deal(zeros(tmN, 1));
 
 % prnLast = 0;
-for loop = 1:tmArrayLen
-    % find the most recent prior ephemeris
-%     if prnLast ~= prn(loop)
-        switch constellation
-            case 'GPS'
-                idx = find(eph.PRN == prn(loop));
-            case 'GAL'
-                % Need to use af0 and af1 for E5a (CODE using E5a, not b)
-                idx = find(eph.PRN == prn(loop));% & galClkRef == 1 & galEphSource == 2);
-                
-            case 'BDS'
-                idx = find(eph.PRN == prn(loop));
-        end
-%     end
+for loop = 1:tmN
+    % find the most recent prior ephemeris for this PRN
+    idx = find(eph.PRN == prn(loop));
+
     if isempty(idx)
         continue
     end
@@ -193,6 +166,32 @@ if WARNING_ENABLE
             tsE(iWarn), eph.Fit_interval(iWarn));
     end
 end
+
+%% check for GAL I/NAV vs. F/NAV
+if strcmp(constellation, 'GAL')
+    %  Parsing data source
+    binData = dec2base(eph.codes_on_L2(iEph), 2, 10);
+    
+    % very naive. does not check for duplicates in fields!
+    galEphSource = zeros(size(binData, 1), 1);
+    galEphSource(binData(:, end) == '1')   = 1; % I/NAV E1-B
+    galEphSource(binData(:, end-1) == '1') = 2; % F/NAV E5a-I
+    galEphSource(binData(:, end-2) == '1') = 3; % I/NAV E5b-I
+    
+    galClkRef = zeros(size(binData, 1), 1);
+    galClkRef(binData(:, end-8) == '1')   = 1; % af0-af2, Toc are for E5a,E1
+    galClkRef(binData(:, end-9) == '1')   = 2; % af0-af2, Toc are for E5b,E1
+
+    % check for consistency
+    if any((galEphSource == 2 & galClkRef == 2) ...
+         | (galEphSource == 3 & galClkRef == 1))
+        error('Inconsistent GAL ephemeris data source bits.');
+    end
+
+    % mark entries that are for E5b, E1 clock
+    galE5b = galClkRef == 2;
+end
+
 
 %% compute SV position
 
@@ -307,6 +306,13 @@ if dualFreq
 else
     pos.TGD(haveEph) = eph.TGD(iEph);
 end
+% check for Galileo E5b/E1 entries. Then group delay is stored in TGD2
+% entry. See GAL ICD 5.1.5 and navsu.readfiles.loadRinexNav
+if strcmp(constellation, 'GAL') && any(galE5b)
+    ephIdx = find(haveEph);
+    pos.TGD(ephIdx(galE5b)) = eph.TGD2(iEph(galE5b));
+end
+    
 pos.t_m_toc(haveEph)     = toC;
 pos.accuracy(haveEph)    = eph.accuracy(iEph);
 pos.health(haveEph)      = eph.health(iEph);
