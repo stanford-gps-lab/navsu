@@ -9,6 +9,13 @@ parse(p, varargin{:});
 res = p.Results;
 DOWNLOAD        = res.DOWNLOAD;        % indicator to check for downloads and download
 
+if numel(years) == 1
+    % bring it to the same size as doys
+    years = years * ones(size(doys));
+end
+if numel(years) ~= numel(doys)
+    error('years and doys inputs must have same number of elements.');
+end
 
 if DOWNLOAD   
     navsu.ftp.download(16, years, doys, obj.settings);
