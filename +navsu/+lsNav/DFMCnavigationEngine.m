@@ -750,26 +750,26 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 % have somewhat realistic position, estimate iono and tropo
                 el = obj.satEl(satIds);
                 az = obj.satAz(satIds);
+                satEpochs = obj.internal_satEpoch(satIds);
                 if ~isempty(obj.Beph)
-
-                    ionoCorrCoeffs = obj.getIonoCoeffs(obj.Beph, satIds);
+                    % estimate iono delay using Klobuchar model
+                    ionoCorrCoeffs = obj.getIonoCoeffs(mean(satEpochs));
                     
-                    ionoDelay = navsu.ppp.models.klobuchar(ionoCorrCoeffs, ...
-                                           obj.internal_satEpoch(satIds), ...
-                                           llh(1)/180*pi, llh(2)/180*pi, ...
-                                           az, el) * navsu.constants.c;
+                    ionoDelay = navsu.ppp.models.klobuchar( ...
+                        ionoCorrCoeffs, satEpochs, ...
+                        llh(1)/180*pi, llh(2)/180*pi, ...
+                        az, el) * navsu.constants.c;
                 else
                     ionoDelay = NaN(size(az));
                 end
             
                 % get tropo error
                 if abs(llh(3)) < 1e5
-                    doy = navsu.time.jd2doy(navsu.time.epochs2jd( ...
-                        obj.internal_satEpoch(satIds)));
+                    doy = navsu.time.jd2doy(navsu.time.epochs2jd(satEpochs));
                     params.tropModel = 'UNB3';
-                    [tropo,~,~] = navsu.ppp.models.tropDelay( ...
+                    [tropo, ~, ~] = navsu.ppp.models.tropDelay( ...
                         el*180/pi, az*180/pi, ...
-                        llh(:,3), llh(:,1), llh(:,2), doy, params, [], [], []);
+                        llh(:,3), llh(:,1), llh(:,2), doy, params);
                 else
                     tropo = NaN(sum(satIds > 0), 1);
                 end
@@ -804,7 +804,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 useDF = false;
             else
                 % compare using SF vs. DF, choose option with smaller
-                % largest dimension of R = inv(G'WG): min(eig(G'WG))
+                % largest dimension of R = inv(G'WG): biggest min(eig(G'WG))
                 WSF = diag(1./(SigRNM + SigIono + SigTropo + SigCS));
                 GSF = obj.Gmatrix(satIds);
                 WDF = diag(1 ./ (measVar(haveDF, end) ...
@@ -988,15 +988,10 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             for fn = fieldnames(obsData)'
                 obsData.(fn{1})(noPr, :) = [];
             end
-%             obsData.freq(noPr, :) = [];
-%             obsData.code(noPr, :) = [];
-%             obsData.carrier(noPr, :) = [];
-%             obsData.tLock(noPr, :) = [];
-%             obsData.fBand(noPr, :) = [];
-%             obsData.rnxCode(noPr, :) = [];
 
             % convert carrier phase to meter
-            obsData.carrier = obsData.carrier .* navsu.constants.c ./ obsData.freq;
+            obsData.carrier = obsData.carrier ...
+                              .* navsu.constants.c ./ obsData.freq;
 
             % Step 1a: build iono-free combinations
             [obsData, SigRNM] = obj.buildIFobs(satIds, obsData);
@@ -1055,46 +1050,26 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
         end
 
-        function ionoCorrCoeffs = getIonoCoeffs(obj, eph, satIds)
+        function ionoCorrCoeffs = getIonoCoeffs(obj, ephEp)
             %Extracts the iono correction coefficients for the right day.
             %   
-            %   ionoCorrCoeffs = obj.getIonoCoeffs(eph, epidx)
+            %   ionoCorrCoeffs = obj.getIonoCoeffs(epoch)
             %
-            %   For a given ephemeris data struct and epoch index extracts
-            %   the GPS iono correction coefficients for the right day.
-            %   This is necessary if the ephemeris struct contains data for
-            %   multiple days.
-            %   
+            %   For a given epoch extracts the GPS iono correction
+            %   coefficients for the right day.
 
-            ephEp = mean(obj.internal_satEpoch(satIds));
             [doy, yr] = navsu.time.jd2doy(navsu.time.epochs2jd(ephEp));
             ephDay = obj.Beph.doy == floor(doy) & obj.Beph.year == yr;
 
-            if ~any(ephDay)
+            % do we have GPS correction parameters for this day?
+            if sum(ephDay) ~= 1 ...
+                || find(ephDay) > size(obj.Beph.gps.ionoCorrCoeffs, 1)
                 % don't have ephemeris for this day
                 ionoCorrCoeffs = NaN(1, 8);
                 return
             end
 
-            % do we have GPS correction parameters for this day?
-            hasGPSiono = arrayfun(@(x) all(x.ionoCorrType(ephDay, :) == 'GPS'), ...
-                                  obj.Beph.iono);
-            
-            if any(hasGPSiono)
-                % using rinex 3
-                ionoCorr = eph.iono(hasGPSiono).ionoCorrCoeffs;
-            elseif strcmp(eph.iono.ionoCorrType, 'RINEX2_A0-B3')
-                % using rinex 2, can only do single day right now
-                ionoCorr = eph.iono.ionoCorrCoeffs;
-            else
-                % don't have iono parameters for this day from GPS
-                ionoCorrCoeffs = NaN(1, 8);
-                return
-            end
-            % get the 8 coefficients for the right day
-            corrIds = (find(ephDay)-1)*8 + (1:8);
-            ionoCorrCoeffs = ionoCorr(corrIds);
-
+            ionoCorrCoeffs = obj.Beph.gps.ionoCorrCoeffs(ephDay, :);
         end
         
         function [codeObservables, fn] = findRnxCodeObs(~, rnxStruct, sats, ep)
