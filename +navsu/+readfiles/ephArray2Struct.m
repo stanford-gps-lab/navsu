@@ -17,7 +17,7 @@ function eph = ephArray2Struct(array, filename, leapSecond, constellation)
 % See also: navsu.readfiles.loadRinexNav
 
 if (size(array, 2) < 36) && (size(array, 2) ~= 22) % second term is for SBAS
-%     fprintf(2, 'Error: Incorrect size of ephemerides array: %d', size(array, 2));
+%     error('Incorrect size of ephemerides array: %d', size(array, 2));
     eph = [];
     return
 end
@@ -31,17 +31,21 @@ z = (y >= 80) & (y <= 99);
 array(z, 2) = array(z, 2) + 1900;
 z = (y >= 0) & (y <= 79);
 array(z, 2) = array(z, 2) + 2000;
-if any(y > 99) || any(y < 0)
-%     fprintf(2, 'Warning: Perhaps incorrect years range from %d to %d', min(y), max(y));
-end
+% if any(y > 99) || any(y < 0)
+%     fprintf(2, 'Warning: Perhaps incorrect years range from %d to %d', ...
+%             min(y), max(y));
+% end
 
 eph.filename         = filename;
 eph.leapSecond       = leapSecond;
 eph.PRN              = array(:, 1);
-[~,eph.Toc,eph.GPS_weekday] = navsu.time.jd2gps(navsu.time.cal2jd(array(:,2),array(:,3),array(:,4)+array(:,5)/24+array(:,6)/(24*60)+array(:,7)/(86400)));
+[~, eph.Toc, eph.GPS_weekday] = navsu.time.jd2gps( ...
+    navsu.time.cal2jd(array(:,2), array(:,3), ...
+        array(:,4)+array(:,5)/24+array(:,6)/(24*60)+array(:,7)/(86400)));
 eph.clock_bias       = array(:, 8);
 
-if strcmp(constellation,'SBAS') % rows 11-22 mostly follow GLONASS(!) record layout...
+if strcmp(constellation,'SBAS')
+    % rows 11-22 mostly follow GLONASS(!) record layout...
     eph.frequency_bias = array(:, 9);
     eph.TTOM           = array(:, 10);
     eph.X              = array(:, 11);
@@ -113,8 +117,10 @@ else % no iodc saved? idk
     eph.IODC = eph.IODE;
 end
 
-if strcmp(constellation,'BDS')
-    eph.TGD2 = array(:,34);
+if any(strcmp(constellation, {'GAL', 'BDS'}))
+    % these have different group delays for different frequency
+    % combinations
+    eph.TGD2 = array(:, 34);
 end
 
 eph.TTOM             = array(:, 35);
