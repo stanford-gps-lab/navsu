@@ -120,6 +120,28 @@ elseif strcmp(outFormat,'struct')
     eph.bds  = navsu.readfiles.ephArray2Struct(Eph_C',filename,leapSecond,'BDS');
     eph.qzss = navsu.readfiles.ephArray2Struct(Eph_J',filename,leapSecond,'QZSS');
     eph.iono = iono;
+
+    % add iono correction to each constellation
+    fn = fieldnames(eph);
+    for fni = 1:length(fn)
+        constMatch = arrayfun(@(x) startsWith(fn{fni}, lower(x.ionoCorrType)), iono);
+        if numel(eph.(fn{fni})) > 1 || isempty(eph.(fn{fni}))
+            % skip "iono" field which is a struct and consts for which I
+            % don't have ephemeris data
+            continue
+        end
+        eph.(fn{fni}).ionoCorrCoeffs = NaN(1, 8);
+        if sum(constMatch) > 1
+            warning(['Can not uniquely identify ', fn{fni}, ' iono correction.', ...
+                ' Not adding it to specific eph constellation struct.']);
+        elseif any(constMatch)
+            eph.(fn{fni}).ionoCorrCoeffs = iono(constMatch).ionoCorrCoeffs';
+        end
+    end
+    % check for Rinex 2 case
+    if numel(iono) == 1 && strcmp(iono.ionoCorrType, 'RINEX2_A0-B3')
+        eph.gps.ionoCorrCoeffs = iono.ionoCorrCoeffs';
+    end
 end
 
 
