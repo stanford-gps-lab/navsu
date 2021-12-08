@@ -19,9 +19,19 @@ function Tiono = klobuchar(ionoCorr, epoch, lat, lon, az, el)
 %   @outputs:
 %   Tiono   - signal delay due to ionosphere in seconds
 
+if any(~isfinite(ionoCorr))
+    % default output at max input dimensions
+    Tiono = NaN(size(epoch .* lat .* lon .* az .* el)); %#ok
+    return
+end
+
 % make sure I have the right number of parameters
 if numel(ionoCorr) ~= 8
     error('Need 8 iono correction parameters.');
+end
+% make sure it's a column vector
+if isrow(ionoCorr)
+    ionoCorr = ionoCorr';
 end
 
 % retrieve iono parameters
