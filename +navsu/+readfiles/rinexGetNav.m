@@ -55,10 +55,7 @@ ionoCorrCoeffs = NaN(8,1);
 leapSecs = NaN(5,1);
 
 if (nargin < 2 || isempty(constellations)) %then use only GPS as default
-    constellations.GPS = struct('numSat', 32, 'enabled', 1, 'indexes', 1:32, 'PRN', 1:32);
-    constellations.nEnabledSat = 32;
-    constellations.indexes = constellations.GPS.indexes;
-    constellations.PRN     = constellations.GPS.PRN;
+    constellations = navsu.thirdparty.initConstellation(1, 0, 0, 0, 0);
 end
 
 
@@ -548,11 +545,11 @@ for constIdx = 1:length(constData)
     % Reshape all entries for this constellation into correct format for TEXTSCAN,
     % padding with spaces to handle longer lines (e.g. those containing data in 'spare' fields
     dummy2 = join(reshape( allData(constData(constIdx).allLines), ...
-                  constData(constIdx).blockLines, ...
-                  constData(constIdx).numSats )' );
+                           constData(constIdx).blockLines, ...
+                           constData(constIdx).numSats )' );
     maxLen = max(cellfun(@(x) size(x,2), dummy2)); % widest row
     dummy2padded = cellfun(@(x) [x repmat(' ', 1, maxLen-size(x,2))], ...
-        dummy2, 'UniformOutput', false);
+                           dummy2, 'UniformOutput', false);
     
 %     if length(unique(cellfun(@(x) size(x, 2), dummy2))) > 1,
 %         warning('One or more lines in input FAILS because not all rows of dummy2 are of equal lengths... PAUSED');
@@ -561,7 +558,7 @@ for constIdx = 1:length(constData)
     dummy3 = [ vertcat(dummy2padded{:}) repmat(char(13), constData(constIdx).numSats, 1) ];
     
     % Parse all entries for this constellation into cell array using appropriate format string
-    data = textscan(reshape(dummy3', 1, []), constData(1).formatString);
+    data = textscan(reshape(dummy3', 1, []), constData(constIdx).formatString);
 
     switch constIdx
         
@@ -723,14 +720,16 @@ for constIdx = 1:length(constData)
             weekno(weekno > 2500) = weekno(weekno > 2500) - 1024;
             
             
-            if size(dummy3,2) < 580
+            if size(dummy3,2) < 580 || all(~isfinite(data{36}))
                 % Some files don't put any data in the spare field (rather
-                % than using zeros), which offsets the outputs
-               noSpareData = 1;
-               L2flag = zeros(size(data{31}));
+                % than using zeros) or fills it with spaces, which offsets
+                % the outputs. This shows in a reduced string size and/or
+                % in the tom field (36) being all NaNs.
+                noSpareData = 1;
+                L2flag = zeros(size(data{31}));
             else
-               noSpareData = 0; 
-               L2flag     = data{31};
+                noSpareData = 0; 
+                L2flag     = data{31};
             end            
             
             svaccur  = data{32-noSpareData};
@@ -796,7 +795,7 @@ for constIdx = 1:length(constData)
             end
             
             if 1 %LSB_RECOVERY
-                A = Eph';
+                
                 piGPS = 3.1415926535898;
                 indices = [8:27 33 34];
                 % scaleFactors = pow2([1 1 1 1 1 piGPS piGPS 1 1 1 1 1 1 piGPS 1 piGPS 1 piGPS piGPS piGPS 1 1], ...
@@ -806,21 +805,7 @@ for constIdx = 1:length(constData)
  %                [-31 -43 -55   0  -5 -43 -31 -29 -33 -29 -19   4 -29 -31 -29 -31  -5 -31 -43 -43  -31]);
                  % af0 af1 af2 IODE crs dn  M0 cuc   e cus  ra toe cic  O0 cis   i crc   w  Wd  id tgd tgd2
                 
-                
-%                 scaleFactors(end-1:end) = 1e-9*0.1;
-%                 limits = pow2([21 15 7 8 15 15 31 15 32 15 32 16 15 31 15 31 15 31 23 13 10 10]);
-                A1 = bsxfun(@rdivide, A(:, indices), scaleFactors);
-                A2 = round(A1);
-%                 stderr = std(A2 - A1, 'omitnan');
-%                 if max(stderr) > 0.1
-%                                         fprintf(2, 'Imprecise %s: %g\n', file_nav, max(stderr));
-%                 end
-                %                 idx = any(bsxfun(@ge, abs(A2), limits), 2);
-%                 if any(idx)
-                    %                     fprintf(2, 'Over limit %s: %d/%d\n', filename, nnz(idx), length(idx));
-%                 end
-                A(:, indices) = bsxfun(@times, A2, scaleFactors);
-                Eph = A';
+                Eph = lsbRecovery(Eph, indices, scaleFactors);
             end
             
             
@@ -955,30 +940,17 @@ for constIdx = 1:length(constData)
             end
             
             if 1 %LSB_RECOVERY
-                A = Eph';
                 piGPS = 3.1415926535898;
                 indices = [8:27 33 34];
                 % scaleFactors = pow2([1 1 1 1 1 piGPS piGPS 1 1 1 1 1 1 piGPS 1 piGPS 1 piGPS piGPS piGPS 1 1], ...
                 %                     [-31 -43 -55 0 -5 -43 -31 -29 -33 -29 -19 4 -29 -31 -29 -31 -5 -31 -43 -43 0 0]);
                 scaleFactors = pow2([1 1 1 1 1 piGPS piGPS 1 1 1 1 1 1 piGPS 1 piGPS 1 piGPS piGPS piGPS 1 1], ...
                     [-33 -50 -66   0  -6 -43 -31 -31 -33 -31 -19   3 -31 -31 -31 -31  -6 -31 -43 -43   0   0]);
-                % af0 af1 af2 IODE crs dn  M0 cuc   e cus  ra toe cic  O0 cis   i crc   w  Wd  id tgd tgd2
+                %    af0 af1 af2 IODE crs dn  M0 cuc   e cus  ra toe cic  O0 cis   i crc   w  Wd  id tgd tgd2
                              
                 scaleFactors(end-1:end) = 1e-9*0.1;
-%                 limits = pow2([21 15 7 8 15 15 31 15 32 15 32 16 15 31 15 31 15 31 23 13 10 10]);
-                A1 = bsxfun(@rdivide, A(:, indices), scaleFactors);
-                A2 = round(A1);
-%                 stderr = std(A2 - A1, 'omitnan');
-%                 if max(stderr) > 0.1
-%                                         fprintf(2, 'Imprecise %s: %g\n', filename, max(stderr));
-%                 end
-                %                 idx = any(bsxfun(@ge, abs(A2), limits), 2);
-%                 if any(idx)
-                    %                     fprintf(2, 'Over limit %s: %d/%d\n', filename, nnz(idx), length(idx));
-%                 end
-                A(:, indices) = bsxfun(@times, A2, scaleFactors);
-                Eph = A';
-                %                 A(idx, :) = [];
+
+                Eph = lsbRecovery(Eph, indices, scaleFactors);
             end
             
             
@@ -1053,3 +1025,24 @@ for constIdx = 1:length(constData)
 end % for constIdx
 
 end % of function
+
+%% Helper function
+function Eph = lsbRecovery(Eph, indices, scaleFactors)
+
+    A = Eph';
+    
+    A1 = A(:, indices) ./ scaleFactors;
+    A2 = round(A1);
+%     stderr = std(A2 - A1, 'omitnan');
+%     if max(stderr) > 0.1
+%         fprintf(2, 'Imprecise %s: %g\n', filename, max(stderr));
+%     end
+%     idx = any(bsxfun(@ge, abs(A2), limits), 2);
+%     if any(idx)
+%         fprintf(2, 'Over limit %s: %d/%d\n', filename, nnz(idx), length(idx));
+%     end
+    A(:, indices) = A2 .* scaleFactors;
+    Eph = A';
+    %                 A(idx, :) = [];
+end
+
