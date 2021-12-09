@@ -16,15 +16,14 @@ function outDesc = convertConstIndName(inDesc,letterFlag)
 %
 % See also: navsu.svprn.constSvnData,
 
-
-consts = {'GPS','GLO','GAL','BDS','QZSS','SBAS'};
-
 if nargin < 2
     letterFlag = false;
 end
 
 if letterFlag
     consts = {'G' 'R' 'E' 'C' 'J' 'S'};
+else
+    consts = {'GPS','GLO','GAL','BDS','QZSS','SBAS'};
 end
 
 if ischar(inDesc)
