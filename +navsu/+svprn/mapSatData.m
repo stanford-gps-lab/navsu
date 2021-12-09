@@ -42,10 +42,9 @@ if nargin < 5
     const = ones(size(satId));
 elseif ischar(const)
     % Check for string constellation type input and convert to number
-    constNames = {'GPS','GLO','GAL','BDS','SBAS','QZSS'};
-    const = find(~cellfun(@isempty,(strfind(constNames, const))));
+    const = navsu.svprn.convertConstIndName(const);
     if isempty(const)
-        warning('Invalid constellation name- defaulting to GPS')
+        warning('Invalid constellation name - defaulting to GPS')
         const = 1;
     end
 elseif isrow(const)

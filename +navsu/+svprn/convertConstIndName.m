@@ -1,8 +1,8 @@
 function outDesc = convertConstIndName(inDesc,letterFlag)
 % convertConstIndName
 % DESCRIPTION:
-%   Given the constellation index (G = 1, R = 2, E = 3, C = 4, S = 5), output 
-%   the name of the constellation.  Or vice versa!
+%   Given the constellation index (G = 1, R = 2, E = 3, C = 4, J = 5, S = 6),
+%   output the name of the constellation.  Or vice versa!
 % INPUT:
 %   inDesc      - Either the constellation index or the name of the
 %                 constellation.
@@ -17,18 +17,18 @@ function outDesc = convertConstIndName(inDesc,letterFlag)
 % See also: navsu.svprn.constSvnData,
 
 
-consts = {'GPS','GLO','GAL','BDS','SBAS','QZSS'};
+consts = {'GPS','GLO','GAL','BDS','QZSS','SBAS'};
 
 if nargin < 2
     letterFlag = false;
 end
 
 if letterFlag
-    consts = {'G' 'R' 'E' 'C' 'S' 'J'};
+    consts = {'G' 'R' 'E' 'C' 'J' 'S'};
 end
 
 if ischar(inDesc)
-    outDesc = find(contains(consts,inDesc));
+    outDesc = find(contains(consts, inDesc));
 else 
     outDesc = consts{inDesc};
 end
