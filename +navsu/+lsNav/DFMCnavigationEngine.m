@@ -11,6 +11,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         tBiasRate   % time bias rate for each constellation in (s/s)
         tPosSol = NaN; % time of last position solution in sec since first GPS epoch
         numConsts   % number of included constellations
+        activeConsts% indices of the involved constellations
         numSats     % number of included satellites
         constellations % char vector indicating the useable constellations
         navCov      % Position, time bias covariance matrix
@@ -105,7 +106,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             obj.internal_Beph = eph;
             
             % also initialize internal sat memory properties
-            obj.initializeEngine(~structfun(@isempty, eph)');
+%             obj.initializeEngine(~structfun(@isempty, eph)');
         end
         
         function eph = get.Peph(obj)
@@ -117,7 +118,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % this is a start to implement it
             obj.internal_Peph = eph;
             % also initialize internal sat memory properties
-            obj.initializeEngine(eph.settings.constUse);
+%             obj.initializeEngine(eph.settings.constUse);
         end
         
         function llh = get.positionLLH(obj)
@@ -142,7 +143,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
     end
     
     methods
-        function obj = DFMCnavigationEngine(eph, x0)
+        function obj = DFMCnavigationEngine(ephData, x0)
             % DFMCnavigationEngine GNSS navigation engine for DF, MC.
             %   Provides recursive least squares estimation for dual
             %   frequency (DF), multi constellation (MC) GNSS measurements.
@@ -159,21 +160,42 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %           of first fix. Default is [0 0 0]'.
             
             if nargin > 0
-                if isa(eph, 'navsu.svOrbitClock')
-                    % got precise ephemeris. This one will be preferred.
-                    obj.Peph = eph;
-                elseif isstruct(eph)
-                    % work with broadcast ephemeris
-                    obj.Beph = eph;
+                if isa(ephData, 'navsu.svOrbitClock')
+                    if ~isempty(ephData.PEph)
+                        % got precise ephemeris. This one will be preferred.
+                        obj.Peph = ephData;
+                    elseif ~isempty(ephData.BEph)
+                        % work with broadcast ephemeris
+                        obj.Beph = ephData.BEph;
+                    end
+
+                    useConst = ephData.settings.constUse;
+    
+                elseif isstruct(ephData)
+                    obj.Beph = ephData;
+                    useConst = false(1, 5);
+                    % check each constellation to see if it can be used
+                    for cI = 1:length(useConst)
+                        cStr = lower(navsu.svprn.convertConstIndName(cI));
+                        useConst(cI) = isfield(ephData, cStr) ...
+                                     && ~isempty(ephData.(cStr)) ...
+                                     && numel(fieldnames(ephData.(cStr))) > 1;
+                    end
+                    
                 end
+            else
+                useConst = [true, false(1, 4)];
             end
+
+            % initiaze the navigation engine
+            obj.initializeEngine(useConst);
             
+            % read further inputs
             if nargin > 1
                 obj.position = x0;
             else
                 obj.position = zeros(3, 1);
             end
-            
             
         end
         
@@ -510,9 +532,14 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             [prMeas, prVar, satIds] = obj.preprocessMeas( ...
                 allSatIds, epoch, obsData);
             % all measurement inputs are now N x 2 matricies [f_SF f_IF]
+
+            % remove satellites without measurements
             
             % get involved constellations
             consts0 = unique(obj.satConstId(satIds));
+
+            % update the current estimate of the clock bias
+            obj.updateClkBias(epoch);
             
             % Step 2: propagate satellite ephemeris (includes Sagnac
             % effect)
@@ -525,6 +552,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             % get involved constellations
             consts = unique(obj.satConstId(satIds));
+            constIds = obj.getActiveConstId(consts);
+            satConstIds = obj.getActiveConstId(obj.satConstId(satIds));
             
             % now solve for the position and clock bias
             % apply elevation mask
@@ -546,6 +575,11 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 varargout{4} = false; % useDF
                 return
             end
+
+            % Step 3: correct measurement errors
+            [errCorr, SigURE, varargout{4}] = obj.UREcorrection(...
+                satIds, prMeas, prVar);
+            
             
             % initialize loop counter, last state update
             loopCounter = 0; dx = inf;
@@ -555,20 +589,16 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 % use latest elevation mask
                 goodElNow = goodEl;
 
-                % Step 3: correct measurement errors
-                [errCorr, SigURE, varargout{4}] = obj.UREcorrection(...
-                    satIds(goodElNow), prMeas(goodElNow, :), prVar(goodElNow, :));
-                
                 % calculate the a-priori pseudo range residual prhat
                 prhat = prMeas(goodElNow, 1) ...
-                      - errCorr ...
+                      - errCorr(goodElNow) ...
                       - obj.theoranges(satIds(goodElNow)) ...
-                      - obj.tBias(obj.satConstId(satIds(goodElNow))) ...
+                      - obj.tBias(satConstIds(goodElNow)) ...
                       + obj.internal_satClkBias(satIds(goodElNow))*navsu.constants.c;
 
                 % Step 4: do least squares update
                 [dxi, R, varargout{1:min(nargout-3, 3)}] = obj.doLSupdate( ...
-                    satIds(goodElNow), prhat, SigURE);
+                    satIds(goodElNow), prhat, SigURE(goodElNow));
                 
                 % check for oscillating state, bad update
                 if all(dxi + dx < 1e-6) || any(isnan(dxi))
@@ -578,18 +608,21 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 end
 
                 obj.position = obj.position + dx(1:3);
-                obj.tBias(consts) = obj.tBias(consts) + dx(4:end);
-                obj.navCov([1:3, 3+consts'], [1:3, 3+consts']) = R;
+                obj.tBias(constIds) = obj.tBias(constIds) + dx(4:end);
+                obj.navCov([1:3, 3+constIds'], [1:3, 3+constIds']) = R;
                 
                 % next step depends on size of the update
                 normDx = norm(dx);
-                if normDx < 1e-6
+                if normDx < 1e-4
                     % stop update, we have converged
                     break;
                 elseif normDx > 1e3
                     % large update, redo orbit propagation with new
                     % theoranges
                     obj.propagateOrbits(satIds, epoch);
+                    % redo pseudorange error estimates
+                    [errCorr, SigURE, varargout{4}] = obj.UREcorrection(...
+                        satIds, prMeas, prVar);
                 end
                 % up the counter
                 loopCounter = loopCounter + 1;
@@ -608,7 +641,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             if nargout > 0
                 pos = obj.position;
                 if nargout > 1
-                    tBias = obj.tBias(consts);
+                    tBias = obj.tBias(constIds);
                     if nargout > 3
                         nSats = length(allSatIds);
                         % make sure prr, P are for the right satIds
@@ -650,7 +683,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             freq(sNoMeas, :) = [];
             
             % Step 1: propagate orbits (if necessary)
-            obj.propagateOrbits(satIds, epoch);
+            if dt > 0 || any(~isfinite(obj.satVel(satIds, :)), 'all')
+                obj.propagateOrbits(satIds, epoch);
+            end
             
             % now limit to satellites with orbit info
             sNoEph = isnan(obj.theoranges(satIds)) ...
@@ -659,19 +694,23 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             dopplerMeas(sNoEph, :) = [];
             freq(sNoEph, :) = [];
             
+            satConstIds = obj.getActiveConstId(obj.satConstId(satIds));
             
             % Step 2: perform least squares solution
             % get rate residual
             unitvecs = obj.losVectors(satIds, :) ./ obj.theoranges(satIds);
             rateRes = dot(obj.satVel(satIds, :)', -unitvecs')' ...
-                    - dopplerMeas .* navsu.constants.c ./ freq;
+                    - dopplerMeas .* navsu.constants.c ./ freq ...
+                    - obj.tBiasRate(satConstIds);
             % solve LS nav equation
             rateSol = obj.doLSupdate(satIds, rateRes, ...
                                      obj.codeMeasSigma(satIds, freq));
             
             % store in object properties
             obj.velocity = rateSol(1:3);
-            obj.tBiasRate(unique(obj.satConstId(satIds))) = rateSol(4:end);
+            satConstIdsU = unique(satConstIds);
+            obj.tBiasRate(satConstIdsU) = obj.tBiasRate(satConstIdsU) ...
+                                        + rateSol(4:end);
             
             if nargout > 0
                 % compile outputs
@@ -823,13 +862,6 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 useDFionoDelay = false(size(ionoDelayDF));
             end
 
-%             if sum(useDFionoDelay) < 4 + length(unique(obj.satConstId(satIds)))
-%                 % don't use DF measurements
-%                 useDFionoDelay = false(size(useDFionoDelay));
-%             else
-%                 % use only DF measurements
-%                 SigIono(~useDFionoDelay) = inf;
-%             end
             % apply DF iono delay estimation where appropriate
             SigIono(useDFionoDelay)     = measVar(useDFionoDelay, end);
             ionoDelay(useDFionoDelay)   = ionoDelayDF(useDFionoDelay);
@@ -887,10 +919,10 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % initialize several properties
             obj.satPRN              = consts.PRN';
             obj.satConstId          = consts.constInds';
-            activeConsts            = unique(consts.constInds);
-            obj.numConsts           = numel(activeConsts);
+            obj.activeConsts        = unique(obj.satConstId);
+            obj.numConsts           = numel(obj.activeConsts);
             obj.numSats             = consts.nEnabledSat;
-            obj.constellations      = consts.constellations(activeConsts);
+            obj.constellations      = consts.constellations(obj.activeConsts);
             obj.tBias               = zeros(obj.numConsts, 1);
             obj.tBiasRate           = zeros(obj.numConsts, 1);
             obj.navCov              = NaN(3+obj.numConsts);
@@ -974,7 +1006,6 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             elseif size(obsData.rnxCode, 2) == 1
                 obsData.rnxCode = [obsData.rnxCode, ...
                                    repmat({''}, size(obsData.rnxCode))];
-
             end
             
             % Step 0: clean up inputs
@@ -1032,8 +1063,13 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 end                
             end
 
-
             % all measurement inputs are now N x 3 matricies [f_1 f_2 f_IF]
+
+            % clean up: remove satellites without measurements
+            noMeas = ~any(isfinite(prMeas) & isfinite(prVar), 2);
+            prMeas(noMeas, :) = [];
+            prVar(noMeas, :) = [];
+            satIds(noMeas) = [];
             
             % Step 1c: limit to 1 single frequency (SF) measurement
             % NOTE: that's a bad idea. TGD, iono corrections expect L1
@@ -1380,12 +1416,10 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         
         function ttx = transmissionTime(obj, satIds, measEpoch)
             %Compute time of signal transmission.
-            constIds = obj.satConstId(satIds);
-            rcvrClkBias = obj.tBias(constIds) ...
-                + (measEpoch - obj.tPosSol) .* obj.tBiasRate(constIds);
+            constIds = obj.getActiveConstId(obj.satConstId(satIds));
             
             ttx = sum([measEpoch*ones(sum(satIds > 0), 1), ...
-                - rcvrClkBias / navsu.constants.c, ...
+                - obj.tBias(constIds) / navsu.constants.c, ...
                 - obj.theoranges(satIds) / navsu.constants.c],  2, 'omitnan');
             
         end
@@ -1478,6 +1512,34 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 end
             end
 
+        end
+
+        function usedConstIdx = getActiveConstId(obj, constIds)
+            % Compute the index among the used constellations for a const
+            % id.
+
+            if isrow(constIds)
+                % usually comes as a column vector
+                constIds = constIds';
+            end
+
+            if ~all(constIds, obj.activeConsts)
+                % check if only legal constellations passed
+                error('Did not expect these constellations!');
+            end
+            % compute index among used consts for each const id
+            usedConstIdx = find(obj.activeConsts == constIds') ...
+                         - obj.numConsts*(0:length(constIds)-1)';
+        end
+
+        function updateClkBias(obj, measEpoch)
+            % Updates the clock bias estimate at the given epoch based on
+            % previous estimates of clock bias and clock bias rate.
+            consts = isfinite(obj.tBiasRate);
+            if isfinite(obj.tPosSol)
+                obj.tBias(consts) = obj.tBias(consts) ...
+                      + (measEpoch - obj.tPosSol) .* obj.tBiasRate(consts);
+            end
         end
     end
 end

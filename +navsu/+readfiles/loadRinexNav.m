@@ -123,25 +123,33 @@ elseif strcmp(outFormat,'struct')
 
     % add iono correction to each constellation
     fn = fieldnames(eph);
+
     for fni = 1:length(fn)
-        constMatch = arrayfun(@(x) startsWith(fn{fni}, lower(x.ionoCorrType)), iono);
-        if numel(eph.(fn{fni})) > 1 || isempty(eph.(fn{fni}))
+        if numel(eph.(fn{fni})) > 1 || ~isstruct(eph.(fn{fni}))
             % skip "iono" field which is a struct and consts for which I
             % don't have ephemeris data
             continue
         end
+
+        % set default values for this const
         eph.(fn{fni}).ionoCorrCoeffs = NaN(1, 8);
-        if sum(constMatch) > 1
-            warning(['Can not uniquely identify ', fn{fni}, ' iono correction.', ...
-                ' Not adding it to specific eph constellation struct.']);
-        elseif any(constMatch)
-            eph.(fn{fni}).ionoCorrCoeffs = iono(constMatch).ionoCorrCoeffs';
+        
+        if isstruct(iono) && isfield(iono, 'ionoCorrType')
+            % do we have iono correction values for this constellation?
+            constMatch = arrayfun(@(x) startsWith(fn{fni}, lower(x.ionoCorrType)), iono);
+    
+            if sum(constMatch) > 1
+                warning(['Can not uniquely identify ', fn{fni}, ' iono correction.', ...
+                    ' Not adding it to specific eph constellation struct.']);
+            elseif any(constMatch)
+                eph.(fn{fni}).ionoCorrCoeffs = iono(constMatch).ionoCorrCoeffs';
+            elseif numel(iono) == 1 && strcmp(iono.ionoCorrType, 'RINEX2_A0-B3')
+                % check for Rinex 2 case
+                eph.gps.ionoCorrCoeffs = iono.ionoCorrCoeffs';
+            end
         end
     end
-    % check for Rinex 2 case
-    if numel(iono) == 1 && strcmp(iono.ionoCorrType, 'RINEX2_A0-B3')
-        eph.gps.ionoCorrCoeffs = iono.ionoCorrCoeffs';
-    end
+    
 end
 
 
