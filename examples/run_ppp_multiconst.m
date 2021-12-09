@@ -98,7 +98,6 @@ filter = navsu.estimators.pppFilter;
 % filter = navsu.estimators.leastSq;
 
 filter.PARAMS.states.RX_DCB_GLO = false;
-filter.PARAMS.Q.PXOS = 0;
 filter.PARAMS.Q.VEL = 0;
 
 filter.PARAMS.measMask.f1 = [0 0 1]';

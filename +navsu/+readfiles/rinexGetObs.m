@@ -126,22 +126,22 @@ if (~isempty(sat_types)) %RINEX v2.xx
                         continue;
                     end
                     
-                    consti = strfind('GRECJS',sat_types(s));
+                    consti = strfind('GRECJS', sat_types(s));
                     
-                    coli = find(obs_col_mat(consti,:) == k);
+                    coli = obs_col_mat(consti, :) == k;
                     
-                    obs_mat(sat_types_id(s)+sat(s)-1,coli) = obs;
+                    obs_mat(sat_types_id(s)+sat(s)-1, coli) = obs;
                     
                 end
             end
             % Add the Loss of Lock Indicator
             lliNum = [1 2 5];
-            for i=1:3
+            for i = 1:3
                 lliField = ['LLI' num2str(lliNum(i))];
                 lliIdx = find(contains(obsTypes,lliField));
                 if lliIdx
-                    idxL = find(contains(obsTypes,['L' num2str(lliNum(i))]));
-                    lliObs = (reshape(lin(maskLLI(:)),1,nObsToRead));
+                    idxL = contains(obsTypes, ['L' num2str(lliNum(i))]);
+                    lliObs = reshape(lin(maskLLI(:)), 1, nObsToRead);
                     LLI = str2num(lliObs(idxL));
                     if ~isempty(LLI)
                         obs_mat(sat_types_id(s)+sat(s)-1,lliIdx) = LLI;
@@ -228,15 +228,16 @@ else %RINEX v3.xx
         % start parsing the observation string
         for k = 1 :  min(nObsToRead, floor(linLength/16))
             % check if the element is empty
-            if (~strcmp(strObs(:,k)', char(ones(1,obsChars)*32))) % if the current val is not missing (full of spaces)
+            if (~strcmp(strObs(:,k)', char(ones(1, obsChars)*32)))
+                % if the current val is not missing (full of spaces)
                 obsId = obsId+1;
                 %obs = sscanf(lin(mask(:,k)), '%f');
                 obs = fltObs(obsId);
                 
-                coli = find(obs_col_mat(consti,:) == k);
-                obsTypei = obsTypes{coli};
+                coli = obs_col_mat(consti,:) == k;
+%                 obsTypei = obsTypes{coli};
                                 
-                obs_mat(index,coli) = obs;
+                obs_mat(index, coli) = obs;
                 
             end
         end
