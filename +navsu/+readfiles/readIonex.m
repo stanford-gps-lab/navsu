@@ -13,7 +13,6 @@ function [dcbData, tecData] = readIonex(filename)
 
 %
 % CURRENTLY ONLY PARSING SATELLITE DCB DATA.. SORRY!
-dcbData = struct;
 
 fid = fopen(filename,'r');
 dcbData = [];
@@ -73,14 +72,15 @@ while ~feof(fid)
     end
     
     % Offset between geodetic marker and antenna reference point
-    if contains(linetxt,'START OF AUX DATA') && contains(upper(linetxt),'DIFFERENTIAL CODE BIASES')
+    if contains(linetxt, 'START OF AUX DATA') ...
+        && contains(upper(linetxt), 'DIFFERENTIAL CODE BIASES')
         % Check if we have a signal definition
-        if strcmp(linetxt(27:31),'     ')
+        if strcmp(linetxt(27:31), '     ')
             obs1i = 'C1W';
             obs2i = 'C2W';
         else
-            pair = upper(linetxt(27:31));
-            pair(strfind(pair,'P')) = 'W';
+%             pair = upper(linetxt(27:31));
+%             pair(strfind(pair,'P')) = 'W';
             
             obs1i = ['C' linetxt(28:-1:27)];
             obs2i = ['C' linetxt(31:-1:31)];
@@ -109,16 +109,15 @@ while ~feof(fid)
         
         ind = 1;
         % get lines until end of section
-        while ~contains(linetxt,'END OF AUX DATA')
+        while ~contains(linetxt, 'END OF AUX DATA')
             
             % get next line
             linetxt = fgetl(fid);
             
-            if contains(upper(linetxt),'COMMENT')
-                if strcmp(upper(linetxt(1:34)),upper('Reference observables for GPS    :'))
-                    obs1i = linetxt(36:38);
-                    obs2i = linetxt(40:42);
-                end
+            if contains(upper(linetxt), 'COMMENT') ...
+               && strcmpi(linetxt(1:34), 'Reference observables for GPS    :')
+                obs1i = linetxt(36:38);
+                obs2i = linetxt(40:42);
             end
             
             if contains(upper(linetxt),'PRN / BIAS / RMS')
@@ -150,10 +149,10 @@ while ~feof(fid)
                 biasi   = datai{3};
                 stdDevi = datai{4};
                 
+                % get constellation index
                 constIndi = navsu.svprn.convertConstIndName(consti,1);
-                constiFull = navsu.svprn.convertConstIndName(constIndi);
                 
-                SVNs(ind) = navsu.svprn.prn2svn(prni,startJdi,constiFull);
+                SVNs(ind) = navsu.svprn.prn2svn(prni,startJdi,constIndi);
                 PRNs(ind) = prni;
                 sites{ind} = NaN;
                 domes{ind} = NaN;
@@ -169,7 +168,7 @@ while ~feof(fid)
                 stdDev(ind) = stdDevi;
                 satFlag(ind) = 1;
                 const{ind} = consti;
-                constInd(ind) = navsu.svprn.convertConstIndName(consti,1);
+                constInd(ind) = constIndi;
                 
                 ind = ind+1;
             end
@@ -246,7 +245,7 @@ while ~feof(fid)
                 % Initialize 
                 datai = cell2mat(textscan(linetxt,'%f %f %f%f %f'));
                 lati = datai(1);
-                lonsi = datai(2):datai(4):datai(3);
+%                 lonsi = datai(2):datai(4):datai(3);
                 hgti   = datai(5);
                 
                 mapEntryi = [];
