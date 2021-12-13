@@ -28,7 +28,11 @@ end
 
 if ischar(inDesc)
     outDesc = find(contains(consts, inDesc));
-else 
+else
+    if ~islogical(inDesc) && any(inDesc == 0)
+        % double array of 1's and 0's that is mimicing a logical array
+        inDesc = logical(inDesc);
+    end
     outDesc = consts{inDesc};
 end
 
