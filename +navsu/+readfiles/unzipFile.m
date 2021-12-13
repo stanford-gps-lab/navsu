@@ -26,8 +26,8 @@ if nargin < 3
 end
 
 % check if file already exists locally
-[path, fileName, ~] = fileparts(filename);
-if isfile(fullfile(path, fileName)) && ~overwrite
+[~, fileName, ~] = fileparts(filename);
+if isfile(fullfile(outLocation, fileName)) && ~overwrite
     % unzipped file already exists!
     result = []; status = 0;
     return
