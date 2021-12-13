@@ -4,8 +4,9 @@ function [freqs, freqDes] = mapSignalFreq(freqDes, prns, constInds, jd)
 %   Map from the signal number used in RINEX observation codes (1, 2, 5, 6,
 %   7, 8)  and the constellation to the actual frequency of the signal
 % INPUTS:
-%   freqDes   - a MxN matrix, where N is the number of desired signals output,
-%               and M is the number of PRNs we consider
+%   freqDes   - a MxN matrix of Rinex frequency band designators, where N 
+%               is the number of desired signals output, and M is the
+%               number of PRNs we consider
 %   prns      - vector length M, list of PRNs
 %   constInds - vector length M, list of indices indicating constellation (GRECS) of PRNs
 %   jd        - julian date, if necessary, to indicate GLONASS freq

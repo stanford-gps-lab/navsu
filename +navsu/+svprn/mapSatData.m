@@ -65,6 +65,7 @@ elseif isrow(source)
     source = source';
 end
 
+% convert fractional year to julian date if necessary
 sdx = epoch < 3000;
 if any(sdx)
     year = floor(epoch(sdx));
