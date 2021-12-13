@@ -558,8 +558,9 @@ for constIdx = 1:length(constData)
     dummy3 = [ vertcat(dummy2padded{:}) repmat(char(13), constData(constIdx).numSats, 1) ];
     
     % Parse all entries for this constellation into cell array using appropriate format string
-    if suglFlag
-        % sugl files are all created with GPS-like format...
+    if suglFlag || floor(rinexVersion) == 2
+        % - Rinex 2 files can be read by GPS format.
+        % - sugl files are all created with GPS-like format...
         data = textscan(reshape(dummy3', 1, []), constData(1).formatString);
     else
         data = textscan(reshape(dummy3', 1, []), constData(constIdx).formatString);
