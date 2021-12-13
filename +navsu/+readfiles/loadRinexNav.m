@@ -101,7 +101,14 @@ end
 
 if any(isnan(leapSecond)) && ~isempty(Eph_R)
     % Pull the actual leap second count
-    [~,~,~,leapSecond] = navsu.time.utc2gps(Eph_R(2:7,1)',1);
+    dateVec = Eph_R(2:7,1)';
+    % Solve year ambiguity. See RINEX 3 section 6.10
+    if dateVec(1) < 80
+        dateVec(1) = dateVec(1) + 2000;
+    elseif dateVec(1) <= 99
+        dateVec(1) = dateVec(1) + 1900;
+    end
+    [~,~,~,leapSecond] = navsu.time.utc2gps(dateVec,1);
 end
 
 % Collect everything for output
