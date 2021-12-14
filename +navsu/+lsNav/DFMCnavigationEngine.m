@@ -615,7 +615,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                         nSats = length(allSatIds);
                         % make sure prr, P are for the right satIds
                         prr = NaN(nSats, 1);
-                        [~, LocB] = ismember(satIds(goodElNow), satIds);
+                        [~, LocB] = ismember(satIds(goodElNow), allSatIds);
                         prr(LocB) = varargout{1};
                         varargout{1} = prr;
                         if nargout > 4
