@@ -10,12 +10,14 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         tBias      % time bias for each constellation in (s)
         tBiasRate   % time bias rate for each constellation in (s/s)
         tPosSol = NaN; % time of last position solution in sec since first GPS epoch
+        usePreciseProducts (1,1) logical = false;% logical indicator: use precise or brdc orbits
         numConsts   % number of included constellations
         activeConsts% indices of the involved constellations
         numSats     % number of included satellites
         constellations % char vector indicating the useable constellations
         navCov      % Position, time bias covariance matrix
         rateCov     % Velocity, time rate covariance matrix
+        theoranges  % ranges user to satellite (length of losVectors)
         satAcc      % Variance of satellite position
         satPRN      % PRN of each satellite
         satConstId  % constellation id of each satellite
@@ -31,25 +33,21 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         position    % current position estimate in ECEF coordinates in (m)
         positionLLH % position estimate in lat, lon, height (deg, deg, m)
         losVectors  % line of sight vectors user to satellite
-        theoranges  % ranges user to satellite (length of losVectors)
         satPos      % satellite position at time of broadcast
         satVel      % satellite velocity at time of broadcast
-        Beph        % broadcast ephemeris, output of navsu.readfiles.loadRinexNav
-        Peph        % precise ephemeris object
+        satEph      % svOrbitClk object containing ephemeris data
     end
     
     properties (Access = private, Hidden = true)
         % internal memory
         internal_position (3,1)
         internal_losVectors
-        internal_theoranges
         internal_satPos = zeros(0, 3);
         internal_satVel = zeros(0, 3);
         internal_satClkBias
         internal_satClkRate
         internal_satEpoch       % epoch of last orbit propagation
-        internal_Beph struct
-        internal_Peph navsu.svOrbitClock
+        internal_svOrbClk navsu.svOrbitClock % satellite ephemeris data
     end
     
     methods % SET & GET methods
@@ -88,37 +86,15 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             [obj.satEl, obj.satAz] = navsu.geo.pos2elaz(obj.position', obj.satPos);
         end
         
-        function tr = get.theoranges(obj)
+        function eph = get.satEph(obj)
             % retrieve from memory
-            tr = obj.internal_theoranges;
+            eph = obj.internal_svOrbClk;
         end
-        function set.theoranges(obj, ranges)
-            % set stored value
-            obj.internal_theoranges = ranges;
-        end
-        
-        function eph = get.Beph(obj)
-            % retrieve from memory
-            eph = obj.internal_Beph;
-        end
-        function set.Beph(obj, eph)
+        function set.satEph(obj, eph)
             % set the property
-            obj.internal_Beph = eph;
-            
-            % also initialize internal sat memory properties
-%             obj.initializeEngine(~structfun(@isempty, eph)');
-        end
-        
-        function eph = get.Peph(obj)
-            % retrieve from memory
-            eph = obj.internal_Peph;
-        end
-        function set.Peph(obj, eph)
-            % set the property
-            % this is a start to implement it
-            obj.internal_Peph = eph;
-            % also initialize internal sat memory properties
-%             obj.initializeEngine(eph.settings.constUse);
+            obj.internal_svOrbClk = eph;
+            % also initialize internal sat memory properties accordingly
+            obj.initializeEngine;
         end
         
         function llh = get.positionLLH(obj)
@@ -161,34 +137,27 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             if nargin > 0
                 if isa(ephData, 'navsu.svOrbitClock')
-                    if ~isempty(ephData.PEph)
-                        % got precise ephemeris. This one will be preferred.
-                        obj.Peph = ephData;
-                    elseif ~isempty(ephData.BEph)
-                        % work with broadcast ephemeris
-                        obj.Beph = ephData.BEph;
-                    end
 
-                    useConst = ephData.settings.constUse;
-    
+                    % got svOrbitClock product directly
+                    obj.satEph = ephData;
+
                 elseif isstruct(ephData)
-                    obj.Beph = ephData;
+                    % eph struct was passed
+                    % first retrieve for which constellations is has data
                     useConst = false(1, 5);
                     % check each constellation to see if it can be used
                     for cI = 1:length(useConst)
                         cStr = lower(navsu.svprn.convertConstIndName(cI));
                         useConst(cI) = isfield(ephData, cStr) ...
-                                     && ~isempty(ephData.(cStr)) ...
-                                     && numel(fieldnames(ephData.(cStr))) > 1;
+                                    && ~isempty(ephData.(cStr)) ...
+                                    && numel(fieldnames(ephData.(cStr))) > 1;
                     end
+                    % initialize and populate svOrbitClock object
+                    obj.satEph = navsu.svOrbitClock('constUse', useConst);
+                    obj.satEph.BEph = ephData;
                     
                 end
-            else
-                useConst = [true, false(1, 4)];
             end
-
-            % initiaze the navigation engine
-            obj.initializeEngine(useConst);
             
             % read further inputs
             if nargin > 1
@@ -790,7 +759,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 el = obj.satEl(satIds);
                 az = obj.satAz(satIds);
                 satEpochs = obj.internal_satEpoch(satIds);
-                if ~isempty(obj.Beph)
+                if ~isempty(obj.satEph.BEph)
                     % estimate iono delay using Klobuchar model
                     ionoCorrCoeffs = obj.getIonoCoeffs(mean(satEpochs));
                     
@@ -903,17 +872,18 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             sigma = 0.05 ./ freq * navsu.constants.c;
         end
         
-        function initializeEngine(obj, consts)
+        function initializeEngine(obj)
             % Initialize several nav engine properties based on
-            % the involved constellations.
+            % the involved constellations. Based on the ephemeris
+            % information provided to the navigation engine.
             % 
-            % obj.initializeEngine(consts)
+            % obj.initializeEngine
             % 
             % Inputs:
-            % consts    logical vector indicating which consts to include
+            % none. Uses obj.satEph.
             
             % create const struct
-            c = num2cell(consts);
+            c = num2cell(obj.satEph.settings.constUse);
             consts = navsu.readfiles.initConstellation(c{1:5});
             
             % initialize several properties
@@ -935,18 +905,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             obj.internal_satClkRate = NaN(consts.nEnabledSat, 1);
             obj.internal_satEpoch   = NaN(consts.nEnabledSat, 1);
 
-%             defaultSignals = {'1C', '1C', '1C', '2I', '1C', '1C'; ...
-%                               '2C', '2C', '7I', }
-% 
-%             for f_i = 1:length(obj.CS)
-%                 if f_i == 3
-%                     tMax = 1800; % code-carrier div. no issue for DF
-%                 else
-%                     tMax = 100; % to avoid code-carrier divergence
-%                 end
-%                 obj.CS(f_i) = ...
-%                     navsu.lsNav.CarrierSmoother('', consts.nEnabledSat, tMax);
-%             end
+            % also set a logical indicator whether to use precise products
+            obj.usePreciseProducts = ~isempty(obj.satEph.PEph);
             
         end
         
@@ -1094,18 +1054,21 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %   For a given epoch extracts the GPS iono correction
             %   coefficients for the right day.
 
+            % pull out broadcast ephemeris struct
+            eph = obj.satEph.BEph;
+
             [doy, yr] = navsu.time.jd2doy(navsu.time.epochs2jd(ephEp));
-            ephDay = obj.Beph.doy == floor(doy) & obj.Beph.year == yr;
+            ephDay = eph.doy == floor(doy) & eph.year == yr;
 
             % do we have GPS correction parameters for this day?
             if sum(ephDay) ~= 1 ...
-                || find(ephDay) > size(obj.Beph.gps.ionoCorrCoeffs, 1)
+                || find(ephDay) > size(eph.gps.ionoCorrCoeffs, 1)
                 % don't have ephemeris for this day
                 ionoCorrCoeffs = NaN(1, 8);
-                return
+            else
+                ionoCorrCoeffs = eph.gps.ionoCorrCoeffs(ephDay, :);
             end
-
-            ionoCorrCoeffs = obj.Beph.gps.ionoCorrCoeffs(ephDay, :);
+            
         end
         
         function [codeObservables, fn] = findRnxCodeObs(~, rnxStruct, sats, ep)
@@ -1342,15 +1305,14 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 return
             end
             
-            if isempty(obj.Peph)
-                % Don't have precise ephemeris. Propagate the broadcast.
-                obj.updateSatDataFromBrdc(satIds(n2p), epoch(n2p));
-                
-            else
+            if obj.usePreciseProducts
                 % Propagate the precise ephemeris
                 % need: satPos, satVel, satClk.bias, satClk.drift, posVar,
                 % TGD
                 obj.updateSatDataFromPProd(satIds(n2p), epoch(n2p));
+            else
+                % Propagate the broadcast.
+                obj.updateSatDataFromBrdc(satIds(n2p), epoch(n2p));
             end
             
         end
@@ -1362,7 +1324,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % here I could check the memory to see what I need to propagate                
                 
             % propagate navigation broadcast to desired epoch
-            satInfo = navsu.geo.propNavMsg(obj.Beph, ...
+            satInfo = navsu.geo.propNavMsg(obj.satEph.BEph, ...
                                            obj.satPRN(s2update), ...
                                            obj.satConstId(s2update), ...
                                            epoch);
@@ -1390,16 +1352,17 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %   updateSatDataFromPProd(obj, s2update, epoch)
             %   
             %   Inputs:
-            %   s2update
+            %   s2update    index of satellites to compute data for
+            %   epoch       epoch at which to compute the data for
             
             N = sum(s2update>0);
             [obj.satPos(s2update, :), obj.satVel(s2update, :)] = ...
-                obj.Peph.propagate(obj.satPRN(s2update), ...
-                                   obj.satConstId(s2update), ...
-                                   epoch.*ones(N, 1));
-            svClock = obj.Peph.clock(obj.satPRN(s2update), ...
+                obj.satEph.propagate(obj.satPRN(s2update), ...
                                      obj.satConstId(s2update), ...
                                      epoch.*ones(N, 1));
+            svClock = obj.satEph.clock(obj.satPRN(s2update), ...
+                                       obj.satConstId(s2update), ...
+                                       epoch.*ones(N, 1));
 
             obj.internal_satClkRate(s2update) = ...
                 (svClock - obj.internal_satClkBias(s2update)) ...
