@@ -108,6 +108,9 @@ navEngine = navsu.lsNav.DFMCnavigationEngine(corrData);
 % navEngine = navsu.lsNav.DFMCnavigationEngine;
 % navEngine.satEph = corrData;
 
+% OPTIONAL: Change elevation mask angle (stored in rad)
+navEngine.elevMask = 5*pi/180; % default is 15 deg
+
 % Due to the lack of a carrier lock time, no carrier smoothing will be
 % performed on this dataset. If it were provided, the following parameters
 % could be changed:
