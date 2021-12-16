@@ -35,13 +35,18 @@ obsGnssRaw.tLock     = [];
 % NOTE the absence of a lock time will inhibit carrier smoothing :-(
 
 %% Read orbit data
+% At least one file location must be specified to set up the orbit
+% products. It is recommended to create a local copy of this example script
+% and modify it accordingly.
 
 % A configuration file should be specified- this tells the software where
 % to place all of the downloaded products.  It can be modeled after the
 % default.ini file that already exists. 
 configFile = 'config.ini';
 
-% Username and password file for NASA data/products download. See: 
+% Username and password file for NASA data/products download. THESE ARE NO
+% LONGER REQUIRED, but their use can result in faster downloads.
+% For their use see: 
 % [1] https://cddis.nasa.gov/Data_and_Derived_Products/CDDIS_Archive_Access.html
 % [2] https://cddis.nasa.gov/Data_and_Derived_Products/CreateNetrcFile.html
 netrcFile = 'C:\...\cddislogin.netrc'; % change to your directory
@@ -61,9 +66,12 @@ jdRangeProd = (min(jdRange0)-1):(max(jdRange0)+1);
 doyProd = floor(doyProd);
 
 corrData = navsu.svOrbitClock('configFile', configFile, ...
-                              'constUse', [1 1 1 1 0], ... % defaults to GPS only
-                              'netrcFile', netrcFile, ... % not required on Mac
-                              'cookieFile', cookieFile); % not required on Mac
+                              'constUse', useConst, ... % defaults to GPS only
+                              'netrcFile', netrcFile, ... % not required
+                              'cookieFile', cookieFile); % not required
+% can also be called as:
+% corrData = navsu.svOrbitClock('configFile', configFile, ...
+%                               'constUse', useConst);
 
 corrData.settings.gpsEphCenter = igsAc;
 corrData.settings.gpsClkCenter = igsAc;
@@ -91,45 +99,56 @@ else
     corrData.initBroadcastData(yearProd, doyProd);
 end
 
-%% Initialize nav engine with broadcast orbits
-if usePreciseOrbits
-    % run with PRECISE orbits
-    navEngine = navsu.lsNav.DFMCnavigationEngine(corrData);
-else
-    % run with BROADCAST orbits
-    navEngine = navsu.lsNav.DFMCnavigationEngine(corrData.BEph);
-end
+%% Set up and run nav engine
+% the navigation engine recognizes automatically if precise orbit data is
+% provided in corrData. Prioritizes using precise data if it is available.
+navEngine = navsu.lsNav.DFMCnavigationEngine(corrData);
+
+% Due to the lack of a carrier lock time, no carrier smoothing will be
+% performed on this dataset. If it were provided, the following settings
+% could be changed for altered behavior of the engine:
+
+% OPTIONAL: change smoothing constants
+navEngine.smoothingConstant = 300; % single frequency default is 100 sec
+navEngine.smoothingConstantIF = 3000; % iono-free default is 1800 sec
+
+% OPTIONAL: turn off carrier smoothing (default = on)
+navEngine.useCarrierSmoothing = false;
+
+% the below commented lines are summarized in the following call:
+[posECEF, velECEF, tBias, R, prr, P, chi2stat, dop, useDF] = ...
+    navEngine.batchPvtSolution(obsGnssRaw, useConst, freqs);
 
 % select the satellites to use
-sats = ismember(obsGnssRaw.constInds, find(useConst));
-
-% initialize all the outputs
-nEpochs = length(obsGnssRaw.epochs);
-posECEF = NaN(3, nEpochs);
-velECEF = NaN(3, nEpochs);
-tBias = NaN(sum(useConst), nEpochs);
-prr = NaN(sum(sats), nEpochs); % pseudorange residuals
-R = NaN(3+sum(useConst), 3+sum(useConst), nEpochs); % cov. matrix
-P = NaN(sum(sats), sum(sats), nEpochs); % residuals information matrix
-chi2stat = NaN(1, nEpochs); % chi-squared statistic
-
-for ep = 1:length(obsGnssRaw.epochs)
-    [obsData, satIds] = navEngine.readRinexData(obsGnssRaw, sats, ep);
-    % limit to selected frequencies
-    obsData = structfun(@(x) x(:, freqs), obsData, 'UniformOutput', false);
-    
-    % do PVT computation
-    [posECEF(:, ep), tBias(:, ep), R(:, :, ep), prr(:, ep), P(:, :, ep)] = ...
-        navEngine.positionSolution(satIds, obsGnssRaw.epochs(ep), obsData);
-    
-    velECEF(:, ep) = ...
-        navEngine.velocitySolution(satIds, obsGnssRaw.epochs(ep), obsData);
-    
-    % also compute chi square statistic
-    s = isfinite(prr(:, ep));
-    chi2stat(ep) = prr(s, ep)' * P(s, s, ep) * prr(s, ep);
-                                            
-end
+% sats = ismember(obsGnssRaw.constInds, find(useConst));
+% 
+% % initialize all the outputs
+% nEpochs = length(obsGnssRaw.epochs);
+% posECEF = NaN(3, nEpochs);
+% velECEF = NaN(3, nEpochs);
+% tBias = NaN(sum(useConst), nEpochs);
+% prr = NaN(sum(sats), nEpochs); % pseudorange residuals
+% R = NaN(3+sum(useConst), 3+sum(useConst), nEpochs); % cov. matrix
+% P = NaN(sum(sats), sum(sats), nEpochs); % residuals information matrix
+% chi2stat = NaN(1, nEpochs); % chi-squared statistic
+% 
+% for ep = 1:length(obsGnssRaw.epochs)
+%     [obsData, satIds] = navEngine.readRinexData(obsGnssRaw, sats, ep);
+%     % limit to selected frequencies
+%     obsData = structfun(@(x) x(:, freqs), obsData, 'UniformOutput', false);
+%     
+%     % do PVT computation
+%     [posECEF(:, ep), tBias(:, ep), R(:, :, ep), prr(:, ep), P(:, :, ep)] = ...
+%         navEngine.positionSolution(satIds, obsGnssRaw.epochs(ep), obsData);
+%     
+%     velECEF(:, ep) = ...
+%         navEngine.velocitySolution(satIds, obsGnssRaw.epochs(ep), obsData);
+%     
+%     % also compute chi square statistic
+%     s = isfinite(prr(:, ep));
+%     chi2stat(ep) = prr(s, ep)' * P(s, s, ep) * prr(s, ep);
+%                                             
+% end
 
 %% Plot position error
 xyz = 'xyz';
