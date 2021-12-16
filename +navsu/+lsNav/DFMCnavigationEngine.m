@@ -257,7 +257,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             if nargin < 3 || isempty(useConst)
                 % default to using everything
                 useConst = 1:5;
-            elseif islogical(useConst)
+            elseif islogical(useConst) || all(ismember(useConst, [0 1]))
                 % ensure integer indices
                 useConst = find(useConst);
             end
@@ -402,7 +402,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             for c = 1:size(codeObservables, 2)
                 % get signal names of code measurements for this constellation
-                fni = fn(codeObservables(:, c));
+                % do so in increasing number in case some have to be cut
+                % off
+                fni = sort(fn(codeObservables(:, c)));
             
                 % scan all code meas to analyze each signal
                 for sI = 1:length(fni)
@@ -617,14 +619,17 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                     satIds(goodElNow), prhat, SigURE(goodElNow));
                 
                 % check for oscillating state, bad update
-                if all(dxi + dx < 1e-6) || any(isnan(dxi))
+                if all(dxi + dx < 1e-6) || any(isnan(dxi(1:3)))
                     break;
                 else
                     dx = dxi;
                 end
 
                 obj.position = obj.position + dx(1:3);
-                obj.tBias(constIds) = obj.tBias(constIds) + dx(4:end);
+                biasUpdate = dx(4:end);
+                haveBiasUpdate = isfinite(biasUpdate);
+                obj.tBias(constIds) = obj.tBias(constIds(haveBiasUpdate)) ...
+                                    + biasUpdate(haveBiasUpdate);
                 obj.navCov([1:3, 3+constIds'], [1:3, 3+constIds']) = R;
                 
                 % next step depends on size of the update
@@ -1526,16 +1531,12 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % Limit obsData to signals on specific frequency bands
             % obsData = obj.frequencyMask(obsData, fBands)
 
-            excludeVals = ~ismember(obsData.fBand, fBands);
-            fn = fieldnames(obsData);
-            for fni = 1:length(fn)
-                if iscell(obsData.(fn{fni}))
-                    % char per signal
-                    obsData.(fn{fni})(excludeVals) = {''};
-                else
-                    % double per signal
-                    obsData.(fn{fni})(excludeVals) = NaN;
-                end
+            % choose frequency bands
+            if max(fBands) <= size(obsData.code, 2)
+                obsData = structfun(@(x) x(:, fBands), obsData, ...
+                                    'UniformOutput', false);
+            else
+                warning('Illegal frequency band selection.');
             end
 
         end
