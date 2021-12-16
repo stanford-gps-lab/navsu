@@ -371,6 +371,11 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                     rnxCodeMeas = rnxStruct.meas.(codeId)(sats, ep);
                     % for which satellites do I have measurements?
                     satIds = find(isfinite(rnxCodeMeas) & rnxCodeMeas ~= 0);
+
+                    if isempty(satIds)
+                        % no measurements on this frequency
+                        continue;
+                    end
                     
                     % now assign the measurements
                     obsData.code(satIds, sI) = rnxCodeMeas(satIds);
@@ -907,6 +912,17 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
 
             % also set a logical indicator whether to use precise products
             obj.usePreciseProducts = ~isempty(obj.satEph.PEph);
+
+            % make sure the orbit product knows it's using precise data
+            if obj.usePreciseProducts
+                obj.satEph.orbMode = 'PRECISE';
+                if isempty(obj.satEph.PClock)
+                    % have to use the broadcast clock
+                    obj.satEph.clkMode = 'BROADCAST';
+                else
+                    obj.satEph.clkMode = 'PRECISE';
+                end
+            end
             
         end
         
