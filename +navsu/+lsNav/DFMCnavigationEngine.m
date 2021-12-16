@@ -356,7 +356,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %       .PRN        - N x 1 vector of satellite PRNs
             %       .constInds  - N x 1 vector of constellation indices
             %       .tLock      - (optional) struct of carrier phase lock
-            %                   time, same fields as .meas struct.
+            %                   time, fields as in .meas struct that start
+            %                   with 'L'.
             %   Equal input form as to navsu.ppp.preprocessGnssObs()
             %   sats            - (optional) indices of satellites to use
             %   ep              - (optional) index of the measurement epoch
@@ -1140,7 +1141,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             codeMeas = cellfun(@(x) strcmp(x(1), 'C') && length(x) == 3, fn);
 
             % identify which observable has data for which constellation
-            constRows = rnxStruct.constInds' == unique(rnxStruct.constInds);
+            constRows = rnxStruct.constInds(:) == unique(rnxStruct.constInds(:))';
             nConsts = size(constRows, 2);
             hasConstMeas = false(length(fn), nConsts);
             for c = 1:nConsts
