@@ -126,9 +126,34 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % retrieve from memory
             eph = obj.internal_svOrbClk;
         end
-        function set.satEph(obj, eph)
-            % set the property
-            obj.internal_svOrbClk = eph;
+        function set.satEph(obj, ephData)
+            % Save the passed satellite ephemeris information. Detect if
+            % it's an eph struct or a svOrbitClock object and handle
+            % accordingly.
+
+            if isa(ephData, 'navsu.svOrbitClock')
+
+                % got svOrbitClock product directly
+                obj.internal_svOrbClk = ephData;
+
+            elseif isstruct(ephData)
+                % eph struct was passed
+                % first retrieve for which constellations is has data
+                useConst = false(1, 5);
+                % check each constellation to see if it can be used
+                for cI = 1:length(useConst)
+                    cStr = lower(navsu.svprn.convertConstIndName(cI));
+                    useConst(cI) = isfield(ephData, cStr) ...
+                                && ~isempty(ephData.(cStr)) ...
+                                && numel(fieldnames(ephData.(cStr))) > 1;
+                end
+                % initialize and populate svOrbitClock object
+                obj.internal_svOrbClk = navsu.svOrbitClock('constUse', ...
+                                                           useConst);
+                obj.internal_svOrbClk.BEph = ephData;
+                
+            end
+
             % also initialize internal sat memory properties accordingly
             obj.initializeEngine;
         end
@@ -151,7 +176,6 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             obj.losVectors = obj.satPos - obj.position';
         end
         
-        
     end
     
     methods
@@ -172,27 +196,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %           of first fix. Default is [0 0 0]'.
             
             if nargin > 0
-                if isa(ephData, 'navsu.svOrbitClock')
-
-                    % got svOrbitClock product directly
-                    obj.satEph = ephData;
-
-                elseif isstruct(ephData)
-                    % eph struct was passed
-                    % first retrieve for which constellations is has data
-                    useConst = false(1, 5);
-                    % check each constellation to see if it can be used
-                    for cI = 1:length(useConst)
-                        cStr = lower(navsu.svprn.convertConstIndName(cI));
-                        useConst(cI) = isfield(ephData, cStr) ...
-                                    && ~isempty(ephData.(cStr)) ...
-                                    && numel(fieldnames(ephData.(cStr))) > 1;
-                    end
-                    % initialize and populate svOrbitClock object
-                    obj.satEph = navsu.svOrbitClock('constUse', useConst);
-                    obj.satEph.BEph = ephData;
-                    
-                end
+                % store ephemeris info
+                obj.satEph = ephData;
             end
             
             % read further inputs
