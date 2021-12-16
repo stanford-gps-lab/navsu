@@ -12,6 +12,9 @@ Class for downloading and handling GNSS corrections, including orbit, clock, ion
 ## ftp
 Main function here: navsu.ftp.download to download various IGS products.
 
+## lsNav
+Contains a conventional least squares navigation engine. Capable of providing dual frequency, multi constellation solutions. Designed to offer flexibility in used frequencies, constellations and signals. Carrier smoothing is accomplished by separate class. See examples/example_lsNavEngine.m.
+
 ## readfiles
 Lots of parsing tools here.  They can be called directly from here, or they can be used by the svOrbitClock object. 
 To parse RINEX obsevation files: navsu.readfiles.loadRinexObs
