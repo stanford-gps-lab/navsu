@@ -58,9 +58,6 @@ for dayi = 1:length(doys)
     ephi = navsu.readfiles.loadRinexNav(fullfile(filePath, fileName), ...
         'constellations', navsu.readfiles.initConstellation(constCell{:}));
 
-    % also store year, doy
-    ephi.year = yr;
-    ephi.doy = doy;
     % concatenate structs from multiple days
     if dayi == 1
         eph = ephi;

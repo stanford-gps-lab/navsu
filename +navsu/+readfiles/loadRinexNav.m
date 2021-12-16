@@ -156,7 +156,11 @@ elseif strcmp(outFormat,'struct')
             end
         end
     end
-    
+
+    % also add year, doy
+    jds = navsu.time.gps2jd(eph.gps.GPS_week_num, eph.gps.Toe);
+    [doy, eph.year] = navsu.time.jd2doy(mean(jds));
+    eph.doy = floor(doy);
 end
 
 
