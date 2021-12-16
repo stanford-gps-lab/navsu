@@ -119,8 +119,8 @@ end
 
 %% extract separate measurements
 epochs    = obsGnssRaw.epochs;
-prns      = obsGnssRaw.PRN;
-constInds = obsGnssRaw.constInds;
+prns      = obsGnssRaw.PRN(:)'; % make sure it's a row vector
+constInds = obsGnssRaw.constInds(:)'; % make sure it's a row vector
 
 nPrn = length(prns);
 
@@ -134,6 +134,13 @@ obsOut = zeros(nObs, nEpochs, nPrn);
 obsTypes = cell(nObs, nPrn);
 for pdx = 1:nPrn
     consti = constInds(pdx);
+    if consti > nConst
+        % illegal constellation
+        warning(['Skipping ', navsu.svprn.convertConstIndName(consti), ...
+                 ' satellite ', num2str(prns(pdx)), ...
+                 ' (constellation not supported).']);
+        continue
+    end
     for odx = 1:nObs
         obsSeti = obsDes{consti,odx};
         for osdx = 1:length(obsSeti)
@@ -505,7 +512,8 @@ if ~isempty(obsGnssRaw.tLock)
     lockTime = nan(size(prph12i));
     % Loop through each satellite
     for pdx = 1:length(prns)
-        indSat = obsGnssRaw.PRN == prns(pdx) & obsGnssRaw.constInds == constInds(pdx);
+        indSat = obsGnssRaw.PRN == prns(pdx) ...
+               & obsGnssRaw.constInds == constInds(pdx);
         % Loop through each signal
         for jdx = 1:size(prph12i,1)
             %             indSignal
@@ -555,7 +563,10 @@ temp(obsGnss.range.ind == 1) = navsu.internal.MeasEnum.Code;
 temp(obsGnss.range.ind == 2) = navsu.internal.MeasEnum.Carrier;
 obsGnss.range.subtype     = temp;
 
-obsGnss.range.ID = navsu.internal.MeasIdGnss(obsGnss.range.PRN,obsGnss.range.constInds,obsGnss.range.sig,temp);
+obsGnss.range.ID = navsu.internal.MeasIdGnss(obsGnss.range.PRN, ...
+                                             obsGnss.range.constInds, ...
+                                             obsGnss.range.sig, ...
+                                             temp);
 
 obsGnss.doppler.obs       = permute(dop12,[1 3 2]);
 obsGnss.doppler.rnxCode   = dopType;
@@ -566,7 +577,10 @@ obsGnss.doppler.constInds = repmat(constInds, size(obsGnss.doppler.obs,1), 1);
 temp = repelem(navsu.internal.MeasEnum.Doppler, size(obsGnss.doppler.sig,1), size(obsGnss.doppler.sig,2));
 obsGnss.doppler.subtype     = temp;
 
-obsGnss.doppler.ID = navsu.internal.MeasIdGnss(obsGnss.doppler.PRN,obsGnss.doppler.constInds,obsGnss.doppler.sig,temp);
+obsGnss.doppler.ID = navsu.internal.MeasIdGnss(obsGnss.doppler.PRN, ...
+                                               obsGnss.doppler.constInds, ...
+                                               obsGnss.doppler.sig, ...
+                                               temp);
 
 obsGnss.snr.obs           = permute(snr12,[1 3 2]);
 obsGnss.snr.rnxCode       = repmat(snrType', 1, size(obsGnss.snr.obs,2));
