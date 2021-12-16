@@ -104,16 +104,20 @@ end
 % provided in corrData. Prioritizes using precise data if it is available.
 navEngine = navsu.lsNav.DFMCnavigationEngine(corrData);
 
+% Alternatively can be called like this:
+% navEngine = navsu.lsNav.DFMCnavigationEngine;
+% navEngine.satEph = corrData;
+
 % Due to the lack of a carrier lock time, no carrier smoothing will be
-% performed on this dataset. If it were provided, the following settings
-% could be changed for altered behavior of the engine:
+% performed on this dataset. If it were provided, the following parameters
+% could be changed:
 
 % OPTIONAL: change smoothing constants
 navEngine.smoothingConstant = 300; % single frequency default is 100 sec
 navEngine.smoothingConstantIF = 3000; % iono-free default is 1800 sec
 
-% OPTIONAL: turn off carrier smoothing (default = on)
-navEngine.useCarrierSmoothing = false;
+% OPTIONAL: turn off carrier smoothing altogether
+navEngine.useCarrierSmoothing = false; % default is true
 
 % the below commented lines are summarized in the following call:
 [posECEF, velECEF, tBias, R, prr, P, chi2stat, dop, useDF] = ...
