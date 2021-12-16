@@ -29,7 +29,7 @@ end
 if ischar(inDesc)
     outDesc = find(contains(consts, inDesc));
 else
-    if ~islogical(inDesc) && any(inDesc == 0)
+    if ~islogical(inDesc) && all(inDesc == 0 | inDesc == 1)
         % double array of 1's and 0's that is mimicing a logical array
         inDesc = logical(inDesc);
     end
