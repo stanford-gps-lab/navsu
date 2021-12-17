@@ -628,8 +628,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 obj.position = obj.position + dx(1:3);
                 biasUpdate = dx(4:end);
                 haveBiasUpdate = isfinite(biasUpdate);
-                obj.tBias(constIds) = obj.tBias(constIds(haveBiasUpdate)) ...
-                                    + biasUpdate(haveBiasUpdate);
+                updatedConsts = constIds(haveBiasUpdate);
+                obj.tBias(updatedConsts) = obj.tBias(updatedConsts) ...
+                                         + biasUpdate(haveBiasUpdate);
                 obj.navCov([1:3, 3+constIds'], [1:3, 3+constIds']) = R;
                 
                 % next step depends on size of the update
