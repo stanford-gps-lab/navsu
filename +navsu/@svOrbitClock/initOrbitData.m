@@ -65,7 +65,17 @@ if isempty(obj.PEph)
     Peph = navsu.readfiles.loadPEph(years,doys,settings,FLAG_NO_LOAD,atxData,FLAG_APC_OFFSET);
     
     % exclude values where the PRN is NaN
-    Peph = structfun(@(x) x(isfinite(Peph.PRN), :), Peph, 'UniformOutput', false);
+    nPRNvals = length(Peph.PRN);
+    finPRN = isfinite(Peph.PRN);
+
+    fn = fieldnames(Peph);
+    for fni = 1:length(fn)
+
+        if size(Peph.(fn{fni}), 1) == nPRNvals
+            Peph.(fn{fni}) = Peph.(fn{fni})(finPRN, :);
+        end
+
+    end
     
     prnConstInds = unique([Peph.PRN Peph.constellation], 'rows');
     prns = prnConstInds(:,1);
