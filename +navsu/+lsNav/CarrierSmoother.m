@@ -83,7 +83,9 @@ classdef CarrierSmoother < matlab.mixin.Copyable
             
             % second step: actually do the smoothing
             prUpdate = (M-1)./M .* (obj.lastSmoothedPr(satIds) + carrierDelta);
-            prUpdate(isnan(prUpdate)) = 0; % to avoid NaN's
+            badUpdate = ~isfinite(prUpdate);
+            prUpdate(badUpdate) = 0;
+            M(badUpdate) = 1;
             prSmoothed = obsData.code ./ M + prUpdate;
             
             % update sigma accordingly

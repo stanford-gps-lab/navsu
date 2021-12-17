@@ -551,8 +551,6 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 allSatIds, epoch, obsData);
             % all measurement inputs are now N x 2 matricies [f_SF f_IF]
 
-            % remove satellites without measurements
-            
             % get involved constellations
             consts0 = unique(obj.satConstId(satIds));
 
@@ -1555,8 +1553,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 % check if only legal constellations passed
                 error('Did not expect these constellations!');
             end
+            constMatches = find(obj.activeConsts == constIds');
             % compute index among used consts for each const id
-            usedConstIdx = find(obj.activeConsts == constIds') ...
+            usedConstIdx = constMatches(:) ...
                          - obj.numConsts*(0:length(constIds)-1)';
         end
 
