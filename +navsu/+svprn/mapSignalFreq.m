@@ -38,12 +38,13 @@ elseif isrow(constInds)
     constInds = constInds';
 end
 
-fRinexLabels = [1 2 5 6 7 8]';
+fRinexLabels = [1 2 3 5 6 7 8]';
 
 % to be accessed by (fDes == fRinexLabels, const)
 %         GPS       GLONASS  GAL         BDS        QZSS    SBAS
 fTable = [1575.42	1602	 1575.42     1575.42    1575.42 1575.42;  % 1
           1227.6	1246	 nan         1561.098   1227.6  nan;      % 2
+          nan       1202.025 nan         nan        nan     nan; % 3
           1176.45	nan      1176.45     1176.45    1176.45 1176.45;  % 5
           nan       1248.06  1278.75     1268.52    1278.75	nan;      % 6
           nan       nan      1207.14     1207.14    nan	    nan;      % 7
