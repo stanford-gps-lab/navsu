@@ -1309,11 +1309,19 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                         % call the right smoother for each constellation,
                         % each signal type
                         
+                        % grab the signal name
                         sigName = uniqueSigs{s_i};
 
                         % get indices of these signals
                         sigIds = constSigs ...
                                & strcmp(sigName, obsData.rnxCode);
+
+                        if any(sum(sigIds, 2) > 1)
+                            warning('I found multiple %s "%s" signals! Skipping.', ...
+                                navsu.svprn.convertConstIndName(c), sigName);
+                            warning('Check Rinex signal identifyers.');
+                            continue
+                        end
                         
                         smootherId = strcmp(sigName, {obj.CS.signal}) ...
                                    & c == [obj.CS.const];
