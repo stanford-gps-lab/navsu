@@ -15,6 +15,20 @@ truePosEcef = [-2706115.1823 -4278731.1983 3866392.5504];
 % run with precise or broadcast orbits?
 usePreciseOrbits = false;
 
+% use carrier smoothing?
+useCarrierSmoothing = true;
+
+% use the Klobuchar model to estimate the iono delay? (the use of dual
+% frequency, iono-free measurements is unaffected by this)
+useIonoModel = true;
+
+% use the UNB3 model to estimate the tropospheric delay?
+useTropoModel = true;
+
+% set an elevation mask angle (default is 15 deg)
+maskAngle = 5*pi/180; % in radians
+
+
 % select frequencies to use
 % two frequencies can be used for iono-free combination.
 % Will be used in the order L1, L2, L5
@@ -108,8 +122,17 @@ navEngine = navsu.lsNav.DFMCnavigationEngine(corrData);
 % navEngine = navsu.lsNav.DFMCnavigationEngine;
 % navEngine.satEph = corrData;
 
+% tell the engine whether to attempt carrier smoothing
+navEngine.useCarrierSmoothing = useCarrierSmoothing;
+
+% tell the engine whether to model the single frequency iono delay
+navEngine.useIonoModel = useIonoModel;
+
+% tell the engine whether to model the tropospheric delay
+navEngine.useTropoModel = useTropoModel;
+
 % OPTIONAL: Change elevation mask angle (stored in rad)
-navEngine.elevMask = 5*pi/180; % default is 15 deg
+navEngine.elevMask = maskAngle; % default is 15 deg
 
 % Due to the lack of a carrier lock time, no carrier smoothing will be
 % performed on this dataset. If it were provided, the following parameters
