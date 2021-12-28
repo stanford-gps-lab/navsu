@@ -3,14 +3,19 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
     %   Computes navigation solutions from dual frequency, multi
     %   constellation GNSS measurements. Can compute position, velocity and
     %   time solutions.
+    %   Offers options to use/not use models for iono and tropo delay as
+    %   well as carrier smoothing. Can be run with precise or broadcast
+    %   orbits. Options are being set by obj.use... properties.
     %   
     %   Properties:
     %   velocity            current velocity estimate in ECEF in (m/s)
     %   tBias               clock bias for each constellation in (s)
     %   tBiasRate           clock bias rate for each constellation in (s/s)
     %   tPosSol             time of last position solution in sec since first GPS epoch
-    %   usePreciseProducts  logical indicator: use precise or brdc orbits
-    %   useCarrierSmoothing logical indicator: attempt carrier smoothing?
+    %   usePreciseProducts  should precise orbit products be used?
+    %   useCarrierSmoothing attempt carrier smoothing?
+    %   useIonoModel        use Klobuchar model to estimate iono delay?
+    %   useTropoModel       use UNB3 model to estimate tropo delay
     %   smoothingConstantIF iono-free carrier smoothing time constant in sec
     %   smoothingConstant   single frequency carrier smoothing time constant in sec
     %   numConsts           number of included constellations
@@ -45,6 +50,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         tPosSol = NaN; % time of last position solution in sec since first GPS epoch
         usePreciseProducts (1,1) logical = false;
         useCarrierSmoothing (1,1) logical = true;
+        useIonoModel (1,1) logical = true;
+        useTropoModel (1,1) logical = true;
         smoothingConstantIF (1,1) double {mustBeReal, mustBeFinite} = 1800;
         smoothingConstant (1,1) double {mustBeReal, mustBeFinite} = 100;
         numConsts   % number of included constellations
@@ -810,8 +817,10 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 el = obj.satEl(satIds);
                 az = obj.satAz(satIds);
                 satEpochs = obj.internal_satEpoch(satIds);
-                if ~isempty(obj.satEph.BEph)
-                    % estimate iono delay using Klobuchar model
+
+                % estimate iono delay using Klobuchar model
+                if obj.useIonoModel && ~isempty(obj.satEph.BEph)
+                    
                     ionoCorrCoeffs = obj.getIonoCoeffs(mean(satEpochs));
                     
                     ionoDelay = navsu.ppp.models.klobuchar( ...
@@ -823,7 +832,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 end
             
                 % get tropo error
-                if abs(llh(3)) < 1e5
+                if obj.useTropoModel && abs(llh(3)) < 1e5
                     doy = navsu.time.jd2doy(navsu.time.epochs2jd(satEpochs));
                     params.tropModel = 'UNB3';
                     [tropo, ~, ~] = navsu.ppp.models.tropDelay( ...
@@ -1280,46 +1289,55 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % Need one carrier smoother per signal, per constellation
             % Each smoother is identified by constelleation and rnx sig id
 
-            haveSigs = cellfun(@(x) ~isempty(x), obsData.rnxCode);
 
             % initialize smoothed values as equal to code only
             prSmoothed = obsData.code;
             prVarRcvr = SigRNM.code;
 
             if obj.useCarrierSmoothing
+                % find all the received signals
+                haveSigs = cellfun(@(x) ~isempty(x), obsData.rnxCode) ...
+                         & isfinite(obsData.code);
+
                 for c = unique(obj.satConstId(satIds))'
-                    % where do I have signals from this constellation?
+
+                    % from which satellites did we receive signals?
                     constSigs = obj.satConstId(satIds) == c & haveSigs;
-    
-                    for f_i = find(any(constSigs, 1))
-                        % call the right smoother for each constellation, each
-                        % frequency
-                        sigs = constSigs(:, f_i);
-                        sigId = unique(obsData.rnxCode(sigs, f_i));
+                    uniqueSigs = unique(obsData.rnxCode(constSigs));
+
+                    for s_i = 1:length(uniqueSigs)
+                        % call the right smoother for each constellation,
+                        % each signal type
                         
-                        smootherId = strcmp(sigId, {obj.CS.signal}) ...
+                        sigName = uniqueSigs{s_i};
+
+                        % get indices of these signals
+                        sigIds = constSigs ...
+                               & strcmp(sigName, obsData.rnxCode);
+                        
+                        smootherId = strcmp(sigName, {obj.CS.signal}) ...
                                    & c == [obj.CS.const];
     
                         if ~any(smootherId)
                             % need to add a smoother for this signal
-                            if startsWith(sigId, 'IF')
+                            if startsWith(sigName, 'IF')
                                 % set large smoothing time for iono-free combo
                                 tMax = obj.smoothingConstantIF;
                             else
                                 tMax = obj.smoothingConstant;
                             end
-                            obj.CS(end+1) = navsu.lsNav.CarrierSmoother(sigId{1}, ...
+                            obj.CS(end+1) = navsu.lsNav.CarrierSmoother(sigName, ...
                                                                         c, ...
                                                                         obj.numSats, ...
                                                                         tMax);
                             % use this new smoother
                             smootherId = [smootherId, true]; %#ok
                         end
-                        [prSmoothed(sigs, f_i), prVarRcvr(sigs, f_i)] = ...
+                        [prSmoothed(sigIds), prVarRcvr(sigIds)] = ...
                             obj.CS(smootherId).smoothen( ...
-                            satIds(sigs), epoch, ...
-                            structfun(@(x) x(sigs, f_i), obsData, 'UniformOutput', false), ...
-                            structfun(@(x) x(sigs, f_i), SigRNM, 'UniformOutput', false));
+                            satIds(any(sigIds, 2)), epoch, ...
+                            structfun(@(x) x(sigIds), obsData, 'UniformOutput', false), ...
+                            structfun(@(x) x(sigIds), SigRNM, 'UniformOutput', false));
                     end
     
                 end
