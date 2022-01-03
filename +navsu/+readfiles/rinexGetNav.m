@@ -531,8 +531,13 @@ for constIdx = 1:length(constData)
     end
     
     % Row indices of FIRST lines of all SV data blocks for this constellation
-    constData(constIdx).firstLinesIdx = header_end + find(strcmp(constData(constIdx).constLetter, firstChars));
-    
+    constData(constIdx).firstLinesIdx = header_end ...
+        + find(strcmp(constData(constIdx).constLetter, firstChars));
+    % check if the last one is still valid
+    validMsg = constData(constIdx).firstLinesIdx + constData(constIdx).blockLines - 1 <= length(allData);
+    constData(constIdx).firstLinesIdx = constData(constIdx).firstLinesIdx(validMsg);
+    constData(constIdx).numSats = sum(validMsg);
+
     % Number of satellites for this constellation
     %%% UNNECESSARY -- done above using hist() for all constellations in a single step
     % constData(constIdx).numSats = length(constData(constIdx).firstLinesIdx);
