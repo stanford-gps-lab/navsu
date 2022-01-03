@@ -280,7 +280,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             end
 
             % select the satellites to use
-            sats = ismember(obsGnss.constInds, useConst);
+            sats = ismember(obsGnss.constInds, useConst) ...
+                 & any(obsGnss.constInds == obj.satConstId' ...
+                       & obsGnss.PRN == obj.satPRN', 2);
             
             % initialize all the outputs
             nEpochs = length(obsGnss.epochs);
@@ -341,8 +343,9 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             end
             
             % get sat index mapping
-            satIds = find(obj.satPRN == PRNs & obj.satConstId == constIds) ...
-                   - obj.numSats * (0:1:length(PRNs)-1)';
+            PRNmatches = obj.satPRN == PRNs & obj.satConstId == constIds;
+            satIds = find(PRNmatches) ...
+                   - obj.numSats * (find(any(PRNmatches, 1))-1)';
             
         end
         
@@ -391,6 +394,11 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 % assume there's only one epoch
                 ep = 1;
             end
+
+            % limit to satellites handled by this object
+            validSats = any(obj.satPRN == rnxStruct.PRN' ...
+                          & obj.satConstId == rnxStruct.constInds', 1);
+            sats = sats(validSats);
             
             % identify code measurements among observables
             [codeObservables, fn] = obj.findRnxCodeObs(rnxStruct, sats, ep);
@@ -530,7 +538,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %   
             %   [pos, tBias] = obj.positionSolution( ...
             %       satIds, epoch, obsData)
-            %   [pos, tBias, R, prr, P, DOP] = obj.positionSolution( ... )
+            %   [pos, tBias, R, prr, P, DOP, useDF] = obj.positionSolution( ... )
             
             %   INPUTS (for N satellites, on F frequencies):
             %   satIds      N x 1 vector of integers indicating index of
@@ -551,6 +559,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             %   prr         N x 1 A posteriori pseudorange residuals (m)
             %   P           N x N Residuals information matrix (for chi^2 stat)
             %   DOP         3+C x 3+C Dilution of precision matrix
+            %   useDF       logical indicating the use of dual frequency
             
             
             % Step 1: preprocess measurements
@@ -559,7 +568,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % all measurement inputs are now N x 2 matricies [f_SF f_IF]
 
             % get involved constellations
-            consts0 = unique(obj.satConstId(satIds));
+            consts0 = unique(obj.satConstId(allSatIds));
 
             % update the current estimate of the clock bias
             obj.updateClkBias(epoch);
@@ -575,7 +584,6 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             % get involved constellations
             consts = unique(obj.satConstId(satIds));
-            constIds = obj.getActiveConstId(consts);
             satConstIds = obj.getActiveConstId(obj.satConstId(satIds));
             
             % now solve for the position and clock bias
@@ -620,7 +628,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                       + obj.internal_satClkBias(satIds(goodElNow))*navsu.constants.c;
 
                 % Step 4: do least squares update
-                [dxi, R, varargout{1:min(nargout-3, 3)}] = obj.doLSupdate( ...
+                [dxi, Ri, varargout{1:min(nargout-3, 3)}] = obj.doLSupdate( ...
                     satIds(goodElNow), prhat, SigURE(goodElNow));
                 
                 % check for oscillating state, bad update
@@ -631,15 +639,25 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 end
 
                 obj.position = obj.position + dx(1:3);
+
+                % constellation-depending updates:
                 biasUpdate = dx(4:end);
+                % check for which consts have been updated
+                updatedConsts = obj.getActiveConstId(unique( ...
+                    obj.satConstId(satIds(goodElNow))));
+                % only update the ones where we have an update
                 haveBiasUpdate = isfinite(biasUpdate);
-                updatedConsts = constIds(haveBiasUpdate);
+                updatedConsts = updatedConsts(haveBiasUpdate);
+
                 obj.tBias(updatedConsts) = obj.tBias(updatedConsts) ...
                                          + biasUpdate(haveBiasUpdate);
-                obj.navCov([1:3, 3+constIds'], [1:3, 3+constIds']) = R;
+                % same for covariance
+                stateVars = [1:3, 3+updatedConsts'];
+                compStates = isfinite(dx);
+                obj.navCov(stateVars, stateVars) = Ri(compStates, compStates);
                 
                 % next step depends on size of the update
-                normDx = norm(dx);
+                normDx = sqrt(sum(dx.^2, 'omitnan'));
                 if normDx < 1e-4
                     % stop update, we have converged
                     break;
@@ -668,18 +686,32 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             if nargout > 0
                 pos = obj.position;
                 if nargout > 1
-                    tBias = obj.tBias(constIds);
-                    if nargout > 3
-                        nSats = length(allSatIds);
-                        % make sure prr, P are for the right satIds
-                        prr = NaN(nSats, 1);
-                        [~, LocB] = ismember(satIds(goodElNow), allSatIds);
-                        prr(LocB) = varargout{1};
-                        varargout{1} = prr;
-                        if nargout > 4
-                            P = NaN(nSats);
-                            P(LocB, LocB) = varargout{2};
-                            varargout{2} = P;
+                    % tBias
+                    tBias = obj.tBias(obj.getActiveConstId(consts0));
+                    if nargout > 2
+                        % R
+                        nStates = 3+length(tBias);
+                        R = NaN(nStates);
+                        R(stateVars, stateVars) = obj.navCov(stateVars, stateVars);
+
+                        if nargout > 3
+                            nSats = length(allSatIds);
+                            % make sure prr, P are for the right satIds
+                            prr = NaN(nSats, 1);
+                            [~, LocB] = ismember(satIds(goodElNow), allSatIds);
+                            prr(LocB) = varargout{1};
+                            varargout{1} = prr;
+                            if nargout > 4
+                                P = NaN(nSats);
+                                P(LocB, LocB) = varargout{2};
+                                varargout{2} = P;
+                                if nargout > 5
+                                    % dop
+                                    tempDop = varargout{3};
+                                    varargout{3} = NaN(nStates);
+                                    varargout{3}(stateVars, stateVars) = tempDop(compStates, compStates);
+                                end
+                            end
                         end
                     end
                         
@@ -1493,7 +1525,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             outConsts = unique(obj.satConstId(satIds));
             nOutStates = 3 + length(outConsts);
             
-            % apply elevation mask
+            % check measurement validity
             measExclude = obj.satEl(satIds) < obj.elevMask ...
                         | ~isfinite(prhat) ...
                         | ~isfinite(measVar);
@@ -1501,6 +1533,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             prhat(measExclude) = [];
             measVar(measExclude) = [];
             
+            % check again which states to really compute
             usedConsts = unique(obj.satConstId(satIds))';
             outStates = [1:3, 3+find(ismember(usedConsts, outConsts))];
             
