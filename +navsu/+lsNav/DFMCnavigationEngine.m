@@ -396,8 +396,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             end
 
             % limit to satellites handled by this object
-            validSats = any(obj.satPRN == rnxStruct.PRN' ...
-                          & obj.satConstId == rnxStruct.constInds', 1);
+            validSats = any(obj.satPRN == rnxStruct.PRN(:)' ...
+                          & obj.satConstId == rnxStruct.constInds(:)', 1);
             sats = sats(validSats);
             
             % identify code measurements among observables
