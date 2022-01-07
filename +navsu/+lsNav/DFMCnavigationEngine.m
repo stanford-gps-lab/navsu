@@ -1165,6 +1165,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
 
             % do we have GPS correction parameters for this day?
             if sum(ephDay) ~= 1 ...
+                || isempty(eph.gps) ...
                 || find(ephDay) > size(eph.gps.ionoCorrCoeffs, 1)
                 % don't have ephemeris for this day
                 ionoCorrCoeffs = NaN(1, 8);
