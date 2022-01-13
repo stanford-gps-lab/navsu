@@ -150,14 +150,15 @@ else
         switch settings.gpsEphCenter
             case 'NGA'
                 if ~FLAG_NO_LOAD
-                    Peph = navsu.readfiles.readSP3(fullFilePathName);
+%                     Peph = navsu.readfiles.readSp3(fullFilePathName);
+                    Peph = navsu.readfiles.readApc(fullFilePathName);
                     
                 end
                 
             case 'IGS'
                 
                 if ~FLAG_NO_LOAD
-                    Peph = navsu.readfiles.readSP3(fullFilePathName, 0, 1);
+                    Peph = navsu.readfiles.readSp3(fullFilePathName, 0, 1);
                     
                     % If nothing was read, just escape.s
                     if isempty(Peph)
@@ -207,7 +208,7 @@ else
                         Peph = navsu.readfiles.readSp3(fullFilePathName,FLAG_APC_OFFSET,1,2);
                         
                     else
-                        Peph = navsu.readfiles.readSP3(fullFilePathName,1,1);
+                        Peph = navsu.readfiles.readSp3(fullFilePathName,1,1);
                     end
                     % If nothing was read, just escape.s
                     if isempty(Peph)
