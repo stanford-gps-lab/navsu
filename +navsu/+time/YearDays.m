@@ -1,4 +1,4 @@
-function nDays = yearDays(year)
+function nDays = YearDays(year)
 % yearDays
 % DESCRIPTION:
 %   Compute the number of days in a given year accounting for leap years
