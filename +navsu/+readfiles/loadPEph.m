@@ -47,7 +47,7 @@ function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings, ...
 % Adjust in case day number is 0
 if dayNum == 0
     Year = Year-1;
-    dayNum = navsu.time.yearDays(Year);
+    dayNum = navsu.time.YearDays(Year);
 end
 
 % Optional flag to not actually load and only pass out filename
