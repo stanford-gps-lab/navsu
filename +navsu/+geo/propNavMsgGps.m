@@ -144,7 +144,6 @@ end
 
 % the remaining calculations can be done vectorized!
 
-% time since ephemeris for each SV
 % only work with prns I have an ephemeris for
 haveEph = iEph > 0;
 if ~any(haveEph)
@@ -152,20 +151,6 @@ if ~any(haveEph)
     return
 end
 iEph = iEph(haveEph);
-tsE = tmArray(haveEph) ...
-      - eph.GPS_week_num(iEph) * 604800 ...
-      - eph.Toe(iEph);
-if strcmp(constellation,'BDS')
-    tsE = tsE - 14; % need to adjust for Beidou timescale leapseconds
-end
-
-% check fit interval
-if WARNING_ENABLE 
-    for iWarn = find(tsE > eph.Fit_interval(iEph) * 3600)'
-        fprintf(2, 'Warning: t = %g (second) exceeds the Fit Interval %g (hour)\n', ...
-            tsE(iWarn), eph.Fit_interval(iWarn));
-    end
-end
 
 %% check for GAL I/NAV vs. F/NAV
 if strcmp(constellation, 'GAL')
@@ -194,6 +179,22 @@ end
 
 
 %% compute SV position
+
+% get time since ephemeris
+tsE = tmArray(haveEph) ...
+      - eph.GPS_week_num(iEph) * 604800 ...
+      - eph.Toe(iEph);
+if strcmp(constellation,'BDS')
+    tsE = tsE - 14; % need to adjust for Beidou timescale leapseconds
+end
+
+% check fit interval
+if WARNING_ENABLE 
+    for iWarn = find(tsE > eph.Fit_interval(iEph) * 3600)'
+        fprintf(2, 'Warning: t = %g (second) exceeds the Fit Interval %g (hour)\n', ...
+            tsE(iWarn), eph.Fit_interval(iWarn));
+    end
+end
 
 A = eph.sqrtA(iEph).^2; % semimajor axis  
 n0 = sqrt(mu ./ A.^3); % mean motion in rad/s
