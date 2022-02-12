@@ -65,18 +65,18 @@ end
 
 eph.clock_drift      = array(:, 9);
 eph.clock_drift_rate = array(:, 10);
-if strcmp(constellation,'GAL')
-    % IODE is not defined for GAL -- the most closely analogous quantity is
-    % called IODNav -- so take this value from ToE (see below) instead.
-    %
-    % QUESTION: per the (somewhat hard-to-follow) discusslion presented in
-    % <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>,
-    % might it be more appropriate to take this value from eph.TTOM (that
-    % is, array(:, 35)) instead?
-    eph.IODE         = array(:, 19); % this is just eph.Toe
-else
-    eph.IODE         = array(:, 11);
-end
+% if strcmp(constellation,'GAL')
+%     % IODE is not defined for GAL -- the most closely analogous quantity is
+%     % called IODNav -- so take this value from ToE (see below) instead.
+%     %
+%     % QUESTION: per the (somewhat hard-to-follow) discusslion presented in
+%     % <https://destevez.net/2019/09/ephemeris-quality-during-the-galileo-outage/>,
+%     % might it be more appropriate to take this value from eph.TTOM (that
+%     % is, array(:, 35)) instead?
+%     eph.IODE         = array(:, 19); % this is just eph.Toe
+% else
+eph.IODE             = array(:, 11); % IODN in the case of Galileo
+% end
 eph.Crs              = array(:, 12);
 eph.Delta_n          = array(:, 13);
 eph.M0               = array(:, 14);
