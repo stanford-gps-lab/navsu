@@ -321,7 +321,7 @@ pos.IODC(haveEph)        = eph.IODC(iEph);
 pos.t_m_toe(haveEph)     = tsE;
 pos.AoD(haveEph)         = tmArray(haveEph) ...
                            - eph.GPS_week_num(iEph) * 604800 ...
-                           - eph.Toe(iEph); % what is this??
+                           - eph.TTOM(iEph); % what is this??
 
 switch constellation 
     case 'GPS'
