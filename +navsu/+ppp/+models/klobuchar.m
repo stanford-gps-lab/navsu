@@ -54,10 +54,10 @@ lambda = lon/pi + psi .* sin(A) ./ cos(phi);
 phi_m = phi + 0.064 * cos(lambda - 1.617);
 
 % amplitude of cosine function
-AMP = reshape(max(phi_m(:).^(1:4) * alpha, 0), size(phi_m));
+AMP = reshape(max(phi_m(:).^(0:3) * alpha, 0), size(phi_m));
 
 % get period of cosine function
-PER = reshape(max(phi_m(:).^(1:4) * beta, 72000), size(phi_m));
+PER = reshape(max(phi_m(:).^(0:3) * beta, 72000), size(phi_m));
 
 % get value of where to evaluate cosine function
 t = mod(4.32e4 * lambda + epoch, 86400);
