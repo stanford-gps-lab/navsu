@@ -1057,7 +1057,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                                 .* ones(size(obsData.code));
                 obsData.fBand(~isfinite(obsData.code)) = NaN;
             elseif size(obsData.fBand, 2) == 1
-                obsData.fBand = [obsData.fBand, zeros(obsData.fBand)];
+                obsData.fBand = [obsData.fBand, zeros(size(obsData.fBand))];
             end
 
             if ~isfield(obsData, 'rnxCode') || isempty(obsData.rnxCode)
