@@ -871,7 +871,7 @@ for constIdx = 1:length(constData)
             
             idot       = data{28};
             code_on_L2 = data{29};
-            weekno     = data{30};
+            weekno     = 1356 + data{30}; % directly convert to GPS week number
             L2flag     = data{31};
             
             svaccur  = data{32};
