@@ -1,6 +1,6 @@
 function Tiono = klobuchar(ionoCorr, epoch, lat, lon, az, el)
-%Copmutes approximate Ionospheric delay of pseudoranges according to the
-%Klobuchar model.
+%Copmutes approximate Ionospheric delay of pseudoranges on the L1 frequency
+% according to the Klobuchar model.
 %   Tiono = klobuchar(ionoCorr, epoch, lat, lon, az, el)
 %   
 %   Function to compute the single frequency iono delay in seconds.
