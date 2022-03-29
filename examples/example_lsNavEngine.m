@@ -42,8 +42,8 @@ useConst = [1 1 1 0 0]; % [GPS GLO GAL BDS QZSS]
 disp('Reading observation file')
 [obsStruc, constellations, epochs] = navsu.readfiles.loadRinexObs(filenameGnss);
 obsGnssRaw.meas      = obsStruc;
-obsGnssRaw.PRN       = constellations.PRN;
-obsGnssRaw.constInds = constellations.constInds;
+obsGnssRaw.PRN       = constellations.PRN(:);
+obsGnssRaw.constInds = constellations.constInds(:);
 obsGnssRaw.epochs    = epochs;
 obsGnssRaw.tLock     = [];
 % NOTE the absence of a lock time will inhibit carrier smoothing :-(
