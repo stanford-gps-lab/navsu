@@ -396,8 +396,8 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             end
 
             % limit to satellites handled by this object
-            validSats = any(obj.satPRN == rnxStruct.PRN(:)' ...
-                          & obj.satConstId == rnxStruct.constInds(:)', 1);
+            validSats = any(obj.satPRN == rnxStruct.PRN(sats)' ...
+                          & obj.satConstId == rnxStruct.constInds(sats)', 1);
             sats = sats(validSats);
             
             % identify code measurements among observables
@@ -563,7 +563,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
             
             % Step 1: preprocess measurements
-            [prMeas, prVar, satIds] = obj.preprocessMeas( ...
+            [prMeas, prVar, satIds, freqs] = obj.preprocessMeas( ...
                 allSatIds, epoch, obsData);
             % all measurement inputs are now N x 2 matricies [f_SF f_IF]
 
@@ -609,7 +609,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
 
             % Step 3: correct measurement errors
             [errCorr, SigURE, varargout{4}] = obj.UREcorrection(...
-                satIds, prMeas, prVar);
+                satIds, prMeas, prVar, freqs);
             
             
             % initialize loop counter, last state update
@@ -667,7 +667,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                     obj.propagateOrbits(satIds, epoch);
                     % redo pseudorange error estimates
                     [errCorr, SigURE, varargout{4}] = obj.UREcorrection(...
-                        satIds, prMeas, prVar);
+                        satIds, prMeas, prVar, freqs);
                 end
                 % up the counter
                 loopCounter = loopCounter + 1;
@@ -824,11 +824,21 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             dop = inv(G'*G);
         end
         
-        function [errCorr, SigURE, useDF] = UREcorrection(obj, satIds, prMeas, measVar)
+        function [errCorr, SigURE, useDF] = UREcorrection(obj, satIds, prMeas, measVar, freqs)
             %Compute User Range Error (URE) corrections and Variances.
+            % WARNING: This blindly uses the stored group delay values if a
+            % single frequency solution is computed. This can lead to
+            % erroneous results when e.g. the wrong Galileo BGD is stored
+            % w.r.t. the E5 signal being used.
             
+            if nargin < 5
+                freqs = 1.57542e9 * ones(size(prMeas, 1), 1);
+            end
+
+            gamma = (1.57542e9 ./ freqs(:, 1)).^2;
+
             % retrieve TGD correction
-            TGD = obj.satTGD(satIds);
+            TGD = gamma .* obj.satTGD(satIds);
             TGD(isnan(TGD)) = 0; % mostly for GLONASS
             
             % relativistic clock correction
@@ -855,7 +865,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                     
                     ionoCorrCoeffs = obj.getIonoCoeffs(mean(satEpochs));
                     
-                    ionoDelay = navsu.ppp.models.klobuchar( ...
+                    ionoDelay = gamma .* navsu.ppp.models.klobuchar( ...
                         ionoCorrCoeffs, satEpochs, ...
                         llh(1)/180*pi, llh(2)/180*pi, ...
                         az, el) * navsu.constants.c;
@@ -1014,7 +1024,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
         end
         
         
-        function [prMeas, prVar, satIds] = preprocessMeas( ...
+        function [prMeas, prVar, satIds, freqs] = preprocessMeas( ...
                 obj, satIds, epoch, obsData)
             %Preprocess the passed inputs and measurements
             %   
@@ -1109,20 +1119,21 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             
 
             % now limit to best option on each frequency band!!
-            prMeas = NaN(size(obsData.code, 1), 2);
-            prVar = NaN(size(obsData.code, 1), 2);
+            [prMeas, prVar, freqs] = deal(NaN(size(obsData.code, 1), 2));
             for s = 1:size(obsData.code, 1)
                 % choose best signal on fBand 1
-                sigsBand1 = find(obsData.fBand(s, :) == 1);
-                if ~isempty(sigsBand1)
-                    [prVar(s, 1), iBest] = min(prVarRcvr(s, sigsBand1));
-                    prMeas(s, 1) = prSmoothed(s, sigsBand1(iBest));
+                sigsSF = find(obsData.fBand(s, :) < 10 & isfinite(obsData.code(s, :)));
+                if ~isempty(sigsSF)
+                    [prVar(s, 1), iBest] = min(prVarRcvr(s, sigsSF));
+                    prMeas(s, 1) = prSmoothed(s, sigsSF(iBest));
+                    freqs(s, 1) = obsData.freq(s, sigsSF(iBest));
                 end
                 % choose best dual frequency signal
                 sigsDF = find(obsData.fBand(s, :) > 10);
                 if ~isempty(sigsDF)
                     [prVar(s, 2), iBest] = min(prVarRcvr(s, sigsDF));
                     prMeas(s, 2) = prSmoothed(s, sigsDF(iBest));
+                    freqs(s, 2) = obsData.freq(s, sigsDF(iBest));
                 end                
             end
 
@@ -1133,6 +1144,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             prMeas(noMeas, :) = [];
             prVar(noMeas, :) = [];
             satIds(noMeas) = [];
+            freqs(noMeas, :) = [];
             
             % Step 1c: limit to 1 single frequency (SF) measurement
             % NOTE: that's a bad idea. TGD, iono corrections expect L1
