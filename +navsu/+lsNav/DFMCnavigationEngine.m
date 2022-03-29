@@ -395,6 +395,14 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                 ep = 1;
             end
 
+            % make sure PRN, constInds are column vectors
+            if isrow(rnxStruct.PRN)
+                rnxStruct.PRN = rnxStruct.PRN';
+            end
+            if isrow(rnxStruct.constInds)
+                rnxStruct.constInds = rnxStruct.constInds';
+            end
+
             % limit to satellites handled by this object
             validSats = any(obj.satPRN == rnxStruct.PRN(sats)' ...
                           & obj.satConstId == rnxStruct.constInds(sats)', 1);
