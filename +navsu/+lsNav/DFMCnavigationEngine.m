@@ -589,6 +589,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             satIds(noEph) = [];
             prMeas(noEph, :) = [];
             prVar(noEph, :) = [];
+            freqs(noEph, :) = [];
             
             % get involved constellations
             consts = unique(obj.satConstId(satIds));
@@ -640,7 +641,7 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
                     satIds(goodElNow), prhat, SigURE(goodElNow));
                 
                 % check for oscillating state, bad update
-                if all(dxi + dx < 1e-6) || any(isnan(dxi(1:3)))
+                if all(abs(dxi + dx) < 1e-6) || any(isnan(dxi(1:3)))
                     break;
                 else
                     dx = dxi;
