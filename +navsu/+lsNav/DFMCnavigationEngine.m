@@ -740,9 +740,12 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             end
             
             % retrieve inputs from structure
-            % (choose first freq. measurements for now)
-            dopplerMeas = obsData.doppler(:, 1);
-            freq = obsData.freq(:, 1);
+            [dopplerMeas, freq] = deal(NaN(size(obsData.doppler, 1), 1));
+            for s = find(any(isfinite(obsData.doppler), 2))'
+                fI = find(isfinite(obsData.doppler(s, :)), 1);
+                dopplerMeas(s) = obsData.doppler(s, fI);
+                freq(s) = obsData.freq(s, fI);
+            end
             
             % exclude satellites without measurements
             sNoMeas = all(~isfinite(dopplerMeas) | ~isfinite(freq), 2);
@@ -767,15 +770,16 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % Step 2: perform least squares solution
             % get rate residual
             unitvecs = obj.losVectors(satIds, :) ./ obj.theoranges(satIds);
-            rateRes = dot(obj.satVel(satIds, :)', -unitvecs')' ...
+            rateRes = dot(obj.satVel(satIds, :)' - obj.velocity, -unitvecs')' ...
                     - dopplerMeas .* navsu.constants.c ./ freq ...
-                    - obj.tBiasRate(satConstIds);
+                    - obj.tBiasRate(satConstIds) ...
+                    + obj.internal_satClkRate(satIds) * navsu.constants.c;
             % solve LS nav equation
             rateSol = obj.doLSupdate(satIds, rateRes, ...
-                                     obj.codeMeasSigma(satIds, freq));
+                                     obj.codeMeasSigma(satIds, freq).^2);
             
             % store in object properties
-            obj.velocity = rateSol(1:3);
+            obj.velocity = obj.velocity + rateSol(1:3);
             satConstIdsU = unique(satConstIds);
             obj.tBiasRate(satConstIdsU) = obj.tBiasRate(satConstIdsU) ...
                                         + rateSol(4:end);
