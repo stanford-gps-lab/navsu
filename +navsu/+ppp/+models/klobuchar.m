@@ -1,6 +1,6 @@
 function Tiono = klobuchar(ionoCorr, epoch, lat, lon, az, el)
-%Copmutes approximate Ionospheric delay of pseudoranges according to the
-%Klobuchar model.
+%Copmutes approximate Ionospheric delay of pseudoranges on the L1 frequency
+% according to the Klobuchar model.
 %   Tiono = klobuchar(ionoCorr, epoch, lat, lon, az, el)
 %   
 %   Function to compute the single frequency iono delay in seconds.
@@ -47,17 +47,17 @@ E = el/pi;
 psi = 0.0137 ./ (E + 0.11) - 0.022;
 
 % get geodetic latitude and longitude of earth projection of IIPs
-phi = max(min(lat/pi + psi .* cos(A), 0.416), -0.416);
-lambda = lon/pi + psi .* sin(A) ./ cos(phi);
+phi = max(min(lat/pi + psi .* cospi(A), 0.416), -0.416);
+lambda = lon/pi + psi .* sinpi(A) ./ cospi(phi);
 
 % get geomagnetic latitude of earth projection of IIPs
-phi_m = phi + 0.064 * cos(lambda - 1.617);
+phi_m = phi + 0.064 * cospi(lambda - 1.617);
 
 % amplitude of cosine function
-AMP = reshape(max(phi_m(:).^(1:4) * alpha, 0), size(phi_m));
+AMP = reshape(max(phi_m(:).^(0:3) * alpha, 0), size(phi_m));
 
 % get period of cosine function
-PER = reshape(max(phi_m(:).^(1:4) * beta, 72000), size(phi_m));
+PER = reshape(max(phi_m(:).^(0:3) * beta, 72000), size(phi_m));
 
 % get value of where to evaluate cosine function
 t = mod(4.32e4 * lambda + epoch, 86400);
