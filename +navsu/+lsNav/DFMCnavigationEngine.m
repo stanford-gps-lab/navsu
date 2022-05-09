@@ -1615,9 +1615,27 @@ classdef DFMCnavigationEngine < matlab.mixin.Copyable
             % Limit obsData to signals on specific frequency bands
             % obsData = obj.frequencyMask(obsData, fBands)
 
+            legalBands = ismember(obsData.fBand, fBands);
+
             % choose frequency bands
-            if max(fBands) <= size(obsData.code, 2)
-                obsData = structfun(@(x) x(:, fBands), obsData, ...
+            if any(legalBands, 'all')
+
+                nSat = size(legalBands, 1);
+                colIdx = [1 2] .* ones(nSat, 2);
+                nBands = sum(legalBands, 2);
+                twoOne = [2 1];
+
+                for s = find(any(legalBands, 2))'
+                    colIdx(s, 1:nBands(s)) = find(legalBands(s,:), 2);
+                    if nBands(s) == 1 && colIdx(s, 1) == colIdx(s, 2)
+                       % make sure they're not both = 1
+                       colIdx(s, 2) = twoOne(colIdx(s, 1));
+                    end
+                end
+                lIndex = sub2ind(size(legalBands), ...
+                                 repmat(1:nSat, 2, 1)', ...
+                                 colIdx);
+                obsData = structfun(@(x) x(lIndex), obsData, ...
                                     'UniformOutput', false);
             else
                 warning('Illegal frequency band selection.');
