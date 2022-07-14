@@ -46,7 +46,9 @@ if curlFeedbackCode > 0 && (useHttp || ~ispc)
 end
 
 % now parse the output of the curl command
-if useHttp
+if isempty(output)
+    files = {};
+elseif useHttp
     % this works with the output of the http call
     files = textscan(output, '%s%f');
     files = files{1};
