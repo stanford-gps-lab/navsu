@@ -1,9 +1,37 @@
 function [yy, yy_dot, chi2, p] = polyinterp(x, y, m_order, xx, flag, var, polyIn, nearestAdjust)
 
+% SYNTAX:
+%   [yy, yy_dot, chi2, p] = polyinterp(x, y, ord, xx, flag, var, polyIn, nearestAdjust)
+%
+% INPUT:
+%   x   n x 1 <double> vector of x-data values
+%   y   n x m <double> matrix of y-data values
+%   ord 1 x 1 <int> order of the polynomial to be fit
+%   xx  p x 1 <double> vector of evaluation points
+% Optional inputs:
+%   flag    n x 1 <logical> vector that is true for data points to be
+%           ignored in this fit. Default = false
+%   var     n x m <double> matrix of e.g. measurement variances. This 
+%           scales the chi^2 statistic output. Default = 1
+%   polyIn  1 x ord+1 <double> pre-fit polynomial of order ord to be used
+%           instead of a fit computed on the provided data. Default = []
+%   nearestAdjust   1 x 1 <logical> if true the fit error of the nearest 
+%                   neighbor data point affects the result. Default = false
+
+% OUTPUT:
+%   yy      p x m <double> matrix of interpolated data points
+%   yy_dot  p x m <double> matrix of gradient at fit points
+%   chi2    chi-squared statistic of fit error
+%   p       exponents of polynomial used
+%
+% DESCRIPTION:
+%   Polynomial interpolation algorithm.
+
+
 
 if nargin < 6
     var = ones(size(y));
-elseif var == 0 || isempty(var)
+elseif all(var == 0) || isempty(var)
     var = ones(size(y));
 end
 
@@ -18,7 +46,7 @@ if nargin < 7
 end
 
 if nargin < 8
-    nearestAdjust = 1;
+    nearestAdjust = true;
 end
 
 x = x(idx);
@@ -78,23 +106,5 @@ if nargout > 1
         chi2 = dot(y - z((n+1):end, :), (y - z((n+1):end, :))./var, 2);
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
