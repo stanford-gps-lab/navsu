@@ -104,6 +104,7 @@ if nargout > 1
     
     if nargout > 2
         chi2 = dot(y - z((n+1):end, :), (y - z((n+1):end, :))./var, 2);
+        chi2 = mean(chi2); % RW 8/22/22 - added
     end
 end
 

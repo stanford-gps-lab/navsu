@@ -12,7 +12,8 @@ Cclock       = Clck.Cclk(prn,:);
 Cclock_sig   = Clck.Cclk_sig(prn,:);
 
 % Set up interpolation constants
-n     = settings.nPolyFit; % number of nominal points to use for polynominal fit
+% n     = settings.nPolyFit; % number of nominal points to use for polynominal fit
+n     = 9;                  % RW - 8/22 test, there should be 9 points fed into polyinterp
 pfit  = settings.pfit;     % order of fit for position interpolation
 cdfit = settings.cdfit;    % order of fit for clock interpolation
 
@@ -20,7 +21,8 @@ process_interval = Cepochs(2) - Cepochs(1);
 n_epochs_day = 86400/process_interval;
 cdecimate = Peph.Epoch_interval/process_interval; %how many high rate epochs per low rate epoch
 
-rcidx = (1:n) - n/2;                % relative indices to fit
+% rcidx = (1:n) - n/2;                % relative indices to fit
+rcidx = (1:n) - floor(n/2);         % RW - 8/22 test, indices can't be noninteger
 rpidx = rcidx;                      % relative indices for precise orbit file
 rtf   = rcidx*Peph.Epoch_interval;  % relative time steps for fits
 rcidx = rcidx*cdecimate;            % relative indices for high rate clock data
@@ -53,6 +55,10 @@ for idx = idx_start:idx_end
     Vxyzti(1,4) = Pclock_drift(idx);
     
     % interpolate precise orbit values
+    % polyinterp called 3 times to calculate the interpolated values at a
+    % higher rate of 30 seconds one coordinate at a time 
+    % Pxyzti(1 + rcjdx, 1) output should be a 9x1
+
 %     [Pxyzti(1 + rcjdx, 1), Vxyzti(1 + rcjdx, 1), chi2(idx,1), p] = ...
 %         navsu.geo.polyinterp(rtf', Pposition(rpidx + idx,1), pfit, rtjdx, ...
 %         Pevent(rpidx +idx), pvar);
@@ -66,10 +72,10 @@ for idx = idx_start:idx_end
 %         Pevent(rpidx +idx), pvar);  % RW - 8/7/21
 
     [Pxyzti(1 + rcjdx, 2), Vxyzti(1 + rcjdx, 2), chi2(idx,2)] = ...
-        polyinterp(rtf', Pposition(rpidx + idx,2), pfit, rtjdx, ...
+        navsu.geo.polyinterp(rtf', Pposition(rpidx + idx,2), pfit, rtjdx, ...
         Pevent(rpidx +idx), pvar);
     [Pxyzti(1 + rcjdx, 3), Vxyzti(1 + rcjdx, 3), chi2(idx,3)] = ...
-        polyinterp(rtf', Pposition(rpidx + idx,3), pfit, rtjdx, ...
+        navsu.geo.polyinterp(rtf', Pposition(rpidx + idx,3), pfit, rtjdx, ...
         Pevent(rpidx +idx), pvar);
     
     
@@ -80,8 +86,9 @@ for idx = idx_start:idx_end
     
     Pxyzti(1 + [0 rcjdx], 4) = Cclock(cdx);
     tmp2 = [0; rtjdx];
+    % RW - what does the next line do?
     [~,Vxyzti(1 + [0 rcjdx], 4)] = ...
-            polyinterp(rtf', Cclock(cedx + rcidx)',cdfit,tmp2, ...
+            navsu.geo.polyinterp(rtf', Cclock(cedx + rcidx)',cdfit,tmp2, ...
             (Pevent(rpidx +idx) | ...
             abs(Pclock_bias(rpidx + idx)) > 0.9999), ...
             (Cclock_sig(cedx + rcidx).^2)' + 1e-22);
