@@ -2,29 +2,10 @@ classdef svOrbitClock < handle
 
     properties
         % structure containing file directories and ephemeris settings
-        settings = struct(...
-            'constUse',         [1 0 0 0 0],... % GPS GLO GAL BDS QZSS 
-            'miceDir',                   [],... % Directory containing NASA MICE files
-            'preciseProdDir',            [],... % Directory containing precise products
-            'obsDir',                    [],... % Directory containting IGS observations
-            'gpsEphCenter',           'GRG',... % IGS AC code for GPS precise eph
-            'gloEphCenter',           'GRG',... % IGS AC code for GLO precise eph
-            'galEphCenter',           'GRG',... % IGS AC code for GAL precise eph
-            'bdsEphCenter',           'GRG',... % IGS AC code for BDS precise eph
-            'gpsClkCenter',           'GRG',... % IGS AC code for GPS precise clk
-            'gloClkCenter',           'GRG',... % IGS AC code for GLO precise clk
-            'galClkCenter',           'GRG',... % IGS AC code for GAL precise clk
-            'bdsClkCenter',           'GRG',... % IGS AC code for BDS precise clk
-            'dcbSource',                  2,... % Differential code bias source 2 = DLR- just use that
-            'orbitInterpMethod', 'lagrange',...
-            'polyfit',   struct('nPolyFit',12,'pfit',8,'cdfit',2),...                 
-            'tempDir',                   [],... % directory to put some temporary things...
-            'dcbDir',                    [],...; % directory for differential code biases
-            'mgxObsDir',                 [],... % MGEX obs files
-            'mgxHrObsDir',               []); % MGEX hr obs files
+        settings % see navsu.internal.initSettings
         
-        orbMode = 'PRECISE' % whether to use 'PRECISE' or 'BROADCAST' orbit
-        clkMode = 'PRECISE' % whether to use 'PRECISE' or 'BROADCAST' clock
+        orbMode(1,:) char {mustBeMember(orbMode, {'PRECISE', 'BROADCAST', 'PREDICT'})} = 'PRECISE' % 'PREDICT" is deprecated
+        clkMode(1,:) char {mustBeMember(clkMode, {'PRECISE', 'BROADCAST', 'PREDICT'})} = 'PRECISE' % 'PREDICT" is deprecated
         
         PClock % precise clock data structure
         PEph   % precise orbit data structure
@@ -87,44 +68,26 @@ classdef svOrbitClock < handle
             p.addParameter('cookieDir',[]);
             parse(p, varargin{:});
             res = p.Results;
-            constUse = res.constUse;
-            configFile = res.configFile;
             
-            %% Pull info from the .ini file
-            if ~isempty(configFile)
-                iniData = navsu.thirdparty.ini2struct(configFile);
-                basePreciseProdDir = iniData.preciseproddir;
-                obsDir             = iniData.obsdir;
-            else
-                cdi = cd;
-                cdi(strfind(cdi,'\')) = '/';
-                basePreciseProdDir = [cdi '/data/'];
-                obsDir             = [cdi '/data/'];
-            end
+            %% initialize settings
+            obj.settings = navsu.internal.initSettings('configFile', res.configFile, ...
+                                                       'netrcFile', res.netrcFile, ...
+                                                       'cookieFile', res.cookieFile, ...
+                                                       'cookieDir', res.cookieDir);
+            obj.settings.constUse = res.constUse;
 
-            obj.settings.preciseProdDir = [basePreciseProdDir 'precise-daily/'];
-            obj.settings.mgxObsDir      = [obsDir 'mgex-obs/'];
-            obj.settings.mgxHrObsDir    = [obsDir 'mgex-hr-obs/'];
-            obj.settings.tempDir        = [basePreciseProdDir 'temp/'];
-            obj.settings.dcbDir         = [basePreciseProdDir 'dcb/'];
-            obj.settings.navMgxDir      = [basePreciseProdDir 'nav-daily/'];
+            % a few fields now need to be overwritten to be backwards
+            % compatible:
+
+            % remove the '/mgex/' part from the path
+            obj.settings.navMgxDir = fullfile(obj.settings.baseDir, 'nav-daily/');
             
-            obj.settings.constUse       = constUse;
-            
-            %% NASA login/download setup
-            defaultCookieFilename = 'nasa_cddis_cookies.txt';
-            if ~isempty(res.cookieFile)
-                % A specific filename of the cookie was provided
-                obj.settings.cookieFile = res.cookieFile;
-            elseif ~isempty(res.cookieDir)
-                % only a directory was provided-
-                obj.settings.cookieFile = fullfile(res.cookieDir,defaultCookieFilename);
-            else
-                % No location information about where to place teh cookie file was
-                % provided
-                obj.settings.cookieFile = fullfile(basePreciseProdDir,defaultCookieFilename);
+            % reset the ephemeris and clk center
+            centerConsts = {'gps'; 'glo'; 'gal'; 'bds'};
+            for cci = 1:length(centerConsts)
+                obj.settings.([centerConsts{cci}, 'EphCenter']) = 'GRG';
+                obj.settings.([centerConsts{cci}, 'ClkCenter']) = 'GRG';
             end
-            obj.settings.netrcFile = res.netrcFile;
 
         end
     end
@@ -181,7 +144,6 @@ classdef svOrbitClock < handle
         cbias = predictClock(obj, prns, constInds, epochs, latency);
                 
     end
-
 
 end
 

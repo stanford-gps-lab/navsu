@@ -85,17 +85,23 @@ settings.gloClkCenter   = 'com'; % MGEX/IGS source of high rate precise clock
 settings.galClkCenter   = 'com'; % MGEX/IGS source of high rate precise clock
 settings.bdsClkCenter   = 'com'; % MGEX/IGS source of high rate precise clock
 
+
+% orbit interpolation
+settings.polyfit = struct('nPolyFit',12,'pfit',8,'cdfit',2);
+
+settings.orbitInterpMethod = 'lagrange';
+
+%% old settings still needed :(
 settings.navSource   = 'sugl'; % sugl, iac
 settings.MGEXSource  = 's'; % THIS IS ACTUALLY GAL NAV SOURCE
 
-% old settings still needed :(
 settings.GloPephSource = 'MGEX';
 settings.GloPclkSource = 'MGEX';
 settings.nPolyFit       = 12;    % number of nominal points to use for polynominal fit
 settings.pfit           = 8;     % order of fit for position interpolation
 settings.cdfit          = 2;     % order of fit for clock interpolation
 
-%% IGS Analysis Center settings
+% IGS Analysis Center settings
 settings.orbCenter = {settings.gpsEphCenter, ...
                       settings.gloEphCenter, ...
                       settings.galEphCenter, ...
@@ -104,13 +110,5 @@ settings.clkCenter = {settings.gpsClkCenter, ...
                       settings.gloClkCenter, ...
                       settings.galClkCenter, ...
                       settings.bdsClkCenter, 'com'};
-
-settings.orbitInterpMethod = 'lagrange';
-
-%% Primary directory
-baseDir = preciseProdDir;
-tempDir = fullfile(baseDir, 'Temp Dir/');
-
-settings.tempDir = tempDir;
 
 end

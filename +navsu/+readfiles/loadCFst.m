@@ -23,7 +23,6 @@ function [Clck, CFileName,CFileNameFull] = loadCFst(Year, dayNum, settings, FLAG
 %   .gpsClkCenter      - 3 letter IGS Analysis Center for GPS corrections
 %   .gloClkCenter      - 3 letter IGS Analysis Center for GLO corrections
 %   .galClkCenter      - 3 letter IGS Analysis Center for GAL corrections
-%   .GloPclkSource     - this should be set to 'MGEX'- this is old and bad
 %
 % OPTIONAL INPUTS:
 %  FLAG_NO_LOAD        - True = do not parse the file, just output the name

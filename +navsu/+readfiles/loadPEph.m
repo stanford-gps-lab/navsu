@@ -26,7 +26,6 @@ function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings, ...
 %                        'IGS' indicates the IGS final solution
 %   .gloEphCenter      - 3 letter IGS Analysis Center for GLO corrections
 %   .galEphCenter      - 3 letter IGS Analysis Center for GAL corrections
-%   .GloPephSource     - this should be set to 'MGEX'- this is old and bad
 %
 % OPTIONAL INPUTS:
 %  FLAG_NO_LOAD        - True = do not parse the file, just output the name
