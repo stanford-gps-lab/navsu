@@ -49,6 +49,13 @@ if dayNum == 0
     dayNum = navsu.time.YearDays(Year);
 end
 
+% Adjust in case day number is 366 or 367 for year start/end
+total_days = navsu.time.YearDays(Year);
+if dayNum == total_days + 1
+    Year = Year + 1;
+    dayNum = 1;
+end
+
 % Optional flag to not actually load and only pass out filename
 if nargin < 4
     FLAG_NO_LOAD = 0;
