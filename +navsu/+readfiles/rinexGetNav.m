@@ -502,6 +502,7 @@ entryCounts = num2cell(hist(entries,1:8)); %#ok<HIST>
 
 % Check if we have any data to work with...
 if isempty(entries)
+    % This is the case for GAL Year 2019 Days 193:196
     error('In input file %s: no GNSS navigation data entries found!\n', file_nav);
 end
 
