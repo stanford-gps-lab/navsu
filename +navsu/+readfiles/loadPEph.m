@@ -116,6 +116,8 @@ else
 
                     if yr >= 2020
                         PfileNameFormat = 'nga%04d%1d.apc';
+                    elseif yr == 2017 && dayNum == 125
+                        PfileNameFormat = 'NGA%04d%1d.APC';
                     elseif yr > 2011
                         PfileNameFormat = 'apc%04d%1d';
                     else
