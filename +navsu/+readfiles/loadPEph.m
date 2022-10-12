@@ -42,23 +42,29 @@ function [Peph,PFileName,PFileNameFull] = loadPEph(Year, dayNum, settings, ...
 %
 % See also: navsu.ftp.download, navsu.svOrbitClock
 
+if isscalar(Year)
+    Year = repmat(Year, size(dayNum));
+end
+
 %%
+total_days = navsu.time.YearDays(Year);
 % Adjust in case day number is 0
-if dayNum == 0
-    Year = Year-1;
-    dayNum = navsu.time.YearDays(Year);
+day0 = dayNum == 0;
+if any(day0)
+    Year(day0) = Year(day0)-1;
+    dayNum(day0) = total_days(day0);
 end
 
 % Adjust in case day number is 366 or 367 for year start/end
-total_days = navsu.time.YearDays(Year);
-if dayNum == total_days + 1
-    Year = Year + 1;
-    dayNum = 1;
+day366 = dayNum == total_days + 1;
+if any(day366)
+    Year(day366) = Year(day366) + 1;
+    dayNum(day366) = 1;
 end
 
 % Optional flag to not actually load and only pass out filename
 if nargin < 4
-    FLAG_NO_LOAD = 0;
+    FLAG_NO_LOAD = false;
 end
 
 % optional antenna phase center structure

@@ -15,11 +15,9 @@ function nDays = YearDays(year)
 % If the year can be evenly divided by 100, it is NOT a leap year, unless;
 % The year is also evenly divisible by 400. Then it is a leap year.
 
+leapYear = ((mod(year,4) == 0) & ~(mod(year,100) == 0)) | (mod(year,400) == 0);
 
-if ((mod(year,4) == 0) && ~(mod(year,100) == 0)) || (mod(year,400) == 0)
-    nDays = 366;
-else
-    nDays = 365;
-end
+nDays = 365*ones(size(year));
+nDays(leapYear) = 366;
 
 end
