@@ -566,7 +566,9 @@ switch const
             219    36  2019     2    11    10    26   Inf     1     1     0     0     3; 
             222    33  2019     2    11    10    56   Inf     1     1     0     0     3; 
             220    13  2019     2    11    11    26   Inf     1     1     0     0     3;
-            221    15  2019     2    11    12    10   Inf     1     1     0     0     3;]; 
+            221    15  2019     2    11    12    10   Inf     1     1     0     0     3; 
+            223    34  2022     5     5    10    42   Inf     1     1     0     0     3;
+            224    10  2022     8    29    13    51   Inf     1     1     0     0     3;]; 
         elseif source == 2 % LAUNCH DATES- USED FOR IDENTIFICATION OF SATELLITES BEFORE USABLE DATES
             svndata = [
             %                  |     Launch Time       |     Decommission Time      |
