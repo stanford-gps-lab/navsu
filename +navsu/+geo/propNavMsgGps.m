@@ -38,6 +38,10 @@ WARNING_ENABLE = false;
 mu = 3.986005e14; % WGS-84 value in m^3/s^2
 OMEGA_DOTe = 7.2921151467e-5; % WGS-84 value in rad/s
 
+if strcmp(constellation,'GAL')
+    mu = 3.986004418e14; % WGS-84 value in m^3/s^2
+end
+
 if strcmp(constellation,'BDS')
     OMEGA_DOTe = 7.292115e-5; 
 end

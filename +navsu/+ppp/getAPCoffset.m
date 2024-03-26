@@ -46,7 +46,8 @@ offset = NaN(3, length(PRN));
 
 for ii = 1:length(adx) 
     if ~isempty(atxData(adx(ii)).apc)
-        offset(:, sdx(ii)) = atxData(adx(ii)).apc(1,:) * 1e-3;
+       offset(:, sdx(ii)) = atxData(adx(ii)).apc(1,:) * 1e-3;
+%         offset(:, sdx(ii)) = (2.26*atxData(adx(ii)).apc(4,:) - 1.26*atxData(adx(ii)).apc(1,:)) * 1e-3;
     end
 end
 

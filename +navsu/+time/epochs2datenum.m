@@ -10,7 +10,7 @@ function tDatenum = epochs2datenum(epochs)
 %   datenums = Nx1 vector of MATLAB datenums
 %
 % See also: navsu.time.datenum2epochs
-tDatenum = datenum(navsu.time.epochs2cal(epochs,1));
+tDatenum = datetime(navsu.time.epochs2cal(epochs,1));
 
 
 end
