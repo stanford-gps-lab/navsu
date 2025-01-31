@@ -58,7 +58,7 @@ end
 if nargin < 6
     % Source of database (only applies to GLONASS)
     source = ones(size(const));
-    source(const == 2) = 3;
+    % source(const == 2) = 3;
 elseif numel(source) == 1
     source = source * ones(size(const));
 elseif isrow(source)
@@ -105,7 +105,7 @@ for csdx = 1:size(unCS, 1)
     else
         epochi = epoch;
     end
-    sdx = sati == svndata(:, refCol) ...
+    sdx = sati == svndata(:, 2) ...
         & epochi >= epStart ...
         & epochi < epEnd;
     % which PRNs do I have data for?
