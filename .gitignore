@@ -22,3 +22,6 @@ data/
 .DS_Store
 *.bak
 *.m~
+*.sp3*
+.buildtool/
+reports/

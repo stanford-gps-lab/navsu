@@ -1,4 +1,5 @@
-classdef NavsuTests <  matlab.unittest.TestCase
+classdef  (SharedTestFixtures={ matlab.unittest.fixtures.PathFixture(fileparts(fileparts(mfilename('fullpath'))))}) ...
+        NavsuTests <  matlab.unittest.TestCase
 
     methods (Test)
 
@@ -8,18 +9,15 @@ classdef NavsuTests <  matlab.unittest.TestCase
 
             % check if curl exists
             [a, ~] = system('curl');
-            if a  == 2
-                fileName = 'ftp://gdc.cddis.eosdis.nasa.gov/gnss/data/campaign/mgex/daily/rinex3/2020/brdm/';
-                fileList = navsu.ftp.curlGetDirectoryContents(fileName);
-                % should have exactly 176 files
-                testCase.verifyEqual(numel(fileList), 176);
-                % test the name of the last
-                testCase.verifyTrue(strcmp(fileList{end}, 'brdm1900.20p.Z'));
-            else
-                warning('No curl distribution found. Cannot run this test.');
-            end
-            
+            testCase.assumeEqual(a, 2, 'No curl distribution found. Cannot run this test.')
 
+            fileName = 'ftp://gdc.cddis.eosdis.nasa.gov/gnss/data/campaign/mgex/daily/rinex3/2020/brdm/';
+            fileList = navsu.ftp.curlGetDirectoryContents(fileName);
+            testCase.assertNotEmpty(fileList)
+            % should have exactly 176 files
+            testCase.verifyEqual(numel(fileList), 176);
+            % test the name of the last
+            testCase.verifyEqual(fileList{end}, 'brdm1900.20p.Z')
         end
 
         function orbitParserTest(testCase)

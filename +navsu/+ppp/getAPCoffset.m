@@ -16,10 +16,10 @@ function offset = getAPCoffset(atxData, PRN, constInds, epochs)
 %  offset              - 3 x N matrix of APC offset in satellite coordinate
 %                        system
 
-if numel(epochs) == 1
+if isscalar(epochs)
     epochs  = epochs * ones(size(PRN));
 end
-if numel(constInds) == 1
+if isscalar(constInds)
     constInds = constInds * ones(size(PRN));
 end
 

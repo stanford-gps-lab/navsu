@@ -168,6 +168,7 @@ else
     
     %open RINEX observation file
     fid = fopen(filename,'r');
+    assert(fid > 0, filename + " not existing file")
     
     %parse RINEX header
     [obs_type, pos(:,1), basic_info, interval(1,1), sysId, antoff(:,1), ...

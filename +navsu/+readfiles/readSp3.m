@@ -1,5 +1,12 @@
 function pvt = readSp3(filename, cmToApcFlag, strictConstNumFlag, ...
                        constellationOut, atxData)
+arguments
+  filename (1,1) string {mustBeFile}
+  cmToApcFlag (1,1) logical = false
+  strictConstNumFlag (1,1) logical = false
+  constellationOut (1,1) double = 1
+  atxData (1,:) struct = struct.empty
+end
 % readSp3
 % DESCRIPTION:
 %   Parses .sp3 precise orbit and clock files!
@@ -37,28 +44,9 @@ function pvt = readSp3(filename, cmToApcFlag, strictConstNumFlag, ...
 
 pvt = [];
 
-[fid, message] = fopen(filename, 'rt');
-if (fid == -1)
-    fprintf(2, 'Error open %s: %s\n', filename, message);
-    return
-end
-if nargin < 2
-    cmToApcFlag = false;
-end
-
-if (nargin < 3)
-    strictConstNumFlag = false;
-end
+fid = fopen(filename, 'rt');
 
 %GRECJ
-
-if nargin < 4
-    constellationOut = 1;
-end
-
-if nargin < 5
-    atxData = [];
-end
 
 if cmToApcFlag && isempty(atxData)
     error(['Antenna phase center data (IGS .atx file) required to ' ...
@@ -68,10 +56,10 @@ end
 NumSV = -1;
 % Default constellation is GPS
 const = 'GPS';
-while 1
+while ~feof(fid)
     tline = fgetl(fid);
-    if ~ischar(tline)
-        break
+    if strlength(tline) < 2
+        continue
     end
     switch tline(1:2)
         case '#a'
@@ -110,7 +98,7 @@ while 1
                 if strcmp(tline(4),'M')
                     const = 'MIX';
                 end
-                
+
             end
         case '##'
             GPS_week_num = str2double(tline(4:7));
@@ -134,18 +122,19 @@ while 1
             break
     end
 end
+
 consts = 'GRECJ';
 C = [];
 while ~feof(fid)
     tline = fgetl(fid);
     if ~strcmp(tline(1),'*') && ~strcmp(tline,'EOF')
         const = tline(2);
-        
+
         constNum = strfind(consts,const);
-        
+
         Ci = textscan(tline(3:end),'%n%n%n%n%n%n%n%n%n%n%n%n%n');
         dataTemp = [Ci{1:5}];
-        
+
         if ~isempty(dataTemp)
             C = [C; [constNum dataTemp]];
         end
@@ -177,7 +166,7 @@ if strictConstNumFlag
         array = outArray;
         NumSV = 32;
     end
-    
+
     if constellationOut == 2 % GLONASS
         outArray = nan(24*NumEpochs,9);
         setInds = [0; find(diff(array(:,1)) < 1); length(array(:,1))];
@@ -212,7 +201,7 @@ if strictConstNumFlag
         array = outArray;
         NumSV = 36;
     end
-    
+
     if constellationOut == 4 % Beidou
         NumSV = 35;
         outArray = nan(NumSV*NumEpochs,5);
@@ -241,7 +230,7 @@ epochs = repelem(dataEpochs, NumSV, 1);
 constInds = constellationOut*ones(size(epochs));
 
 pvt = struct('filename', filename, ...
-    'DateTime', DateTime', ...
+    'DateTime', datetime(DateTime'), ...
     'GPS_week_num', GPS_week_num, ...
     'GPS_seconds', GPS_seconds, ...
     'Epoch_interval', Epoch_interval, ...
@@ -260,58 +249,31 @@ pvt.Event(any(pvt.position == 0, 2)) = true;
 
 %% Correct APC
 if cmToApcFlag && ~isempty(atxData)
-    
+
     PRNs = unique(array(:,1));
-    
+
     % get offset vector for each satellite (at first epoch, this should not
     % change during the scenario)
     offset = navsu.ppp.getAPCoffset(atxData, PRNs, constellationOut, dataEpochs(1));
-    
+
     % now offset each sat pos into correct direction
     for pdx = 1:NumSV
-        
+
         inds = find(array(:,1) == PRNs(pdx));
-        
+
         if any(~isnan(pvt.position(inds,:)), 'all')
-            
+
             % get rotation matrix
             R = navsu.geo.svLocalFrame(pvt.position(inds, :), dataEpochs);
-            
+
             % do the rotation
             offsetECEF = NaN(3, NumEpochs);
-            for tdx = 1:NumEpochs                
+            for tdx = 1:NumEpochs
                 offsetECEF(:, tdx) = R(:, :, tdx) * offset(:, pdx);
             end
-            
+
             pvt.position(inds, :) = pvt.position(inds, :) + offsetECEF';
-            
+
         end
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

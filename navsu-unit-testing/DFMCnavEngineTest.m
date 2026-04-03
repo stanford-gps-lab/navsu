@@ -1,4 +1,5 @@
-classdef DFMCnavEngineTest < matlab.unittest.TestCase
+classdef (SharedTestFixtures={ matlab.unittest.fixtures.PathFixture(fileparts(fileparts(mfilename('fullpath'))))}) ...
+        DFMCnavEngineTest < matlab.unittest.TestCase
     % Unittest class for the DFMCnavEngine
     %   Runs a bank of unit tests for the DFMCnavEngine class.
 
@@ -50,10 +51,9 @@ classdef DFMCnavEngineTest < matlab.unittest.TestCase
         function testRinexParser(testCase)
             
             % get path to Rinex file
-            folderPath = fileparts(mfilename('fullpath'));
-            newStr = split(folderPath, filesep);
-            navsuPath = fullfile(newStr{1:end-1});
+            navsuPath = fileparts(fileparts(mfilename('fullpath')));
             obsFile = fullfile(navsuPath, 'examples', 'swift-gnss-20200312-093212.obs');
+            testCase.assumeThat(obsFile, matlab.unittest.constraints.IsFile);
             % read obs file
             [obsStruc, constellations, epochs] = navsu.readfiles.loadRinexObs(obsFile);
             obsGnssRaw.meas      = obsStruc;
