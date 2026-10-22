@@ -1,10 +1,10 @@
 function files = curlGetDirectoryContents(remoteDir, varargin)
 % Pull directory contents using curl. Returns a cell array of strings. Each
 % string specifies one file in the remote directory.
-%    
+%
 %   files = curlGetDirectoryContents(site, netrcFile, cookieFile)
 %   files = curlGetDirectoryContents(site)
-%   
+%
 %   Can be called with netrc and cookie file on windows for slightly faster
 %   response using http instead of ftp. See:
 %   https://cddis.nasa.gov/Data_and_Derived_Products/CDDIS_Archive_Access.html
@@ -27,13 +27,13 @@ if useHttp
 elseif ispc
     % need to call ftp protocol with a timeout
     curlCall = ['curl --silent --speed-time 1 --speed-limit 10 '...
-                '-u anonymous:fabianr@stanford.edu ' ...
-                '--ftp-ssl ' remoteDir];
+                '--user anonymous:fabianr@stanford.edu ' ...
+                '--ssl ' remoteDir];
 else
     % use ftp protocol on the mac
     curlCall = ['curl --silent ' ...
-                '-u anonymous:fabianr@stanford.edu ' ...
-                '--ftp-ssl ' remoteDir];
+                '--user anonymous:fabianr@stanford.edu ' ...
+                '--ssl ' remoteDir];
 end
 
 [curlFeedbackCode, output] = system(curlCall);
@@ -42,7 +42,8 @@ end
 if curlFeedbackCode > 0 && (useHttp || ~ispc)
     warning(['Failed to access %s\n', ...
              'Could not retrieve ftp directory listing.\n', ...
-             'cURL exited with code %i.'], remoteDir, curlFeedbackCode);
+             'cURL exited with code %i and warning %s.'], ...
+             remoteDir, curlFeedbackCode, output);
 end
 
 % now parse the output of the curl command
@@ -55,12 +56,12 @@ elseif useHttp
 else
     % this works with the output of the ftp call
     byLineOutput = split(output, newline);
-    
+
     useLines = find(~cellfun(@isempty, byLineOutput));
     nLines = length(useLines);
-    
+
     files = cell(nLines, 1);
-    
+
     for lineId = 1:nLines
         s = textscan(byLineOutput{useLines(lineId)}, '%s');
         files{lineId} = s{1}{end};

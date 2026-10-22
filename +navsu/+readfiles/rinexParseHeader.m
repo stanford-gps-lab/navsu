@@ -30,6 +30,9 @@ function [Obs_types, pos_M, ifound_types, interval, sysId, antoff, antmod,...
 % Adapted by Mirko Reguzzoni, Eugenio Realini, 2009
 % Portions of code contributed by Damiano Triglione, 2012
 %----------------------------------------------------------------------------------------------
+arguments
+  file (1,1) {mustBeInteger, mustBePositive}
+end
 
 ifound_types = 0;
 Obs_types = cell(0,0);
@@ -42,7 +45,7 @@ rxmod = '';
 %parse first line
 line = fgetl(file);
 
-mixedFlag = ~isempty(strfind(line,'MIXED'));
+mixedFlag = contains(line,'MIXED');
 
 rinexVer = 0;
 

@@ -2,9 +2,15 @@ name: Matlab Code Build Checker
 
 on:
   push:
-  workflow_dispatch:
+    paths:
+    - "**.m"
+    - ".github/workflows/**.yml"
   pull_request:
     types: [opened, reopened]
+# avoid wasted runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
 
@@ -40,28 +46,68 @@ jobs:
 
   matlab_linter:
     name: Matlab Checkcode Linter
-    runs-on: self-hosted
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        release: [R2024a]
+
     steps:
 
-    - name: Checkout Branch
-      uses: actions/checkout@v2
-    
-    - name: Execute Matlab Checkcode
-      run: |
-        matlab -batch "addpath(genpath('.')); addpath('.github/workflows'); exit(matlab_checkcode_on_directory('navsu-unit-testing'))"
+    - &install-matlab
+      name: Install MATLAB
+      uses: matlab-actions/setup-matlab@v2
+      with:
+        release: ${{ matrix.release }}
+        cache: true
+
+    - &checkout
+      name: Checkout Branch
+      uses: actions/checkout@v6
+
+    - uses: matlab-actions/run-build@v2
+      with:
+        tasks: check
+
 
   matlab_runtests:
+    timeout-minutes: 15
     name: Matlab Runtests
-    runs-on: self-hosted
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        release: [R2024a]
+
     steps:
 
-    - name: Checkout Branch
-      uses: actions/checkout@v2
-      with:
-        submodules: true
+    - *install-matlab
+
+    - *checkout
 
     - name: Execute Matlab Runtests
-      run: matlab -batch "addpath(genpath('.')); addpath('.github/workflows'); matlab_runtests_on_directory('.','matlab_test_results.xml','matlab_test_coverage_report.xml')"
+      uses: matlab-actions/run-build@v2
+      with:
+        tasks: test
+
+
+  coverage:
+    if: false
+    timeout-minutes: 10
+    # just fixup to work with buildtool
+    name: Matlab Code Coverage
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        release: [R2024a]
+
+    steps:
+
+    - *install-matlab
+    - *checkout
 
     - name: Retreive Pull Request Number
       uses: jwalton/gh-find-current-pr@v1
@@ -82,12 +128,3 @@ jobs:
         pull_request_number: ${{ steps.findPr.outputs.number }}
         only_changed_files: true # Only show coverage for changed files.
         report_name: Matlab Unit Test Coverage Report # Use a unique name for the report and comment.
-
-    - name: Publish Matlab Runtests Results
-      uses: mikepenz/action-junit-report@v2
-      with:
-        check_name: 'Matlab Runtests Results'
-        report_paths: 'matlab_test_results.xml'
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        fail_on_failure: true
-        require_tests: true
